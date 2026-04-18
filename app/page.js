@@ -1,101 +1,110 @@
-import Image from "next/image";
+import { Hero }              from '@/components/sections/Hero'
+import { TrustBar }          from '@/components/sections/TrustBar'
+import { TrustLogos }        from '@/components/sections/TrustLogos'
+import { HowItWorks }        from '@/components/sections/HowItWorks'
+import { SavingsCalculator } from '@/components/sections/SavingsCalculator'
+import { FAQ_ITEMS }         from '@/lib/constants'
+
+export const metadata = {
+  title:       'Günstiger Strom & Gas 2026 – Bis 40 % sparen | Tarifheld Vergleich',
+  description: 'Günstiger Strom gesucht? Tarifheld findet den besten Tarif — kostenlos, persönlich, Ø 480 € Ersparnis. Stromanbieter wechseln in 2 Minuten. Jetzt Tarif prüfen!',
+  alternates:  { canonical: 'https://www.deintarifheld.de/' },
+  openGraph: {
+    title:       'Günstiger Strom & Gas – Tarifheld | Bis zu 40 % sparen',
+    description: 'Günstigen Strom finden: Kostenloser Vergleich, Ø 480 € Ersparnis. Stromanbieter wechseln ohne Papierkram.',
+    url:         'https://www.deintarifheld.de/',
+    images:      [{ url: '/images/og-default.png', width: 1200, height: 630, alt: 'Tarifheld – Günstiger Strom & Gas Vergleich' }],
+  },
+  twitter: {
+    card:        'summary_large_image',
+    title:       'Günstiger Strom & Gas – Tarifheld | Bis zu 40 % sparen',
+    description: 'Günstigen Strom finden: Ø 480 € sparen. Jetzt kostenlos Tarif prüfen!',
+    images:      ['/images/og-default.png'],
+  },
+}
+import { B2BSection }        from '@/components/sections/B2BSection'
+import { CareerSection }     from '@/components/sections/CareerSection'
+import { FAQ }               from '@/components/sections/FAQ'
+import { FunnelSection }     from '@/components/sections/FunnelSection'
+import { Footer }            from '@/components/sections/Footer'
+import { GlowLine }          from '@/components/ui/Background'
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQ_ITEMS.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  }
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+  const serviceSchema = {
+    '@context': 'https://schema.org',
+    '@type':    'Service',
+    name:       'Kostenloser Strompreisvergleich & Gastarif-Vergleich',
+    provider: { '@type': 'LocalBusiness', name: 'Dein Tarifheld', url: 'https://www.deintarifheld.de' },
+    serviceType:  'Energieberatung und Tarifvergleich',
+    description:  'Günstiger Strom & Gas: Kostenloser Vergleich von über 1.000 Strom- und Gastarifen für Privat- und Gewerbekunden. Persönliche Beratung, Ø 480 € Ersparnis.',
+    areaServed:   { '@type': 'Country', name: 'Germany' },
+    offers: {
+      '@type':        'Offer',
+      price:          '0',
+      priceCurrency:  'EUR',
+      description:    'Kostenloser Tarifvergleich und persönliche Beratung',
+      availability:   'https://schema.org/InStock',
+    },
+  }
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type':    'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Startseite', item: 'https://www.deintarifheld.de/' },
+    ],
+  }
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      {/* 1. Hero */}
+      <Hero />
+
+      {/* 2. Trust Bar */}
+      <TrustBar />
+
+      {/* 4. How It Works */}
+      <GlowLine color="white" />
+      <HowItWorks />
+
+      {/* 4. Savings Calculator */}
+      <GlowLine color="volt" />
+      <SavingsCalculator />
+
+      {/* 7. 2-Step Funnel */}
+      <GlowLine color="volt" />
+      <FunnelSection />
+
+      {/* 8. B2B Section */}
+      <GlowLine color="volt" />
+      <B2BSection />
+
+      {/* 10. Career Section */}
+      <GlowLine color="volt" />
+      <CareerSection variant="volt" />
+
+      {/* 11. FAQ */}
+      <GlowLine color="white" />
+      <FAQ />
+
+      {/* 12. Footer */}
+      <Footer />
+    </>
+  )
 }

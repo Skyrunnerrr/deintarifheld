@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dein Tarifheld – Neue Website kommt bald!</title>
+  <meta name="description" content="Wir bauen gerade unsere neue Website. Bald sind wir mit einem frischen Auftritt für dich da!">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/images/icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: #090B0F;
+      color: #F2F4F8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      overflow: hidden;
+    }
+    .glow {
+      position: fixed;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(212,255,62,0.08) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 560px;
+    }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2.5rem;
+    }
+    .logo-icon {
+      width: 48px; height: 48px;
+      background: #D4FF3E;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-icon svg { width: 28px; height: 28px; }
+    .logo-text {
+      font-size: 1.75rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+    .logo-text span { color: #D4FF3E; }
+    .badge {
+      display: inline-block;
+      background: rgba(212,255,62,0.1);
+      color: #D4FF3E;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(212,255,62,0.2);
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      font-weight: 900;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+    h1 span { color: #D4FF3E; }
+    .subtitle {
+      color: #8E97A8;
+      font-size: 1.0625rem;
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+    }
+    .contact {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #D4FF3E;
+      color: #090B0F;
+      font-weight: 800;
+      font-size: 1rem;
+      padding: 14px 32px;
+      border-radius: 999px;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 24px rgba(212,255,62,0.25);
+    }
+    .contact:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(212,255,62,0.35);
+    }
+    .footer {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #4B5563;
+      font-size: 0.8125rem;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    .badge { animation: pulse 2.5s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="container">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M11.5 2L3.5 11.5H9.5L8.5 18L16.5 8.5H10.5Z" fill="#090B0F"/></svg>
+      </div>
+      <div class="logo-text">Dein<span>Tarif</span>held</div>
+    </div>
+
+    <div class="badge">⚡ Relaunch in Kürze</div>
+
+    <h1>Wir bauen gerade<br>etwas <span>Neues</span> für dich.</h1>
+
+    <p class="subtitle">
+      Unsere Website wird aktuell überarbeitet und bekommt einen frischen Auftritt.
+      Schon bald sind wir mit noch besseren Funktionen für dich da.<br><br>
+      Du möchtest jetzt schon Strom & Gas optimieren? Schreib uns einfach!
+    </p>
+
+    <a href="mailto:kontakt@deintarifheld.de" class="contact">
+      ✉ kontakt@deintarifheld.de
+    </a>
+  </div>
+
+  <div class="footer">© 2026 Dein Tarifheld</div>
+</body>
+</html>

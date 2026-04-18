@@ -1,0 +1,314 @@
+// Restored after APFS sparse-file corruption
+import Link from 'next/link'
+import { Zap } from 'lucide-react'
+import { ObfuscatedEmail } from '@/components/ui/ObfuscatedEmail'
+
+export const metadata = {
+  title: 'Datenschutzerklärung – Dein Tarifheld | DSGVO & Datenschutz',
+  description: 'Informationen zum Datenschutz und zur Verarbeitung personenbezogener Daten bei Dein Tarifheld gemäß DSGVO.',
+  alternates: { canonical: 'https://www.deintarifheld.de/datenschutz' },
+  robots: { index: false, follow: false },
+}
+
+function LegalSection({ title, children }) {
+  return (
+    <section style={{ marginBottom: '2.5rem' }}>
+      <h2 style={{
+        fontSize: '1.125rem', fontWeight: 700, color: '#F2F4F8',
+        marginBottom: '0.75rem', paddingBottom: '0.5rem',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+      }}>
+        {title}
+      </h2>
+      <div style={{ color: '#8E97A8', fontSize: '0.9375rem', lineHeight: 1.75 }}>
+        {children}
+      </div>
+    </section>
+  )
+}
+
+function BulletList({ items }) {
+  return (
+    <ul style={{ paddingLeft: '1.25rem', margin: '0.5rem 0' }}>
+      {items.map((item, i) => <li key={i} style={{ marginBottom: '0.25rem' }}>{item}</li>)}
+    </ul>
+  )
+}
+
+function Highlight({ children }) {
+  return <strong style={{ color: '#D9DEE4' }}>{children}</strong>
+}
+
+export default function DatenschutzPage() {
+  return (
+    <div style={{ minHeight: '100vh', background: '#090B0F', paddingTop: '5rem' }}>
+      <div className="legal-container" style={{ maxWidth: 720, margin: '0 auto', padding: '3rem 1.5rem 5rem' }}>
+
+        <style>{`
+          @media (max-width: 767px) {
+            .legal-container { padding: 2rem 1rem 3rem !important; }
+            .legal-container h1 { font-size: 1.5rem !important; }
+          }
+        `}</style>
+
+        {/* Back Link */}
+        <Link href="/" style={{
+          display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+          color: '#8E97A8', fontSize: '0.875rem', fontWeight: 600,
+          textDecoration: 'none', marginBottom: '2.5rem', opacity: 0.9,
+        }}>
+          ← Zurück zur Startseite
+        </Link>
+
+        {/* Logo + Title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10, background: '#8E97A8',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <Zap style={{ width: 20, height: 20, color: '#090B0F' }} strokeWidth={2.5} />
+          </div>
+          <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#F2F4F8' }}>
+            Dein<span style={{ color: '#8E97A8' }}>Tarif</span>held
+          </span>
+        </div>
+
+        <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#F2F4F8', margin: '0 0 0.5rem' }}>
+          Datenschutzerklärung
+        </h1>
+        <p style={{ color: '#6B7280', fontSize: '0.875rem', marginBottom: '3rem' }}>
+          Gemäß Art. 12–14 DSGVO, BDSG und TTDSG
+        </p>
+
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', marginBottom: '3rem' }} />
+
+        {/* Intro */}
+        <p style={{ color: '#8E97A8', fontSize: '0.9375rem', lineHeight: 1.75, marginBottom: '2.5rem' }}>
+          Der Schutz Ihrer persönlichen Daten ist uns ein besonderes Anliegen. Wir verarbeiten
+          Ihre Daten daher ausschließlich auf Grundlage der gesetzlichen Bestimmungen
+          (insbesondere DSGVO, BDSG und TMG). In dieser Datenschutzerklärung informieren wir Sie
+          über Art, Umfang und Zweck der Erhebung und Verwendung personenbezogener Daten auf
+          unserer Website, einschließlich der Nutzung von Formularen, Analyse-Tools sowie
+          externer Diensteanbieter.
+        </p>
+
+        {/* Verantwortlicher */}
+        <LegalSection title="Verantwortlicher (Art. 4 Abs. 7 DSGVO)">
+          <p style={{ margin: 0 }}>
+            <Highlight>Noah Bez</Highlight><br />
+            Selbständiger Vertriebspartner der TELESON Vertriebs GmbH<br />
+            Lochheimer Str. 37<br />
+            69124 Heidelberg<br />
+            Deutschland<br /><br />
+            E-Mail:{' '}
+            <ObfuscatedEmail style={{ color: '#8E97A8', textDecoration: 'none' }} />
+          </p>
+        </LegalSection>
+
+        {/* 1 */}
+        <LegalSection title="Kontaktaufnahme & Übermittlung personenbezogener Daten">
+          <p style={{ marginBottom: '0.75rem' }}>
+            Wenn Sie per Formular auf dieser Website Kontakt mit uns aufnehmen, werden Ihre
+            angegebenen Daten ausschließlich zum Zweck der individuellen Beratung sowie zur
+            Angebotserstellung verwendet. Folgende Daten können verarbeitet werden:
+          </p>
+          <BulletList items={[
+            'Vor- und Nachname',
+            'E-Mail-Adresse',
+            'Telefonnummer (Pflichtfeld bei Karriere-Bewerbungen, sonst optional)',
+            'Jahresverbrauch (Strom/Gas), Postleitzahl, aktueller Anbieter',
+          ]} />
+          <p style={{ margin: '0.75rem 0' }}>
+            Diese Daten werden nicht an Dritte weitergegeben, außer:
+          </p>
+          <BulletList items={[
+            'zur konkreten Prüfung eines Anbieterwechsels oder Tarifs',
+            'im Rahmen einer Weiterleitung an unsere Partnerunternehmen (z. B. die TELESON Vertriebs GmbH)',
+          ]} />
+          <p style={{ marginTop: '0.75rem', margin: 0 }}>
+            Die Datenverarbeitung erfolgt auf Grundlage von{' '}
+            <Highlight>Art. 6 Abs. 1 lit. b DSGVO</Highlight> (vorvertragliche Maßnahme)
+            bzw. Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Angebotserstellung).
+            Wir speichern Ihre Daten nur so lange, wie dies zur Bearbeitung der Anfrage
+            notwendig ist. Eine Weitergabe an sonstige Dritte oder eine Verarbeitung zu
+            Werbezwecken erfolgt nicht ohne Ihre ausdrückliche Einwilligung.
+          </p>
+        </LegalSection>
+
+        {/* 2 */}
+        <LegalSection title="Cookies">
+          <p style={{ marginBottom: '0.75rem' }}>
+            Unsere Website verwendet sogenannte Cookies. Wir nutzen Cookies, um unser Angebot
+            nutzerfreundlich, effektiv und sicher zu gestalten. Wir unterscheiden zwischen:
+          </p>
+          <BulletList items={[
+            'technisch notwendigen Cookies (z. B. zur korrekten Darstellung der Website)',
+            'funktionalen Cookies (z. B. für Benutzerkomfort)',
+            'Analyse- und Tracking-Cookies (z. B. Google Analytics)',
+          ]} />
+          <p style={{ marginTop: '0.75rem', margin: 0 }}>
+            Die Nutzung von Cookies, die nicht technisch notwendig sind, erfolgt ausschließlich
+            auf Grundlage Ihrer ausdrücklichen Einwilligung gemäß{' '}
+            <Highlight>Art. 6 Abs. 1 lit. a DSGVO</Highlight>. Sie können Ihre
+            Cookie-Einstellungen jederzeit über die entsprechende Funktion im Banner oder über
+            Ihren Browser ändern.
+          </p>
+        </LegalSection>
+
+        {/* 3 */}
+        <LegalSection title="Webanalyse">
+          <p style={{ margin: 0 }}>
+            Diese Website verwendet derzeit <Highlight>keine externen Analysedienste</Highlight>{' '}
+            wie Google Analytics. Es werden keine Tracking-Cookies gesetzt und keine
+            personenbezogenen Nutzungsdaten an Dritte übermittelt. Sollte in Zukunft ein
+            Analysedienst eingebunden werden, erfolgt dies ausschließlich auf Grundlage
+            Ihrer ausdrücklichen Einwilligung gemäß Art. 6 Abs. 1 lit. a DSGVO.
+          </p>
+        </LegalSection>
+
+        {/* 4 */}
+        <LegalSection title="Google Drive, Google Workspace & Google Sheets">
+          <p style={{ marginBottom: '0.75rem' }}>
+            Zur Verarbeitung hochgeladener Dokumente nutzen wir den Cloud-Dienst{' '}
+            <Highlight>Google Drive</Highlight> der Google Ireland Limited. Die Speicherung
+            erfolgt auf gesicherten Servern innerhalb oder außerhalb der EU auf Grundlage
+            von Art. 6 Abs. 1 lit. b DSGVO. Wir haben mit Google einen Vertrag zur
+            Auftragsverarbeitung gemäß Art. 28 DSGVO abgeschlossen.
+          </p>
+          <p style={{ marginBottom: '0.75rem' }}>
+            Wir nutzen ferner <Highlight>Google Workspace</Highlight> als cloudbasierte
+            Plattform zur Verarbeitung und Speicherung personenbezogener Daten. Google erfüllt
+            anerkannte internationale Standards (ISO/IEC 27001, ISO/IEC 27701, SOC 2, DSGVO).
+          </p>
+          <p style={{ marginBottom: '0.75rem' }}>
+            <Highlight>Google Sheets & Google Apps Script:</Highlight> Über unsere
+            Kontaktformulare eingegebene Daten (Name, E-Mail, ggf. Telefonnummer,
+            Verbrauchsdaten) werden mittels Google Apps Script an Google Sheets
+            übermittelt und dort gespeichert. Die Verarbeitung erfolgt auf Grundlage von
+            Art. 6 Abs. 1 lit. b DSGVO (vorvertragliche Maßnahme). Mit Google besteht ein
+            Vertrag zur Auftragsverarbeitung gemäß Art. 28 DSGVO.
+          </p>
+          <p style={{ margin: 0 }}>
+            Weitere Informationen:{' '}
+            <a
+              href="https://policies.google.com/privacy"
+              target="_blank" rel="noopener noreferrer"
+              style={{ color: '#8E97A8', textDecoration: 'none' }}
+            >
+              policies.google.com/privacy
+            </a>
+          </p>
+        </LegalSection>
+
+        {/* 5 */}
+        <LegalSection title="Schriftarten (Web Fonts)">
+          <p style={{ margin: 0 }}>
+            Diese Website verwendet die Schriftart <Highlight>Outfit</Highlight>, die über
+            das Next.js-Framework lokal (self-hosted) eingebunden wird. Beim Aufruf der
+            Seite werden <Highlight>keine Verbindungen zu externen Servern</Highlight>{' '}
+            hergestellt, um Schriftarten zu laden. Ihre IP-Adresse wird in diesem
+            Zusammenhang nicht an Dritte übermittelt.
+          </p>
+        </LegalSection>
+
+        {/* 7 */}
+        <LegalSection title="Empfehlungsprogramm / Prämienaktion (Art. 13 DSGVO)">
+          <p style={{ marginBottom: '0.75rem' }}>
+            Wir bieten unseren Kunden die Möglichkeit, an einem Empfehlungsprogramm
+            teilzunehmen. Für jede erfolgreiche Empfehlung (abgeschlossener Strom-/Gasvertrag)
+            erhalten teilnehmende Personen einen digitalen Amazon-Gutschein im Wert von
+            10 Euro; bei zehn erfolgreichen Empfehlungen zusätzlich 50 Euro.
+          </p>
+          <p style={{ marginBottom: '0.5rem' }}>
+            Im Rahmen der Teilnahme verarbeiten wir:
+          </p>
+          <BulletList items={[
+            'Vor- und Nachname sowie E-Mail-Adresse der empfehlenden Person',
+            'freiwillig angegebener Name der empfohlenen Person',
+            'technische Zuordnung (interne ID, Abschlusszeitpunkt)',
+            'ggf. Postanschrift für den Gutscheinversand',
+          ]} />
+          <p style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
+            <Highlight>Rechtsgrundlage:</Highlight> Art. 6 Abs. 1 lit. b DSGVO
+            (vorvertragliche Maßnahme) sowie Art. 6 Abs. 1 lit. f DSGVO (berechtigtes
+            Interesse zur Vermeidung von Missbrauch).
+          </p>
+          <p style={{ marginBottom: '0.75rem' }}>
+            <Highlight>Empfänger:</Highlight> Amazon EU S.à r.l. (Gutscheinzustellung),
+            TELESON Vertriebs GmbH (Vertragsabwicklung) — jeweils auf Basis von Art. 28 DSGVO.
+          </p>
+          <p style={{ margin: 0 }}>
+            Die Teilnahme ist freiwillig. Widerruf an:{' '}
+            <ObfuscatedEmail style={{ color: '#8E97A8', textDecoration: 'none' }} />
+          </p>
+        </LegalSection>
+
+        {/* 8 */}
+        <LegalSection title="Hinweis zu Kooperationspartnern">
+          <p style={{ margin: 0 }}>
+            Dein Tarifheld ist ein Angebot eines selbständigen Handelsvertreters gemäß § 84 HGB
+            für die{' '}
+            <Highlight>TELESON Vertriebs GmbH</Highlight>, Zielstattstraße 10, 81379 München.
+            Die Verarbeitung Ihrer personenbezogenen Daten kann im Zusammenhang mit der
+            Vermittlung von Produkten und Dienstleistungen dieser Partner erfolgen. Weitere
+            Informationen entnehmen Sie bitte direkt der Datenschutzerklärung der TELESON
+            Vertriebs GmbH unter{' '}
+            <a
+              href="https://www.teleson.de/datenschutz"
+              target="_blank" rel="noopener noreferrer"
+              style={{ color: '#8E97A8', textDecoration: 'none' }}
+            >
+              www.teleson.de/datenschutz
+            </a>
+          </p>
+        </LegalSection>
+
+        {/* 9 */}
+        <LegalSection title="Ihre Rechte als betroffene Person">
+          <p style={{ marginBottom: '0.5rem' }}>
+            Ihnen stehen als betroffene Person nach der DSGVO folgende Rechte zu:
+          </p>
+          <BulletList items={[
+            'Recht auf Auskunft (Art. 15 DSGVO)',
+            'Recht auf Berichtigung unrichtiger Daten (Art. 16 DSGVO)',
+            'Recht auf Löschung (Art. 17 DSGVO)',
+            'Recht auf Einschränkung der Verarbeitung (Art. 18 DSGVO)',
+            'Recht auf Datenübertragbarkeit (Art. 20 DSGVO)',
+            'Recht auf Widerspruch (Art. 21 DSGVO)',
+          ]} />
+          <p style={{ marginTop: '0.75rem', margin: 0 }}>
+            Um eines dieser Rechte auszuüben, senden Sie bitte eine Nachricht an:{' '}
+            <ObfuscatedEmail style={{ color: '#8E97A8', textDecoration: 'none' }} />.<br />
+            Sie haben außerdem das Recht, sich bei einer Datenschutzaufsichtsbehörde über
+            die Verarbeitung Ihrer personenbezogenen Daten zu beschweren.
+          </p>
+        </LegalSection>
+
+        {/* 10 */}
+        <LegalSection title="Haftungsausschluss">
+          <p style={{ margin: 0 }}>
+            Alle Informationen auf dieser Website wurden sorgfältig geprüft. Dennoch übernehmen
+            wir keine Haftung für die Richtigkeit, Vollständigkeit oder Aktualität der Inhalte.
+            Die bereitgestellten Vergleichsergebnisse stellen keine verbindliche Beratung oder
+            Vertragsgrundlage dar. Eine Haftung für direkte oder indirekte Schäden ist —
+            soweit gesetzlich zulässig — ausgeschlossen.
+          </p>
+        </LegalSection>
+
+        {/* 11 */}
+        <LegalSection title="Aktualität und Änderung dieser Datenschutzerklärung">
+          <p style={{ margin: 0 }}>
+            Wir behalten uns vor, diese Datenschutzerklärung bei Bedarf anzupassen, um sie
+            aktuellen rechtlichen Anforderungen oder Änderungen unserer Leistungen anzupassen.
+            Für Ihren erneuten Besuch gilt dann die jeweils aktuelle Datenschutzerklärung,
+            abrufbar auf dieser Seite.
+          </p>
+        </LegalSection>
+
+        <p style={{ color: '#4A515C', fontSize: '0.8125rem', marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          Stand: März 2026
+        </p>
+      </div>
+    </div>
+  )
+}

@@ -4,19 +4,30 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && next-sitemap && find out -type f -exec chmod 644 {} + && find out -type d -exec chmod 755 {} +",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
-    "react": "^18",
-    "react-dom": "^18",
-    "next": "14.2.35"
+    "@hookform/resolvers": "^3.10.0",
+    "axios": "^1.13.6",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^0.577.0",
+    "motion-dom": "^12.38.0",
+    "next": "^15.5.14",
+    "react": "^19",
+    "react-dom": "^19",
+    "react-hook-form": "^7.71.2",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
+    "@types/react": "^19",
     "eslint": "^8",
-    "eslint-config-next": "14.2.35"
+    "eslint-config-next": "^15.3.0",
+    "next-sitemap": "^4.2.3",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1"
   }
 }
