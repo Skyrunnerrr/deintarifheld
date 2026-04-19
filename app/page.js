@@ -97,7 +97,7 @@ export default function Home() {
 
       {/* 10. Career Section */}
       <GlowLine color="volt" />
-      <CareerSection variant="volt" />
+      <CareerSection variant="volt" headingLevel="h2" />
 
       {/* 11. FAQ */}
       <GlowLine color="white" />

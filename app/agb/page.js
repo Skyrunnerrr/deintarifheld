@@ -78,15 +78,15 @@ export default function AGBPage() {
         {/* § 1 */}
         <LegalSection title="§ 1 Geltungsbereich">
           <p style={{ marginBottom: '0.75rem' }}>
-            (1) Diese Allgemeinen Geschäftsbedingungen (nachfolgend „AGB") gelten für alle
+            (1) Diese Allgemeinen Geschäftsbedingungen (nachfolgend „AGB”) gelten für alle
             Leistungen und Angebote, die über die Website{' '}
-            <Highlight>www.deintarifheld.de</Highlight> (nachfolgend „Website") von:
+            <Highlight>www.deintarifheld.de</Highlight> (nachfolgend „Website”) von:
           </p>
           <p style={{ margin: '0 0 0.75rem', paddingLeft: '1rem', borderLeft: '3px solid rgba(255,255,255,0.1)' }}>
             Noah Bez<br />
             Selbständiger Vertriebspartner der TELESON Vertriebs GmbH<br />
             Lochheimer Str. 37, 69124 Heidelberg<br />
-            (nachfolgend „Anbieter" oder „wir")
+            (nachfolgend „Anbieter” oder „wir”)
           </p>
           <p style={{ marginBottom: '0.75rem' }}>
             angeboten und erbracht werden.

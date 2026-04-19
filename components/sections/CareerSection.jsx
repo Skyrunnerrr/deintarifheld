@@ -48,7 +48,8 @@ const BENEFITS = [
   { icon: <Star className="w-5 h-5" />,       title: 'Boni & Prämien',   sub: 'Attraktive Provisionsstruktur', color: '#217CFF' },
 ]
 
-export function CareerSection() {
+export function CareerSection({ headingLevel = 'h1' }) {
+  const HeadingTag = headingLevel
   const [submitted, setSubmitted]       = useState(false)
   const [loading, setLoading]           = useState(false)
   const [rateLimitMsg, setRateLimitMsg] = useState('')
@@ -77,7 +78,7 @@ export function CareerSection() {
     setLoading(true)
     recordSubmission('career-form')
     try {
-      const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL
+      const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbyR4SQWp3pmBFMmQUJL9sCSuZ7dfVDMLarUmNzV3rCPng817qYUEtt-a0tSnf_JPWI0/exec'
       if (!webhookUrl) throw new Error('Webhook URL fehlt')
       
       const payload = sanitizePayload({ ...data, _recaptchaToken: recaptchaToken, _recaptchaAction: 'career', page_source: 'career', timestamp: new Date().toISOString(), _formLoadedAt: getFormTiming('career-form')._formLoadedAt, form_version: '2.0' })
@@ -138,7 +139,7 @@ export function CareerSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-center max-w-4xl mx-auto mb-6"
           >
-            <h1
+            <HeadingTag
               className="font-display font-black leading-none tracking-tight"
               style={{ fontSize: 'clamp(2.4rem, 6vw, 5rem)', color: '#F0F4FF' }}
             >
@@ -147,7 +148,7 @@ export function CareerSection() {
                 Karrieresprung
               </span>
               <br />im Energiemarkt
-            </h1>
+            </HeadingTag>
           </motion.div>
 
           <motion.p

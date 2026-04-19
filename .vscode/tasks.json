@@ -2,9 +2,15 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Upload zu Checkdomain",
+			"label": "Upload zu Checkdomain (SSH)",
 			"type": "shell",
 			"command": "cd /Users/noahbez/Desktop/deinTarifheld/out && find . -type f -exec chmod 644 {} + && find . -type d -exec chmod 755 {} + && echo '========================================' && echo '  TIPPE DEIN CHECKDOMAIN-PASSWORT UNTEN' && echo '  (du siehst NICHTS - das ist normal!)' && echo '  Dann druecke ENTER' && echo '========================================' && rsync -avzp -e 'ssh -p 22 -o StrictHostKeyChecking=no' . thwhvklj@host275.checkdomain.de:/var/www/vhosts/thwhvklj.host275.checkdomain.de/deintarifheld.de/",
+			"isBackground": false
+		},
+		{
+			"label": "Upload zu Checkdomain (FTP)",
+			"type": "shell",
+			"command": "/Users/noahbez/Desktop/deinTarifheld/upload-ftp.sh",
 			"isBackground": false
 		},
 		{

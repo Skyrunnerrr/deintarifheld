@@ -183,7 +183,7 @@ function Step2({ step1Data, onSuccess }) {
     setLoading(true)
     recordSubmission('main-funnel')
     try {
-      const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL
+      const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbyR4SQWp3pmBFMmQUJL9sCSuZ7dfVDMLarUmNzV3rCPng817qYUEtt-a0tSnf_JPWI0/exec'
       if (!webhookUrl) throw new Error('Webhook URL fehlt')
       
       const payload = sanitizePayload({

@@ -210,7 +210,7 @@ export function Hero() {
 
     recordSubmission('hero-funnel')
     try {
-      const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL
+      const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbyR4SQWp3pmBFMmQUJL9sCSuZ7dfVDMLarUmNzV3rCPng817qYUEtt-a0tSnf_JPWI0/exec'
       if (!webhookUrl) throw new Error('Webhook URL fehlt')
 
       const { [HONEYPOT_FIELD]: _hp, [HONEYPOT_FIELD_2]: _hp2, gdprStep1: _g1, ...rest } = formData

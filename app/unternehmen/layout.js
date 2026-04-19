@@ -1,6 +1,6 @@
 // Restored after APFS sparse-file corruption
 export const metadata = {
-  title: 'Energieberatung für Unternehmen – B2B Strom & Gas optimieren | Tarifheld',
+  title: 'Energieberatung für Unternehmen – B2B Strom & Gas optimieren',
   description: 'Tarifheld optimiert Strom- und Gastarife für Unternehmen, Gastronomie und Gewerbe. Kostenlose B2B-Analyse, mehrere Standorte möglich, schnelle Abwicklung. Jetzt kostenlos anfragen.',
   keywords: 'B2B Energieberatung, Gewerbe Strom sparen, Unternehmen Gas optimieren, Mehrstandort Energieoptimierung, Gastronomie Stromtarif, Gewerbetarif Strom Vergleich',
   alternates: { canonical: 'https://www.deintarifheld.de/unternehmen/' },

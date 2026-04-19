@@ -18,6 +18,9 @@ const CFG = {
   RECAPTCHA_MIN_SCORE: 0.5,
   RECAPTCHA_ALLOWED_HOSTNAMES: ['deintarifheld.de', 'www.deintarifheld.de'],
   RECAPTCHA_ALLOWED_ACTIONS: [],
+  // hard: reCAPTCHA-Fehler blockieren den Lead (Produktiv-Default)
+  // soft: nur als Notfallmodus, wenn Leads trotz reCAPTCHA-Ausfall gespeichert werden sollen
+  RECAPTCHA_MODE: 'hard',
 
   RETENTION_DAYS: 90,
   CAREER_RETENTION_MONTHS: 6,
@@ -152,9 +155,19 @@ function doPost(e) {
     }
 
     const recaptcha = verifyRecaptchaToken(raw._recaptchaToken);
-    if (!recaptcha.success) {
+    var recaptchaSoftFail = !recaptcha.success && shouldSoftAcceptRecaptcha(recaptcha);
+
+    if (!recaptcha.success && !recaptchaSoftFail) {
       logDsgvo('REJECTED_RECAPTCHA', raw.page_source || 'unknown', recaptcha.reason);
       return jsonOut({ success: true, orderId: 'TH-X-00000000-XXXXX', message: 'Vielen Dank!' });
+    }
+
+    if (recaptchaSoftFail) {
+      logDsgvo(
+        'RECAPTCHA_SOFT_FAIL',
+        raw.page_source || 'unknown',
+        (recaptcha.code || 'UNKNOWN') + ' | ' + recaptcha.reason
+      );
     }
 
     const rateLimit = checkServerRateLimit(raw);
@@ -170,6 +183,9 @@ function doPost(e) {
 
     const stripped = stripUnknownFields(raw);
     const data = sanitize(stripped);
+    if (recaptchaSoftFail) {
+      data._recaptchaSoftFailReason = (recaptcha.code || 'UNKNOWN') + ': ' + recaptcha.reason;
+    }
 
     const dup = checkDuplicate(data);
     if (dup.isDuplicate) {
@@ -247,12 +263,12 @@ function checkTiming(data) {
 
 function verifyRecaptchaToken(token) {
   if (!token || token === 'null' || token === '') {
-    return { success: false, reason: 'reCAPTCHA token missing' };
+    return { success: false, code: 'TOKEN_MISSING', reason: 'reCAPTCHA token missing' };
   }
 
   var recaptchaSecret = getRecaptchaSecretKey();
   if (!recaptchaSecret || recaptchaSecret === 'DEINE_SECRET_KEY_HIER') {
-    return { success: false, reason: 'reCAPTCHA nicht konfiguriert' };
+    return { success: false, code: 'NOT_CONFIGURED', reason: 'reCAPTCHA nicht konfiguriert' };
   }
 
   try {
@@ -269,7 +285,7 @@ function verifyRecaptchaToken(token) {
 
     if (!result.success) {
       var errors = (result.error_codes || []).join(', ');
-      return { success: false, reason: 'reCAPTCHA validation failed: ' + errors };
+      return { success: false, code: 'GOOGLE_VALIDATION_FAILED', reason: 'reCAPTCHA validation failed: ' + errors };
     }
 
     var hostname = String(result.hostname || '').toLowerCase().trim();
@@ -278,7 +294,7 @@ function verifyRecaptchaToken(token) {
     }).filter(function(h) { return h.length > 0; });
 
     if (allowedHosts.length > 0 && allowedHosts.indexOf(hostname) === -1) {
-      return { success: false, reason: 'Ungueltiger reCAPTCHA Hostname: ' + hostname };
+      return { success: false, code: 'HOSTNAME_INVALID', reason: 'Ungueltiger reCAPTCHA Hostname: ' + hostname };
     }
 
     var allowedActions = (CFG.RECAPTCHA_ALLOWED_ACTIONS || []).map(function(a) {
@@ -287,7 +303,7 @@ function verifyRecaptchaToken(token) {
 
     var action = String(result.action || '').toLowerCase().trim();
     if (allowedActions.length > 0 && allowedActions.indexOf(action) === -1) {
-      return { success: false, reason: 'Ungueltige reCAPTCHA Action: ' + action };
+      return { success: false, code: 'ACTION_INVALID', reason: 'Ungueltige reCAPTCHA Action: ' + action };
     }
 
     var hasScore = typeof result.score === 'number';
@@ -296,16 +312,23 @@ function verifyRecaptchaToken(token) {
       if (score < CFG.RECAPTCHA_MIN_SCORE) {
         return {
           success: false,
+          code: 'SCORE_TOO_LOW',
           reason: 'Score zu niedrig: ' + score.toFixed(2) + ' (threshold: ' + CFG.RECAPTCHA_MIN_SCORE + ')',
         };
       }
-      return { success: true, score: score };
+      return { success: true, code: 'OK', score: score };
     }
 
-    return { success: true };
+    return { success: true, code: 'OK' };
   } catch (e) {
-    return { success: false, reason: 'reCAPTCHA validation error: ' + e.toString() };
+    return { success: false, code: 'VALIDATION_ERROR', reason: 'reCAPTCHA validation error: ' + e.toString() };
   }
+}
+
+function shouldSoftAcceptRecaptcha(recaptcha) {
+  var mode = String(CFG.RECAPTCHA_MODE || 'hard').toLowerCase().trim();
+  if (mode === 'soft') return true;
+  return false;
 }
 
 function getRecaptchaSecretKey() {
@@ -599,6 +622,7 @@ function saveToSheet(data) {
   var time = Utilities.formatDate(now, 'Europe/Berlin', 'HH:mm:ss');
   var ipHash = hashIp(data._ip || '');
   var orderId = data._orderId;
+  var status = data._recaptchaSoftFailReason ? 'Neu (Captcha Soft-Fail)' : 'Neu';
 
   var sheetName = '';
   var row = [];
@@ -614,7 +638,7 @@ function saveToSheet(data) {
       data.usage || '',
       data.zip || '',
       data.type || '',
-      'Ja', date + ' ' + time, ipHash, 'Neu', '',
+      'Ja', date + ' ' + time, ipHash, status, '',
     ];
   } else if (src === 'main_funnel') {
     sheetName = CFG.SHEETS.MAIN;
@@ -627,7 +651,7 @@ function saveToSheet(data) {
       data.consumption || data.usage || '',
       data.zip || '',
       data.type || '',
-      'Ja', date + ' ' + time, ipHash, 'Neu', '',
+      'Ja', date + ' ' + time, ipHash, status, '',
     ];
   } else if (src === 'unternehmen') {
     sheetName = CFG.SHEETS.UNTERNEHMEN;
@@ -645,7 +669,7 @@ function saveToSheet(data) {
       data.versorger || '',
       data.vertragslaufzeit || '',
       data.nachricht || '',
-      'Ja', date + ' ' + time, ipHash, 'Neu', '',
+      'Ja', date + ' ' + time, ipHash, status, '',
     ];
   } else if (src === 'career') {
     sheetName = CFG.SHEETS.CAREER;
@@ -655,7 +679,7 @@ function saveToSheet(data) {
       data.email || '',
       data.phone || '',
       data.motivation || '',
-      'Ja', date + ' ' + time, ipHash, 'Neu', '',
+      'Ja', date + ' ' + time, ipHash, status, '',
     ];
   } else {
     throw new Error('Unbekannte Quelle: ' + src);

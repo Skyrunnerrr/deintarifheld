@@ -2,7 +2,7 @@
 module.exports = {
   siteUrl: 'https://www.deintarifheld.de',
   generateRobotsTxt: true,
-  outDir: './public',
+  outDir: './out',
   trailingSlash: true,
   robotsTxtOptions: {
     policies: [
@@ -10,10 +10,18 @@ module.exports = {
     ],
     additionalSitemaps: [],
   },
-  exclude: ['/agb/', '/datenschutz/', '/impressum/', '/404'],
+  exclude: [
+    '/agb', '/agb/',
+    '/datenschutz', '/datenschutz/',
+    '/impressum', '/impressum/',
+    '/404', '/404/', '/404.html',
+    '/icon.png', '/icon.png/',
+  ],
   changefreq: 'weekly',
   priority: 0.7,
   transform: async (config, path) => {
+    const normalizedPath = path.endsWith('/') ? path : path + '/'
+
     // Custom priority per page
     const priorities = {
       '/': 1.0,
@@ -23,7 +31,7 @@ module.exports = {
     return {
       loc: path,
       changefreq: path === '/' ? 'daily' : 'weekly',
-      priority: priorities[path] || config.priority,
+      priority: priorities[normalizedPath] || priorities[path] || config.priority,
       lastmod: new Date().toISOString(),
     }
   },

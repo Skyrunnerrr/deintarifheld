@@ -190,7 +190,7 @@ export default function DatenschutzPage() {
             <span key="payload"><Highlight>Payload-Begrenzung:</Highlight> Die maximale Größe eingehender Anfragen ist auf 10 KB beschränkt, die Anzahl der Felder auf maximal 25.</span>,
             <span key="hash"><Highlight>Pseudonymisierung:</Highlight> IP-Adressen werden ausschließlich als kryptografischer Hash (MD5 mit Salt) gespeichert – niemals im Klartext. Eine Rückrechnung auf die Ursprungs-IP ist praktisch ausgeschlossen.</span>,
             <span key="zugriff"><Highlight>Zugriffsbeschränkung:</Highlight> Der Zugriff auf gespeicherte personenbezogene Daten ist ausschließlich dem Verantwortlichen (Noah Bez) vorbehalten.</span>,
-            <span key="auto"><Highlight>Automatische Datenlöschung:</Highlight> Ein serverseitiger Trigger löscht Daten automatisiert nach Ablauf der konfigurierten Aufbewahrungsfrist (siehe Abschnitt „Speicherdauer und Löschung").</span>,
+            <span key="auto"><Highlight>Automatische Datenlöschung:</Highlight> Ein serverseitiger Trigger löscht Daten automatisiert nach Ablauf der konfigurierten Aufbewahrungsfrist (siehe Abschnitt „Speicherdauer und Löschung”).</span>,
             <span key="proto"><Highlight>DSGVO-Protokollierung:</Highlight> Sämtliche Datenverarbeitungsvorgänge (Speicherung, Löschung, Sicherheitsereignisse) werden in einem separaten Protokoll-Sheet dokumentiert (Art. 30 DSGVO).</span>,
           ]} />
         </LegalSection>
@@ -247,7 +247,7 @@ export default function DatenschutzPage() {
             vertraulicher Inhalte, wie zum Beispiel Anfragen, die Sie an uns als
             Seitenbetreiber senden, eine SSL- bzw. TLS-Verschlüsselung. Eine verschlüsselte
             Verbindung erkennen Sie daran, dass die Adresszeile des Browsers von
-            „http://" auf „https://" wechselt und an dem Schloss-Symbol in Ihrer Browserzeile.
+            „http://” auf „https://” wechselt und an dem Schloss-Symbol in Ihrer Browserzeile.
             Wenn die SSL- bzw. TLS-Verschlüsselung aktiviert ist, können die Daten, die Sie
             an uns übermitteln, nicht von Dritten mitgelesen werden.
           </p>

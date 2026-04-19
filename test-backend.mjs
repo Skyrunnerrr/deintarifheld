@@ -1,16 +1,75 @@
 import https from 'https';
 
-const WEBHOOK_URL = process.env.WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbxHMmnt2xOqaezXHzJTEo2uABRuWoT4J1xpi4Ui_lh7v_18udKMZQ3PfhxcG6ZqnsA6/exec';
+const WEBHOOK_URL = process.env.WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbyR4SQWp3pmBFMmQUJL9sCSuZ7dfVDMLarUmNzV3rCPng817qYUEtt-a0tSnf_JPWI0/exec';
 
-const payload = JSON.stringify({
-  name: 'Test Nutzer',
-  email: 'wunderland50@gmail.com',
-  phone: '+49 89 123456',
-  motivation: 'Test der Backend-Integration - bitte ignorieren',
-  gdpr: true,
-  page_source: 'career',
-  timestamp: new Date().toISOString()
-});
+function buildPayloadFor(source) {
+  const now = new Date().toISOString();
+  const formLoadedAt = Date.now() - 15000;
+
+  if (source === 'hero-funnel') {
+    return {
+      firstName: 'Max',
+      email: 'wunderland50@gmail.com',
+      phone: '+49 89 123456',
+      provider: 'Test Anbieter',
+      usage: '3200',
+      zip: '80331',
+      type: 'strom',
+      gdpr: true,
+      page_source: 'hero-funnel',
+      _formLoadedAt: formLoadedAt,
+      _recaptchaToken: 'TEST_TOKEN',
+      timestamp: now,
+    };
+  }
+
+  if (source === 'main_funnel') {
+    return {
+      name: 'Max Mustermann',
+      email: 'wunderland50@gmail.com',
+      phone: '+49 89 123456',
+      provider: 'Test Anbieter',
+      consumption: '3500',
+      zip: '80331',
+      type: 'strom',
+      gdpr: true,
+      page_source: 'main_funnel',
+      _formLoadedAt: formLoadedAt,
+      _recaptchaToken: 'TEST_TOKEN',
+      timestamp: now,
+    };
+  }
+
+  if (source === 'unternehmen') {
+    return {
+      firma: 'Test GmbH',
+      ansprechpartner: 'Max Muster',
+      email: 'wunderland50@gmail.com',
+      telefon: '+49 89 123456',
+      plz: '80331',
+      energieart: 'strom',
+      verbrauchStrom: '50000',
+      standorte: '2',
+      gdpr: true,
+      page_source: 'unternehmen',
+      _formLoadedAt: formLoadedAt,
+      _recaptchaToken: 'TEST_TOKEN',
+      timestamp: now,
+    };
+  }
+
+  return {
+    name: 'Test Nutzer',
+    email: 'wunderland50@gmail.com',
+    phone: '+49 89 123456',
+    motivation: 'Test der Backend-Integration - bitte ignorieren',
+    gdpr: true,
+    page_source: 'career',
+    _formLoadedAt: formLoadedAt,
+    _recaptchaToken: 'TEST_TOKEN',
+    timestamp: now,
+  };
+}
 
 async function request(urlStr, method, body) {
   return new Promise((resolve, reject) => {
@@ -35,13 +94,12 @@ async function request(urlStr, method, body) {
   });
 }
 
-async function main() {
-  console.log('Sende POST an Webhook...');
+async function testSource(source) {
+  const payload = JSON.stringify(buildPayloadFor(source));
+  console.log(`\n=== Teste Quelle: ${source} ===`);
   let res = await request(WEBHOOK_URL, 'POST', payload);
   console.log('Step 1 - Status:', res.status);
 
-  // Follow redirects – bei GAS muss der Redirect als GET gefolgt werden
-  // Die POST-Daten wurden serverseitig bereits verarbeitet
   let hops = 0;
   while ((res.status === 301 || res.status === 302) && res.location && hops < 5) {
     console.log('Redirect zu:', res.location.substring(0, 80) + '...');
@@ -50,19 +108,42 @@ async function main() {
     hops++;
   }
 
-  console.log('\nFinale Antwort:');
   try {
     const json = JSON.parse(res.body);
     console.log(JSON.stringify(json, null, 2));
-    if (json.success) {
-      console.log('\n✅ Backend funktioniert! Order ID:', json.orderId || json.order_id || '–');
-      console.log('✅ E-Mail wurde an wunderland50@gmail.com gesendet.');
-    } else {
-      console.log('\n❌ Backend-Fehler:', json.error || json.message || 'Unbekannt');
+    const orderId = json.orderId || json.order_id || '';
+    const isMaskedSuccess = orderId === 'TH-X-00000000-XXXXX' || orderId === 'ALREADY_SUBMITTED';
+
+    if (json.success && !isMaskedSuccess) {
+      console.log(`✅ ${source}: gespeichert (${orderId || 'ohne ID'})`);
+      return true;
     }
+
+    if (json.success && isMaskedSuccess) {
+      console.log(`⚠️ ${source}: maskierte Erfolgsantwort (nicht normal gespeichert)`);
+      return false;
+    }
+
+    console.log(`❌ ${source}: Backend-Fehler -`, json.error || json.message || 'Unbekannt');
+    return false;
   } catch {
-    console.log(res.body.substring(0, 500));
+    console.log(`❌ ${source}: Keine JSON-Antwort`, res.body.substring(0, 500));
+    return false;
   }
+}
+
+async function main() {
+  console.log('Sende Multi-Source Tests an Webhook...');
+
+  const sources = ['hero-funnel', 'main_funnel', 'unternehmen', 'career'];
+  let okCount = 0;
+
+  for (const source of sources) {
+    const ok = await testSource(source);
+    if (ok) okCount++;
+  }
+
+  console.log(`\nErgebnis: ${okCount}/${sources.length} Quellen erfolgreich gespeichert.`);
 }
 
 main().catch(console.error);

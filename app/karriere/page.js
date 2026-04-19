@@ -2,7 +2,7 @@ import { CareerSection } from '@/components/sections/CareerSection'
 import { Footer } from '@/components/sections/Footer'
 
 export const metadata = {
-  title: 'Karriere als Energieberater (m/w/d) – Jetzt bewerben | Tarifheld',
+  title: 'Karriere als Energieberater (m/w/d) – Jetzt bewerben',
   description: 'Starte als selbständiger Energieberater bei Tarifheld. Quereinsteiger willkommen, flexible Zeiteinteilung, 1.400– 5.500 €/Monat möglich. Kostenlose Ausbildung, Remote & vor Ort deutschlandweit.',
   keywords: 'Energieberater werden, Karriere Energie, Nebenjob Energieberatung, selbständiger Berater, Quereinsteiger Vertrieb, Energiebranche Jobs, Provision Energ ieberater, Remote Jobs Deutschland',
   alternates: { canonical: 'https://www.deintarifheld.de/karriere/' },
