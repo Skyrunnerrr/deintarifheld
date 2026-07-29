@@ -53,7 +53,11 @@ export function Navbar() {
 
   const scrollToFunnel = () => {
     setMenuOpen(false)
-    document.getElementById('funnel')?.scrollIntoView({ behavior: 'smooth' })
+    // DTH-04: On business preview, Header-CTA must not target the private funnel.
+    const isBusinessPreview =
+      pathname === '/unternehmen-neu' || pathname?.startsWith('/unternehmen-neu/')
+    const targetId = isBusinessPreview ? 'formular' : 'funnel'
+    document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })
   }
 
   return (

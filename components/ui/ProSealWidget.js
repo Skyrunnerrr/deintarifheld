@@ -1,13 +1,23 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
+
+/** DTH-04: Preview route — no fixed ProSeal overlay (private + /unternehmen unchanged). */
+function isBusinessPreviewRoute(pathname) {
+  return pathname === '/unternehmen-neu' || pathname?.startsWith('/unternehmen-neu/')
+}
 
 export function ProSealWidget() {
+  const pathname = usePathname()
   const wrapperRef = useRef(null)
   const [isMobile, setIsMobile] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
+  const disabled = isBusinessPreviewRoute(pathname)
 
   useEffect(() => {
+    if (disabled) return undefined
+
     const mediaQuery = window.matchMedia('(max-width: 767px)')
 
     const syncViewportState = (event) => {
@@ -22,9 +32,11 @@ export function ProSealWidget() {
     return () => {
       mediaQuery.removeEventListener('change', syncViewportState)
     }
-  }, [])
+  }, [disabled])
 
   useEffect(() => {
+    if (disabled) return undefined
+
     if (!isMobile) {
       setIsVisible(true)
       return undefined
@@ -37,9 +49,11 @@ export function ProSealWidget() {
     return () => {
       window.clearTimeout(timer)
     }
-  }, [isMobile])
+  }, [disabled, isMobile])
 
   useEffect(() => {
+    if (disabled) return undefined
+
     const script = document.createElement('script')
     script.src = 'https://s.provenexpert.net/seals/proseal-v2.js'
 
@@ -89,7 +103,9 @@ export function ProSealWidget() {
       clearInterval(interval)
       script.remove()
     }
-  }, [])
+  }, [disabled])
+
+  if (disabled) return null
 
   // OUR container — WE control the position. ProSeal lives inside this.
   const wrapperStyle = isMobile
