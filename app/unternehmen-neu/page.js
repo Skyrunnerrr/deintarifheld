@@ -1,7 +1,6 @@
 'use client'
 
 import { GlowLine } from '@/components/ui/Background'
-import { Footer } from '@/components/sections/Footer'
 import { BusinessHero } from '@/components/business/BusinessHero'
 import { BusinessAudience } from '@/components/business/BusinessAudience'
 import { BusinessServices } from '@/components/business/BusinessServices'
@@ -10,6 +9,7 @@ import { BusinessRoleNotice } from '@/components/business/BusinessRoleNotice'
 import { BusinessForm } from '@/components/business/BusinessForm'
 import { BusinessFAQ } from '@/components/business/BusinessFAQ'
 import { BusinessFinalCTA } from '@/components/business/BusinessFinalCTA'
+import { BusinessFooter } from '@/components/business/BusinessFooter'
 
 /**
  * DTH-04 Foundation Preview Route
@@ -33,7 +33,7 @@ export default function UnternehmenNeuPage() {
       <BusinessFAQ />
       <GlowLine color="white" />
       <BusinessFinalCTA />
-      <Footer />
+      <BusinessFooter />
     </>
   )
 }

@@ -4,11 +4,12 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Mail } from 'lucide-react'
 import { AmbientBg } from '@/components/ui/Background'
 import { SectionLabel, TrustIndicators } from '@/components/ui/Typography'
-import { Button } from '@/components/ui/Button'
 import { BUSINESS_HERO, BUSINESS_TRUST } from '@/lib/business-content'
+import { scrollToAnchor } from '@/components/business/scrollToAnchor'
 
-function scrollToForm() {
-  document.getElementById('formular')?.scrollIntoView({ behavior: 'smooth' })
+function scrollToForm(e) {
+  e?.preventDefault?.()
+  scrollToAnchor('formular')
 }
 
 export function BusinessHero() {
@@ -90,16 +91,14 @@ export function BusinessHero() {
             transition={{ duration: 0.45, delay: 0.28 }}
             className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8"
           >
-            <Button
-              variant="energy"
-              size="lg"
-              type="button"
+            <a
+              href="#formular"
               onClick={scrollToForm}
-              className="whitespace-normal text-center text-[15px] leading-snug sm:text-lg px-5 sm:px-8 h-auto min-h-[56px] py-3 sm:py-4"
+              className="inline-flex items-center justify-center gap-2 font-display font-bold tracking-tight rounded-2xl transition-all duration-200 active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-volt/60 focus-visible:outline-offset-3 cursor-pointer select-none bg-energy text-white hover:bg-energy/90 hover:shadow-energy whitespace-normal text-center text-[15px] leading-snug sm:text-lg px-5 sm:px-8 h-auto min-h-[56px] py-3 sm:py-4"
             >
               {BUSINESS_HERO.primaryCta}
               <ArrowRight className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-            </Button>
+            </a>
             <a
               href={BUSINESS_HERO.secondaryHref}
               className="inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-3 sm:py-4 min-h-[56px] rounded-2xl border border-white/10 bg-bg-elevated text-text-primary font-display font-bold text-[15px] leading-snug sm:text-lg hover:bg-bg-overlay hover:border-white/20 transition-all duration-200 text-center"

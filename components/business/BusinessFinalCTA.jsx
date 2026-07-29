@@ -3,11 +3,12 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Mail } from 'lucide-react'
 import { Section } from '@/components/ui/Background'
-import { Button } from '@/components/ui/Button'
 import { BUSINESS_FINAL_CTA } from '@/lib/business-content'
+import { scrollToAnchor } from '@/components/business/scrollToAnchor'
 
-function scrollToForm() {
-  document.getElementById('formular')?.scrollIntoView({ behavior: 'smooth' })
+function scrollToForm(e) {
+  e?.preventDefault?.()
+  scrollToAnchor('formular')
 }
 
 export function BusinessFinalCTA() {
@@ -27,16 +28,14 @@ export function BusinessFinalCTA() {
           {BUSINESS_FINAL_CTA.description}
         </p>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-          <Button
-            variant="energy"
-            size="lg"
-            type="button"
+          <a
+            href="#formular"
             onClick={scrollToForm}
-            className="whitespace-normal text-center"
+            className="inline-flex items-center justify-center gap-2 font-display font-bold tracking-tight rounded-2xl transition-all duration-200 active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-volt/60 focus-visible:outline-offset-3 cursor-pointer select-none bg-energy text-white hover:bg-energy/90 hover:shadow-energy text-lg px-8 py-4 h-14 whitespace-normal text-center"
           >
             {BUSINESS_FINAL_CTA.primaryCta}
             <ArrowRight className="w-5 h-5" aria-hidden="true" />
-          </Button>
+          </a>
           <a
             href={BUSINESS_FINAL_CTA.secondaryHref}
             className="inline-flex items-center justify-center gap-2 px-6 py-3 min-h-[52px] rounded-2xl border border-white/10 bg-bg-elevated text-text-primary font-display font-bold text-base hover:bg-bg-overlay hover:border-white/20 transition-all duration-200"

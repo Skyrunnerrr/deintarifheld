@@ -32,11 +32,13 @@ function IconArrow() {
 const inputClass =
   'w-full px-4 py-3 rounded-2xl bg-bg-input border border-white/10 text-text-primary font-body text-base placeholder:text-text-tertiary focus:outline-none focus:border-[#FF6B2B]/40 transition-colors'
 
-function ChoiceButton({ active, children, onClick }) {
+function ChoiceButton({ active, children, onClick, ariaLabel }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
+      aria-label={ariaLabel || (typeof children === 'string' ? children : undefined)}
       className={`px-4 py-2.5 rounded-2xl border font-body text-sm font-medium transition-all duration-200 ${
         active
           ? 'bg-[#FF6B2B] text-white border-[#FF6B2B]'
@@ -95,6 +97,8 @@ function BusinessFormular() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (sending) return
+
     setRateLimitMsg('')
     setRecaptchaError('')
     setValidationErrors({})
@@ -165,10 +169,26 @@ function BusinessFormular() {
       setDone(true)
     } catch (error) {
       console.error('Business form submit error:', error)
+      setDone(false)
       setRateLimitMsg('Absenden fehlgeschlagen. Bitte prüfen Sie Ihre Verbindung und versuchen Sie es erneut.')
     } finally {
       setSending(false)
     }
+  }
+
+  const goToStep2 = () => {
+    if (!step1Valid) {
+      const errs = {}
+      if (!form.energieart) errs.energieart = 'Bitte wählen Sie eine Energieart'
+      if (!form.standorte) errs.standorte = 'Bitte wählen Sie die Anzahl der Standorte'
+      if (form.plz.trim().length !== 5 || !/^\d{5}$/.test(form.plz.trim())) {
+        errs.plz = 'Bitte geben Sie eine gültige 5-stellige Postleitzahl ein'
+      }
+      setValidationErrors(errs)
+      return
+    }
+    setValidationErrors({})
+    setStep(2)
   }
 
   if (done) {
@@ -234,16 +254,28 @@ function BusinessFormular() {
             className="flex flex-col gap-5"
           >
             <div>
-              <label className="block font-body text-sm font-medium text-text-secondary mb-2">
+              <label className="block font-body text-sm font-medium text-text-secondary mb-2" id="bneu-energieart-label">
                 Energieart *
               </label>
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-3 flex-wrap" role="group" aria-labelledby="bneu-energieart-label">
                 {['Strom', 'Gas'].map((opt) => (
-                  <ChoiceButton key={opt} active={form.energieart === opt} onClick={() => set('energieart', opt)}>
+                  <ChoiceButton
+                    key={opt}
+                    active={form.energieart === opt}
+                    onClick={() => {
+                      set('energieart', opt)
+                      setValidationErrors((prev) => ({ ...prev, energieart: undefined }))
+                    }}
+                  >
                     {opt}
                   </ChoiceButton>
                 ))}
               </div>
+              {validationErrors.energieart && (
+                <p role="alert" id="bneu-energieart-error" className="font-body text-[#EF4444] text-xs mt-2">
+                  {validationErrors.energieart}
+                </p>
+              )}
             </div>
 
             {form.energieart === 'Strom' && (
@@ -281,16 +313,28 @@ function BusinessFormular() {
             )}
 
             <div>
-              <label className="block font-body text-sm font-medium text-text-secondary mb-2">
+              <label className="block font-body text-sm font-medium text-text-secondary mb-2" id="bneu-standorte-label">
                 Anzahl Standorte *
               </label>
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-3 flex-wrap" role="group" aria-labelledby="bneu-standorte-label">
                 {['1', '2–5', '6+'].map((opt) => (
-                  <ChoiceButton key={opt} active={form.standorte === opt} onClick={() => set('standorte', opt)}>
+                  <ChoiceButton
+                    key={opt}
+                    active={form.standorte === opt}
+                    onClick={() => {
+                      set('standorte', opt)
+                      setValidationErrors((prev) => ({ ...prev, standorte: undefined }))
+                    }}
+                  >
                     {opt}
                   </ChoiceButton>
                 ))}
               </div>
+              {validationErrors.standorte && (
+                <p role="alert" id="bneu-standorte-error" className="font-body text-[#EF4444] text-xs mt-2">
+                  {validationErrors.standorte}
+                </p>
+              )}
             </div>
 
             <div>
@@ -304,18 +348,29 @@ function BusinessFormular() {
                 maxLength={5}
                 placeholder="z. B. 80331"
                 value={form.plz}
-                onChange={(e) => set('plz', e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => {
+                  set('plz', e.target.value.replace(/\D/g, ''))
+                  setValidationErrors((prev) => ({ ...prev, plz: undefined }))
+                }}
                 className={inputClass}
+                aria-required="true"
+                aria-invalid={Boolean(validationErrors.plz)}
+                aria-describedby={validationErrors.plz ? 'bneu-plz-error' : undefined}
               />
+              {validationErrors.plz && (
+                <p role="alert" id="bneu-plz-error" className="font-body text-[#EF4444] text-xs mt-2">
+                  {validationErrors.plz}
+                </p>
+              )}
             </div>
 
             <Button
               variant="energy"
               size="lg"
               type="button"
-              disabled={!step1Valid}
-              onClick={() => step1Valid && setStep(2)}
+              onClick={goToStep2}
               className="w-full mt-2"
+              aria-disabled={!step1Valid}
             >
               {BUSINESS_FORM.nextLabel}
               <IconArrow />
@@ -343,7 +398,15 @@ function BusinessFormular() {
                 value={form.firma}
                 onChange={(e) => set('firma', e.target.value)}
                 className={inputClass}
+                aria-required="true"
+                aria-invalid={Boolean(validationErrors.firma)}
+                aria-describedby={validationErrors.firma ? 'bneu-firma-error' : undefined}
               />
+              {validationErrors.firma && (
+                <p role="alert" id="bneu-firma-error" className="font-body text-[#EF4444] text-xs mt-2">
+                  {validationErrors.firma}
+                </p>
+              )}
             </div>
 
             <div>
@@ -357,7 +420,15 @@ function BusinessFormular() {
                 value={form.ansprechpartner}
                 onChange={(e) => set('ansprechpartner', e.target.value)}
                 className={inputClass}
+                aria-required="true"
+                aria-invalid={Boolean(validationErrors.ansprechpartner)}
+                aria-describedby={validationErrors.ansprechpartner ? 'bneu-ansprechpartner-error' : undefined}
               />
+              {validationErrors.ansprechpartner && (
+                <p role="alert" id="bneu-ansprechpartner-error" className="font-body text-[#EF4444] text-xs mt-2">
+                  {validationErrors.ansprechpartner}
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -372,7 +443,15 @@ function BusinessFormular() {
                   value={form.email}
                   onChange={(e) => set('email', e.target.value)}
                   className={inputClass}
+                  aria-required="true"
+                  aria-invalid={Boolean(validationErrors.email)}
+                  aria-describedby={validationErrors.email ? 'bneu-email-error' : undefined}
                 />
+                {validationErrors.email && (
+                  <p role="alert" id="bneu-email-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    {validationErrors.email}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="bneu-telefon" className="block font-body text-sm font-medium text-text-secondary mb-2">
@@ -454,22 +533,6 @@ function BusinessFormular() {
               />
             </div>
 
-            {validationErrors.firma && (
-              <p role="alert" className="font-body text-[#EF4444] text-xs">
-                {validationErrors.firma}
-              </p>
-            )}
-            {validationErrors.ansprechpartner && (
-              <p role="alert" className="font-body text-[#EF4444] text-xs">
-                {validationErrors.ansprechpartner}
-              </p>
-            )}
-            {validationErrors.email && (
-              <p role="alert" className="font-body text-[#EF4444] text-xs">
-                {validationErrors.email}
-              </p>
-            )}
-
             <label className="flex items-start gap-3 cursor-pointer group">
               <div className="relative mt-0.5 flex-shrink-0">
                 <input
@@ -546,7 +609,7 @@ function BusinessFormular() {
                 variant="energy"
                 size="lg"
                 type="submit"
-                disabled={!step2Valid}
+                disabled={!step2Valid || sending}
                 loading={sending}
                 className="flex-1"
               >

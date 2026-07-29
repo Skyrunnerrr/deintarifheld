@@ -5,6 +5,36 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { NAV_LINKS } from '@/lib/constants'
+
+function isBusinessPreviewRoute(pathname) {
+  return pathname === '/unternehmen-neu' || pathname?.startsWith('/unternehmen-neu/')
+}
+
+function getNavLinks(pathname) {
+  if (pathname === '/unternehmen') {
+    return [{ label: 'Privatkunden', href: '/' }, ...NAV_LINKS]
+  }
+  if (isBusinessPreviewRoute(pathname)) {
+    return [
+      { label: 'Unternehmen', href: '/unternehmen-neu/' },
+      { label: "So funktioniert's", href: '#ablauf' },
+      { label: 'Karriere', href: '/karriere' },
+    ]
+  }
+  return NAV_LINKS
+}
+
+function scrollToSection(id) {
+  const el = document.getElementById(id)
+  if (!el) return
+  const reduced =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' })
+  if (typeof history !== 'undefined' && history.replaceState) {
+    history.replaceState(null, '', `#${id}`)
+  }
+}
 // ─── Inline SVG Icons ─────────────────────────────────────────────
 function IconBolt() {
   return (
@@ -51,13 +81,24 @@ export function Navbar() {
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
 
-  const scrollToFunnel = () => {
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [menuOpen])
+
+  const navLinks = getNavLinks(pathname)
+  const isBusinessPreview = isBusinessPreviewRoute(pathname)
+  const primaryCtaHref = isBusinessPreview ? '#formular' : '#funnel'
+  const primaryCtaTargetId = isBusinessPreview ? 'formular' : 'funnel'
+
+  const handlePrimaryCta = (e) => {
+    e.preventDefault()
     setMenuOpen(false)
-    // DTH-04: On business preview, Header-CTA must not target the private funnel.
-    const isBusinessPreview =
-      pathname === '/unternehmen-neu' || pathname?.startsWith('/unternehmen-neu/')
-    const targetId = isBusinessPreview ? 'formular' : 'funnel'
-    document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })
+    scrollToSection(primaryCtaTargetId)
   }
 
   return (
@@ -128,7 +169,7 @@ export function Navbar() {
             className="navbar-desktop-links"
             style={{ display: 'flex', alignItems: 'center', gap: 4, listStyle: 'none', margin: 0, padding: 0 }}
           >
-            {(pathname === '/unternehmen' ? [{ label: 'Privatkunden', href: '/' }, ...NAV_LINKS] : NAV_LINKS).map(link => (
+            {navLinks.map(link => (
               <li key={link.href}>
                 <a
                   href={link.href}
@@ -158,8 +199,9 @@ export function Navbar() {
           {/* ── Desktop CTAs ── */}
           <div className="navbar-desktop-cta" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {/* Primary CTA */}
-            <button
-              onClick={scrollToFunnel}
+            <a
+              href={primaryCtaHref}
+              onClick={handlePrimaryCta}
               aria-label="Kostenlose Tarifanalyse starten"
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -172,6 +214,7 @@ export function Navbar() {
                 fontWeight: 800,
                 fontSize: 14,
                 cursor: 'pointer',
+                textDecoration: 'none',
                 boxShadow: '0 0 20px rgba(212,255,62,0.22)',
                 transition: 'all 200ms',
               }}
@@ -182,7 +225,7 @@ export function Navbar() {
             >
               Kostenlos analysieren
               <IconArrow />
-            </button>
+            </a>
           </div>
 
           {/* ── Hamburger ── */}
@@ -234,7 +277,7 @@ export function Navbar() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '0 20px 32px' }}>
           {/* Nav Links */}
           <ul role="list" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {(pathname === '/unternehmen' ? [{ label: 'Privatkunden', href: '/' }, ...NAV_LINKS] : NAV_LINKS).map((link, i) => (
+            {navLinks.map((link, i) => (
               <li key={link.href}>
                 <a
                   href={link.href}
@@ -262,8 +305,9 @@ export function Navbar() {
 
           {/* Mobile CTAs */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 32 }}>
-            <button
-              onClick={scrollToFunnel}
+            <a
+              href={primaryCtaHref}
+              onClick={handlePrimaryCta}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
                 padding: '16px 24px',
@@ -274,12 +318,13 @@ export function Navbar() {
                 fontFamily: 'var(--font-cabinet, "Cabinet Grotesk", sans-serif)',
                 fontWeight: 800, fontSize: 16,
                 cursor: 'pointer',
+                textDecoration: 'none',
                 boxShadow: '0 0 24px rgba(212,255,62,0.22)',
               }}
             >
               Kostenlos analysieren
               <IconArrow />
-            </button>
+            </a>
           </div>
         </div>
       </div>
