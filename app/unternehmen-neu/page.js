@@ -2,6 +2,7 @@
 
 import { GlowLine } from '@/components/ui/Background'
 import { BusinessHero } from '@/components/business/BusinessHero'
+import { BusinessCase } from '@/components/business/BusinessCase'
 import { BusinessAudience } from '@/components/business/BusinessAudience'
 import { BusinessServices } from '@/components/business/BusinessServices'
 import { BusinessProcess } from '@/components/business/BusinessProcess'
@@ -19,6 +20,8 @@ export default function UnternehmenNeuPage() {
   return (
     <>
       <BusinessHero />
+      <GlowLine color="energy" />
+      <BusinessCase />
       <GlowLine color="energy" />
       <BusinessAudience />
       <GlowLine color="energy" />

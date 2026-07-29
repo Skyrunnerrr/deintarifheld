@@ -1,26 +1,26 @@
 export const metadata = {
-  title: 'Strom- und Gasangebote für Unternehmen prüfen – DeinTarifheld',
+  title: 'Gewerbestrom & Gas prüfen – Energiekosten Unternehmen | DeinTarifheld',
   description:
-    'DeinTarifheld unterstützt Gewerbebetriebe, Filialunternehmen und Unternehmen mit mehreren Standorten bei der Prüfung und Vermittlung geeigneter Strom- und Gasangebote über ausgewählte Energiepartner. Der Liefervertrag kommt mit dem jeweiligen Energieversorger zustande.',
+    'Kleine Preisunterschiede können bei gewerblichen Verbräuchen die jährlichen Energiekosten spürbar beeinflussen. Unverbindliche Prüfung von Strom- und Gasangeboten für Unternehmen und mehrere Standorte — Vermittlung über ausgewählte Energiepartner, ohne Ersparnisgarantie.',
   keywords:
-    'Energie Unternehmen, Gewerbe Strom, Gewerbe Gas, Mehrstandort Energie, Unternehmensanfrage Energie, Tarifvermittlung Gewerbe',
+    'Gewerbestrom prüfen, Energiekosten Unternehmen, Stromvertrag Gewerbe, Gasvertrag Unternehmen, Mehrstandort Energie, Unternehmensanfrage Energie, Tarifvermittlung Gewerbe, Gewerbe Strom, Gewerbe Gas',
   alternates: { canonical: 'https://www.deintarifheld.de/unternehmen-neu/' },
   robots: {
     index: false,
     follow: false,
   },
   openGraph: {
-    title: 'Strom- und Gasangebote für Unternehmen prüfen – DeinTarifheld',
+    title: 'Gewerbestrom & Gas prüfen – Energiekosten Unternehmen | DeinTarifheld',
     description:
-      'Wir prüfen Ihre Versorgungssituation und vermitteln geeignete Strom- und Gasangebote über ausgewählte Energiepartner — ohne selbst zu liefern.',
+      'Warum kleine Preisunterschiede bei hohen Verbräuchen relevant sein können — und wie wir Ihre Versorgungssituation unverbindlich prüfen. Vermittlung über ausgewählte Energiepartner.',
     url: 'https://www.deintarifheld.de/unternehmen-neu/',
     images: [{ url: '/images/tari-nobg.png', width: 1200, height: 630, alt: 'DeinTarifheld Unternehmen' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Strom- und Gasangebote für Unternehmen prüfen – DeinTarifheld',
+    title: 'Gewerbestrom & Gas prüfen – Energiekosten Unternehmen',
     description:
-      'Prüfung und Vermittlung geeigneter Strom- und Gasangebote für Gewerbe und mehrere Standorte.',
+      'Unverbindliche Prüfung von Strom- und Gasangeboten für Gewerbe und mehrere Standorte. Keine Ersparnisgarantie — klare Vermittlerrolle.',
     images: ['/images/tari-nobg.png'],
   },
 }

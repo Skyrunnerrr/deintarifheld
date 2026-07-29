@@ -71,19 +71,21 @@ export function BusinessHero() {
             initial={{ opacity: 1, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.16 }}
-            className="font-body text-text-primary text-base sm:text-xl leading-relaxed mb-4 max-w-2xl"
+            className={`font-body text-text-primary text-base sm:text-xl leading-relaxed max-w-2xl ${BUSINESS_HERO.support ? 'mb-4' : 'mb-8'}`}
           >
             {BUSINESS_HERO.description}
           </motion.p>
 
-          <motion.p
-            initial={{ opacity: 1, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.22 }}
-            className="font-body text-text-secondary text-sm sm:text-lg leading-relaxed mb-8 max-w-2xl"
-          >
-            {BUSINESS_HERO.support}
-          </motion.p>
+          {BUSINESS_HERO.support ? (
+            <motion.p
+              initial={{ opacity: 1, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.22 }}
+              className="font-body text-text-secondary text-sm sm:text-lg leading-relaxed mb-8 max-w-2xl"
+            >
+              {BUSINESS_HERO.support}
+            </motion.p>
+          ) : null}
 
           <motion.div
             initial={{ opacity: 1, y: 12 }}

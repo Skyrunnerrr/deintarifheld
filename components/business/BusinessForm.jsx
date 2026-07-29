@@ -19,7 +19,7 @@ import {
   getFormTiming,
   isTooFast,
 } from '@/lib/security'
-import { BUSINESS_FORM } from '@/lib/business-content'
+import { BUSINESS_FORM, BUSINESS_TRIGGERS } from '@/lib/business-content'
 
 function IconArrow() {
   return (
@@ -636,6 +636,22 @@ export function BusinessForm() {
           <p className="font-body text-text-secondary text-base sm:text-lg leading-relaxed">
             {BUSINESS_FORM.description}
           </p>
+
+          <div className="flex flex-col gap-3 pt-1">
+            <h3 className="font-display font-bold text-text-primary text-base sm:text-lg leading-snug">
+              {BUSINESS_TRIGGERS.title}
+            </h3>
+            <ul className="flex flex-col gap-2.5" role="list">
+              {BUSINESS_TRIGGERS.items.map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-energy flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <span className="font-body text-text-secondary text-[15px] sm:text-base leading-relaxed">
+                    {item}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
           <div className="flex flex-col gap-3 pt-2">
             {BUSINESS_FORM.trustItems.map((item) => (
