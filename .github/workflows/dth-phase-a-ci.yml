@@ -1,0 +1,69 @@
+name: dth-phase-a-ci
+
+on:
+  pull_request:
+    paths:
+      - 'app/api/**'
+      - 'lib/leads/**'
+      - 'supabase/**'
+      - 'scripts/**'
+      - 'infra/phase-a/**'
+      - 'package.json'
+      - 'vercel.json'
+      - '.github/workflows/dth-phase-a-ci.yml'
+  workflow_dispatch:
+    inputs:
+      run_preview_smoke:
+        description: 'Run preview smoke (requires secrets)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run build:static
+      - name: Migration present
+        run: test -f supabase/migrations/001_leads_phase_a.sql
+      - name: Secret scan (tracked)
+        run: |
+          if git grep -nE 'RECAPTCHA_SECRET_KEY:\s*'\''6L[A-Za-z0-9_-]{20,}'\''' -- '*.md' '*.js' '*.jsx' '*.ts' '*.tsx' || \
+             git grep -nE 'sk_live_|SUPABASE_SERVICE_ROLE_KEY=[A-Za-z]' -- ':!*.example.env' ':!.env.example'; then
+            echo "SECRET_SCAN=FAIL"
+            exit 1
+          fi
+          echo "SECRET_SCAN=PASS"
+      - name: Contract unit checks
+        run: npm run leads:contract
+      - name: No remote migrate on PR
+        run: echo "REMOTE_MIGRATE=SKIPPED_ON_PR"
+
+  preview-smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_preview_smoke == true
+    needs: contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Preview smoke
+        env:
+          PREVIEW_URL: ${{ secrets.PREVIEW_URL }}
+          CONTROLLED_TEST_EMAIL: ${{ secrets.CONTROLLED_TEST_EMAIL }}
+          LEADS_ADMIN_SECRET: ${{ secrets.LEADS_ADMIN_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: npm run infra:phase-a:smoke

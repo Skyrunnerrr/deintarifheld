@@ -4,12 +4,24 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && next-sitemap && find out -type f -exec chmod 644 {} + && find out -type d -exec chmod 755 {} +",
+    "build": "next build",
+    "build:static": "bash scripts/build-static.sh",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "leads:smoke": "node scripts/leads-smoke.mjs",
+    "leads:retention": "node scripts/leads-retention.mjs",
+    "leads:delete": "node scripts/leads-delete-by-email.mjs",
+    "leads:contract": "node scripts/leads-contract-test.mjs",
+    "infra:phase-a:preflight": "bash scripts/infra/phase-a/preflight.sh",
+    "infra:phase-a:plan": "bash scripts/infra/phase-a/plan.sh",
+    "infra:phase-a:dns": "bash scripts/infra/phase-a/configure-dns.sh",
+    "infra:phase-a:apply": "bash scripts/infra/phase-a/apply.sh",
+    "infra:phase-a:status": "bash scripts/infra/phase-a/status.sh",
+    "infra:phase-a:smoke": "bash scripts/infra/phase-a/smoke-preview.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
+    "@supabase/supabase-js": "^2.111.0",
     "axios": "^1.13.6",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
@@ -19,11 +31,13 @@
     "react": "^19",
     "react-dom": "^19",
     "react-hook-form": "^7.71.2",
+    "resend": "^6.18.1",
     "tailwind-merge": "^3.5.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/react": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^8",
     "eslint-config-next": "^15.3.0",
     "next-sitemap": "^4.2.3",
