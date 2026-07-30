@@ -5,9 +5,14 @@ on:
     paths:
       - 'app/api/**'
       - 'lib/leads/**'
+      - 'components/sections/Hero.jsx'
+      - 'components/sections/FunnelSection.jsx'
+      - 'components/sections/CareerSection.jsx'
+      - 'components/business/BusinessForm.jsx'
       - 'supabase/**'
       - 'scripts/**'
       - 'infra/phase-a/**'
+      - 'docs/legal/**'
       - 'package.json'
       - 'vercel.json'
       - '.github/workflows/dth-phase-a-ci.yml'
@@ -24,6 +29,8 @@ permissions:
 jobs:
   contract:
     runs-on: ubuntu-latest
+    env:
+      LEADS_MAIL_MODE: mock
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,8 +41,17 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm run build:static
-      - name: Migration present
-        run: test -f supabase/migrations/001_leads_phase_a.sql
+      - name: Migration present (001 + 002)
+        run: |
+          test -f supabase/migrations/001_leads_phase_a.sql
+          test -f supabase/migrations/002_leads_phase_b.sql
+      - name: Migration lint (additive / non-destructive)
+        run: |
+          if grep -Eiq '^\s*truncate\b|^\s*drop[[:space:]]+table[[:space:]]+public\.leads\b' supabase/migrations/002_leads_phase_b.sql; then
+            echo "MIGRATION_LINT=FAIL"
+            exit 1
+          fi
+          echo "MIGRATION_LINT=PASS"
       - name: Secret scan (tracked)
         run: |
           if git grep -nE 'RECAPTCHA_SECRET_KEY:\s*'\''6L[A-Za-z0-9_-]{20,}'\''' -- '*.md' '*.js' '*.jsx' '*.ts' '*.tsx' || \
@@ -44,10 +60,14 @@ jobs:
             exit 1
           fi
           echo "SECRET_SCAN=PASS"
-      - name: Contract unit checks
+      - name: Contract unit checks (business/private/career/mail mock-fail)
         run: npm run leads:contract
+      - name: Phase B verify
+        run: npm run phase-b:verify
       - name: No remote migrate on PR
         run: echo "REMOTE_MIGRATE=SKIPPED_ON_PR"
+      - name: No live mail on PR
+        run: echo "LIVE_MAIL=DISABLED_ON_PR"
 
   preview-smoke:
     if: github.event_name == 'workflow_dispatch' && inputs.run_preview_smoke == true
@@ -66,4 +86,5 @@ jobs:
           CONTROLLED_TEST_EMAIL: ${{ secrets.CONTROLLED_TEST_EMAIL }}
           LEADS_ADMIN_SECRET: ${{ secrets.LEADS_ADMIN_SECRET }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          LEADS_MAIL_MODE: mock
         run: npm run infra:phase-a:smoke

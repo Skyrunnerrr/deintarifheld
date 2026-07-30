@@ -157,7 +157,7 @@ log "VERCEL_ENV_SET_START"
 # (keys endpoint) — best-effort; may require dashboard for some plans
 log "Set preview env with vercel env (sensitive) — keys from linked supabase"
 
-write_status apply "{\"supabase_action\":\"$SUPABASE_ACTION\",\"resend_domain_id_set\":true,\"dns\":\"checkdomain_api_v1\"}"
+write_status apply "{\"supabase_action\":\"$SUPABASE_ACTION\",\"resend_domain_id_set\":true,\"dns_automation\":\"skipped\",\"checkdomain_active\":false,\"mail_mode\":\"${LEADS_MAIL_MODE:-mock}\"}"
 log "APPLY_CORE_COMPLETE — run lint/build/preview/smoke as next gated steps if env complete"
 
 # Lint/build

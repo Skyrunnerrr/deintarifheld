@@ -14,7 +14,11 @@ log "PREFLIGHT_START"
 cd "$ROOT"
 
 [[ "$(git rev-parse --show-toplevel)" == "$ROOT" ]] || exit_token START_STATE_CONFLICT
-[[ "$(git branch --show-current)" == "feat/deintarifheld-business-landingpage-foundation-001" ]] || exit_token START_STATE_CONFLICT
+BRANCH_NOW="$(git branch --show-current)"
+case "$BRANCH_NOW" in
+  feat/deintarifheld-business-landingpage-foundation-001|feat/deintarifheld-phase-b-lead-channels-001) ;;
+  *) exit_token START_STATE_CONFLICT ;;
+esac
 
 require_cmd node
 require_cmd npm

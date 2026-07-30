@@ -47,3 +47,11 @@ supabase/.temp/
 
 # local QA evidence (never commit)
 evidence/
+
+# supabase CLI local state
+supabase/.branches/
+
+# supabase CLI local project files (never commit)
+supabase/config.toml
+supabase/.gitignore
+supabase/.branches/
