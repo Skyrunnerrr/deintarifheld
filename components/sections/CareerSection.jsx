@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button'
 import { Input, Textarea, Checkbox } from '@/components/ui/Form'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
+import { careersApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 
 const KF = `
   @keyframes career-orb1 {
@@ -78,11 +79,20 @@ export function CareerSection({ headingLevel = 'h1' }) {
     setLoading(true)
     recordSubmission('career-form')
     try {
-      const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbyR4SQWp3pmBFMmQUJL9sCSuZ7dfVDMLarUmNzV3rCPng817qYUEtt-a0tSnf_JPWI0/exec'
-      if (!webhookUrl) throw new Error('Webhook URL fehlt')
-      
-      const payload = sanitizePayload({ ...data, _recaptchaToken: recaptchaToken, _recaptchaAction: 'career', page_source: 'career', timestamp: new Date().toISOString(), _formLoadedAt: getFormTiming('career-form')._formLoadedAt, form_version: '2.0' })
-      await fetch(webhookUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
+      const payload = sanitizePayload({
+        ...data,
+        _recaptchaToken: recaptchaToken,
+        _recaptchaAction: 'career',
+        page_source: 'career',
+        timestamp: new Date().toISOString(),
+        _formLoadedAt: getFormTiming('career-form')._formLoadedAt,
+        form_version: '2.0',
+        source_page: typeof window !== 'undefined' ? window.location.pathname : '/karriere/',
+        website_url: honeypot,
+        company_fax: honeypot2,
+      })
+      const { res, json } = await postJsonLead(careersApiUrl(), payload)
+      if (!res.ok || !json?.ok) throw new Error(json?.code || 'submit-failed')
       setSubmitted(true)
     } catch (error) {
       console.error('Career submit error:', error)

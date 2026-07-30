@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { Footer } from '@/components/sections/Footer'
 import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
+import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 
 // ─── Inline SVG Icons ────────────────────────────────────────────────────────
 
@@ -120,25 +121,22 @@ function B2BFormular() {
     setSending(true)
     recordSubmission('b2b-form')
     try {
-      const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbyR4SQWp3pmBFMmQUJL9sCSuZ7dfVDMLarUmNzV3rCPng817qYUEtt-a0tSnf_JPWI0/exec'
-      if (!webhookUrl) throw new Error('Webhook URL fehlt')
       const payload = sanitizePayload({
         ...form,
         page_source: 'unternehmen',
+        lead_type: 'business_energy',
         brand_theme: 'unternehmen',
-        brand_color: '#FF6B2B',
         form_version: '2.0',
         timestamp: new Date().toISOString(),
         _formLoadedAt: getFormTiming('b2b-form')._formLoadedAt,
         _recaptchaToken: recaptchaToken,
         _recaptchaAction: 'unternehmen',
+        source_page: '/unternehmen/',
+        website_url: honeypot,
+        company_fax: honeypot2,
       })
-      await fetch(webhookUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload),
-      })
+      const { res, json } = await postJsonLead(leadsApiUrl(), payload)
+      if (!res.ok || !json?.ok) throw new Error(json?.code || 'submit-failed')
       setDone(true)
     } catch (error) {
       console.error('B2B submit error:', error)

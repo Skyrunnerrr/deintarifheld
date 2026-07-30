@@ -15,6 +15,7 @@ import { SectionLabel, SectionHeading, VoltText } from '@/components/ui/Typograp
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { cn } from '@/lib/utils'
 import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
+import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 
 // ─── Schemas ─────────────────────────────────────────────────────
 
@@ -183,33 +184,30 @@ function Step2({ step1Data, onSuccess }) {
     setLoading(true)
     recordSubmission('main-funnel')
     try {
-      const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbyR4SQWp3pmBFMmQUJL9sCSuZ7dfVDMLarUmNzV3rCPng817qYUEtt-a0tSnf_JPWI0/exec'
-      if (!webhookUrl) throw new Error('Webhook URL fehlt')
-      
       const payload = sanitizePayload({
-        name:        step1Data.firstName,
-        email:       step1Data.email,
-        phone:       step1Data.phone,
-        provider:    data.provider,
-        consumption: parseInt(data.consumption),
-        zip:         data.zip,
-        type:        energyType,
-        gdpr:        true,
-        timestamp:   new Date().toISOString(),
+        firstName: step1Data.firstName,
+        email: step1Data.email,
+        phone: step1Data.phone,
+        provider: data.provider,
+        usage: data.consumption,
+        consumption: data.consumption,
+        zip: data.zip,
+        type: energyType,
+        gdpr: true,
+        timestamp: new Date().toISOString(),
         _formLoadedAt: getFormTiming('main-funnel')._formLoadedAt,
-        _recaptchaToken: recaptchaToken,  // ← Neu: reCAPTCHA Token
+        _recaptchaToken: recaptchaToken,
         _recaptchaAction: 'main_funnel',
         page_source: 'main_funnel',
+        lead_type: 'private_energy',
         brand_theme: 'privat',
-        brand_color: '#D4FF3E',
         form_version: '2.0',
+        source_page: '/',
+        website_url: '',
+        company_fax: '',
       })
-      await fetch(webhookUrl, {
-        method:  'POST',
-        mode:    'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body:    JSON.stringify(payload),
-      })
+      const { res, json } = await postJsonLead(leadsApiUrl(), payload)
+      if (!res.ok || !json?.ok) throw new Error(json?.code || 'submit-failed')
       onSuccess()
     } catch (err) {
       console.error('Funnel submit error:', err)

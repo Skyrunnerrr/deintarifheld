@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
+import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 
 // ─── Keyframes via inline style tag ────────────────────────────────
 const KEYFRAMES = `
@@ -145,6 +146,7 @@ export function Hero() {
   const [rateLimitMsg, setRateLimitMsg] = useState('')
   const [recaptchaToken, setRecaptchaToken] = useState('')
   const [recaptchaError, setRecaptchaError] = useState('')
+  const [sending, setSending] = useState(false)
 
   // Security: record form load time
   useEffect(() => {
@@ -183,6 +185,7 @@ export function Hero() {
   function goStep1() { setStep(1); setErrors({}) }
 
   async function submitForm() {
+    if (sending) return
     setRateLimitMsg('')
     setRecaptchaError('')
     const newErrors = {}
@@ -209,23 +212,34 @@ export function Hero() {
     }
 
     recordSubmission('hero-funnel')
+    setSending(true)
     try {
-      const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbyR4SQWp3pmBFMmQUJL9sCSuZ7dfVDMLarUmNzV3rCPng817qYUEtt-a0tSnf_JPWI0/exec'
-      if (!webhookUrl) throw new Error('Webhook URL fehlt')
-
       const { [HONEYPOT_FIELD]: _hp, [HONEYPOT_FIELD_2]: _hp2, gdprStep1: _g1, ...rest } = formData
       const { _formLoadedAt } = getFormTiming('hero-funnel')
-      const payload = sanitizePayload({ ...rest, _recaptchaToken: recaptchaToken, _recaptchaAction: 'hero-funnel', page_source: 'hero-funnel', brand_theme: 'privat', brand_color: '#D4FF3E', form_version: '2.0', timestamp: new Date().toISOString(), _formLoadedAt, page: 'deintarifheld.de' })
-      await fetch(webhookUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload),
+      const payload = sanitizePayload({
+        ...rest,
+        firstName: rest.firstName,
+        gdpr: true,
+        _recaptchaToken: recaptchaToken,
+        _recaptchaAction: 'hero-funnel',
+        page_source: 'hero-funnel',
+        lead_type: 'private_energy',
+        brand_theme: 'privat',
+        form_version: '2.0',
+        timestamp: new Date().toISOString(),
+        _formLoadedAt,
+        source_page: '/',
+        website_url: formData[HONEYPOT_FIELD] || '',
+        company_fax: formData[HONEYPOT_FIELD_2] || '',
       })
+      const { res, json } = await postJsonLead(leadsApiUrl(), payload)
+      if (!res.ok || !json?.ok) throw new Error(json?.code || 'submit-failed')
       setStep('success')
     } catch (e) {
-      console.error('Webhook error:', e)
+      console.error('Lead submit error:', e)
       setRateLimitMsg('Absenden fehlgeschlagen. Bitte prüfe deine Verbindung und versuche es erneut.')
+    } finally {
+      setSending(false)
     }
   }
 
@@ -560,7 +574,9 @@ export function Hero() {
                     {rateLimitMsg && (
                       <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{rateLimitMsg}</p>
                     )}
-                    <FunnelCTA onClick={submitForm} style={{ marginTop: 10 }}>Kostenloses Angebot anfordern</FunnelCTA>
+                    <FunnelCTA onClick={submitForm} disabled={sending} style={{ marginTop: 10 }}>
+                      {sending ? 'Wird gesendet…' : 'Kostenloses Angebot anfordern'}
+                    </FunnelCTA>
                     <button
                       onClick={goStep1}
                       style={{
@@ -962,10 +978,13 @@ function FunnelSelect({ label, id, value, onChange }) {
   )
 }
 
-function FunnelCTA({ children, onClick, style }) {
+function FunnelCTA({ children, onClick, style, disabled = false }) {
   return (
     <button
+      type="button"
       onClick={onClick}
+      disabled={disabled}
+      aria-busy={disabled || undefined}
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         width: '100%',
@@ -974,13 +993,24 @@ function FunnelCTA({ children, onClick, style }) {
         fontFamily: 'var(--font-cabinet, "Cabinet Grotesk", sans-serif)',
         fontWeight: 700, fontSize: 15,
         padding: '13px 24px', borderRadius: 14,
-        border: 'none', cursor: 'pointer',
+        border: 'none',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.7 : 1,
         boxShadow: '0 0 22px rgba(212,255,62,0.22)',
         transition: 'all 0.2s ease',
         ...style,
       }}
-      onMouseEnter={e => { e.currentTarget.style.background = '#B8E032'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 0 36px rgba(212,255,62,0.35)' }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'var(--volt, #D4FF3E)'; e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 0 22px rgba(212,255,62,0.22)' }}
+      onMouseEnter={e => {
+        if (disabled) return
+        e.currentTarget.style.background = '#B8E032'
+        e.currentTarget.style.transform = 'translateY(-1px)'
+        e.currentTarget.style.boxShadow = '0 0 36px rgba(212,255,62,0.35)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = 'var(--volt, #D4FF3E)'
+        e.currentTarget.style.transform = ''
+        e.currentTarget.style.boxShadow = '0 0 22px rgba(212,255,62,0.22)'
+      }}
     >
       {children}
       <IconArrow />
