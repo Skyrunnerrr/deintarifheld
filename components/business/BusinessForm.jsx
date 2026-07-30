@@ -7,7 +7,6 @@ import { CheckCircle2 } from 'lucide-react'
 import { Section } from '@/components/ui/Background'
 import { SectionLabel, SectionHeading } from '@/components/ui/Typography'
 import { Button } from '@/components/ui/Button'
-import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import {
   sanitizePayload,
   isBot,
@@ -21,6 +20,12 @@ import {
 } from '@/lib/security'
 import { BUSINESS_FORM, BUSINESS_TRIGGERS } from '@/lib/business-content'
 
+function leadsApiUrl() {
+  const configured = process.env.NEXT_PUBLIC_LEADS_API_URL
+  if (configured && String(configured).trim()) return String(configured).trim()
+  return '/api/leads'
+}
+
 function IconArrow() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -30,7 +35,7 @@ function IconArrow() {
 }
 
 const inputClass =
-  'w-full px-4 py-3 rounded-2xl bg-bg-input border border-white/10 text-text-primary font-body text-base placeholder:text-text-tertiary focus:outline-none focus:border-[#FF6B2B]/40 transition-colors'
+  'w-full px-4 py-3.5 min-h-[52px] rounded-2xl bg-white border border-[rgba(21,32,51,0.14)] text-text-primary font-body text-base placeholder:text-text-tertiary focus:outline-none focus:border-[#F98540]/55 focus:ring-2 focus:ring-[#F98540]/15 transition-colors'
 
 function ChoiceButton({ active, children, onClick, ariaLabel }) {
   return (
@@ -39,10 +44,10 @@ function ChoiceButton({ active, children, onClick, ariaLabel }) {
       onClick={onClick}
       aria-pressed={active}
       aria-label={ariaLabel || (typeof children === 'string' ? children : undefined)}
-      className={`px-4 py-2.5 rounded-2xl border font-body text-sm font-medium transition-all duration-200 ${
+      className={`px-4 py-2.5 min-h-[44px] rounded-2xl border font-body text-sm font-medium transition-all duration-200 ${
         active
           ? 'bg-[#FF6B2B] text-white border-[#FF6B2B]'
-          : 'bg-bg-surface border-white/10 text-text-secondary hover:border-white/20'
+          : 'bg-white border-[rgba(21,32,51,0.14)] text-text-secondary hover:border-[rgba(21,32,51,0.28)]'
       }`}
     >
       {children}
@@ -58,8 +63,6 @@ function BusinessFormular() {
   const [rateLimitMsg, setRateLimitMsg] = useState('')
   const [honeypot, setHoneypot] = useState('')
   const [honeypot2, setHoneypot2] = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
-  const [recaptchaError, setRecaptchaError] = useState('')
   const [validationErrors, setValidationErrors] = useState({})
   const [form, setForm] = useState({
     energieart: '',
@@ -100,7 +103,6 @@ function BusinessFormular() {
     if (sending) return
 
     setRateLimitMsg('')
-    setRecaptchaError('')
     setValidationErrors({})
 
     const errs = {}
@@ -134,38 +136,30 @@ function BusinessFormular() {
       return
     }
 
-    if (!recaptchaToken) {
-      setRecaptchaError('Bitte bestätigen Sie das Captcha.')
-      return
-    }
-
     setSending(true)
     recordSubmission('b2b-form')
     try {
-      const webhookUrl =
-        process.env.NEXT_PUBLIC_WEBHOOK_URL ||
-        'https://script.google.com/macros/s/AKfycbyR4SQWp3pmBFMmQUJL9sCSuZ7dfVDMLarUmNzV3rCPng817qYUEtt-a0tSnf_JPWI0/exec'
-      if (!webhookUrl) throw new Error('Webhook URL fehlt')
-
-      // Backend-Vertrag unverändert: page_source=unternehmen, gleiche Felder
+      const apiUrl = leadsApiUrl()
       const payload = sanitizePayload({
         ...form,
         page_source: 'unternehmen',
-        brand_theme: 'unternehmen',
-        brand_color: '#FF6B2B',
         form_version: '2.0',
+        source_page: typeof window !== 'undefined' ? window.location.pathname : '/unternehmen-neu/',
         timestamp: new Date().toISOString(),
         _formLoadedAt: getFormTiming('b2b-form')._formLoadedAt,
-        _recaptchaToken: recaptchaToken,
-        _recaptchaAction: 'unternehmen',
+        [HONEYPOT_FIELD]: honeypot,
+        [HONEYPOT_FIELD_2]: honeypot2,
       })
 
-      await fetch(webhookUrl, {
+      const res = await fetch(apiUrl, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json.ok) {
+        throw new Error(json.code || `submit-failed-${res.status}`)
+      }
       setDone(true)
     } catch (error) {
       console.error('Business form submit error:', error)
@@ -223,7 +217,7 @@ function BusinessFormular() {
               className={`w-8 h-8 rounded-full flex items-center justify-center font-display font-bold text-sm transition-all duration-300 ${
                 step >= s
                   ? 'bg-[#FF6B2B] text-white'
-                  : 'bg-white/8 text-text-tertiary border border-white/10'
+                  : 'bg-[#EEF0F4] text-text-tertiary border border-[rgba(21,32,51,0.12)]'
               }`}
             >
               {s}
@@ -231,7 +225,7 @@ function BusinessFormular() {
             {s === 1 && (
               <div
                 className={`h-px flex-1 w-12 transition-all duration-500 ${
-                  step > 1 ? 'bg-[#FF6B2B]/50' : 'bg-white/10'
+                  step > 1 ? 'bg-[#FF6B2B]/50' : 'bg-[rgba(21,32,51,0.12)]'
                 }`}
                 aria-hidden="true"
               />
@@ -550,7 +544,7 @@ function BusinessFormular() {
                   className={`w-5 h-5 rounded-md border-2 transition-all duration-200 flex items-center justify-center ${
                     form.dsgvo
                       ? 'bg-[#FF6B2B] border-[#FF6B2B]'
-                      : 'bg-transparent border-white/20 group-hover:border-white/40'
+                      : 'bg-white border-[rgba(21,32,51,0.28)] group-hover:border-[rgba(21,32,51,0.45)]'
                   }`}
                 >
                   {form.dsgvo && (
@@ -575,14 +569,6 @@ function BusinessFormular() {
               </p>
             )}
 
-            <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="unternehmen" />
-
-            {recaptchaError && (
-              <p role="alert" className="font-body text-[#EF4444] text-xs">
-                {recaptchaError}
-              </p>
-            )}
-
             <div className="flex items-center gap-2 text-text-tertiary">
               <svg width="13" height="14" viewBox="0 0 13 14" fill="none" aria-hidden="true">
                 <rect x="1.5" y="6" width="10" height="7.5" rx="2" stroke="currentColor" strokeWidth="1.3" />
@@ -601,7 +587,7 @@ function BusinessFormular() {
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="px-5 py-3 rounded-2xl border border-white/10 text-text-secondary font-body text-sm hover:border-white/20 hover:text-text-primary transition-all duration-200"
+                className="px-5 py-3 min-h-[48px] rounded-2xl border border-[rgba(21,32,51,0.14)] text-text-secondary font-body text-sm hover:border-[rgba(21,32,51,0.28)] hover:text-text-primary transition-all duration-200"
               >
                 ← Zurück
               </button>
@@ -626,26 +612,26 @@ function BusinessFormular() {
 
 export function BusinessForm() {
   return (
-    <Section id="formular" className="bg-bg-base">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-        <div className="flex flex-col gap-6">
+    <Section id="formular" className="bg-bg-surface">
+      <div className="dth-biz-container grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div className="lg:col-span-5 flex flex-col gap-6">
           <SectionLabel variant="energy">{BUSINESS_FORM.label}</SectionLabel>
-          <SectionHeading className="text-[1.75rem] sm:text-4xl md:text-5xl leading-[1.14]">
+          <SectionHeading className="dth-section-heading text-[1.85rem] sm:text-3xl md:text-[2.4rem] leading-[1.14]">
             {BUSINESS_FORM.title}
           </SectionHeading>
-          <p className="font-body text-text-secondary text-base sm:text-lg leading-relaxed">
+          <p className="font-body text-text-secondary text-lg sm:text-xl leading-relaxed">
             {BUSINESS_FORM.description}
           </p>
 
-          <div className="flex flex-col gap-3 pt-1">
-            <h3 className="font-display font-bold text-text-primary text-base sm:text-lg leading-snug">
+          <div className="flex flex-col gap-3.5 pt-1">
+            <h3 className="font-display font-bold text-text-primary text-lg sm:text-xl leading-snug">
               {BUSINESS_TRIGGERS.title}
             </h3>
-            <ul className="flex flex-col gap-2.5" role="list">
+            <ul className="flex flex-col gap-3" role="list">
               {BUSINESS_TRIGGERS.items.map((item) => (
                 <li key={item} className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-energy flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <span className="font-body text-text-secondary text-[15px] sm:text-base leading-relaxed">
+                  <CheckCircle2 className="w-6 h-6 text-energy flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <span className="font-body text-text-secondary text-base sm:text-lg leading-relaxed">
                     {item}
                   </span>
                 </li>
@@ -653,11 +639,11 @@ export function BusinessForm() {
             </ul>
           </div>
 
-          <div className="flex flex-col gap-3 pt-2">
+          <div className="flex flex-col gap-3.5 pt-2">
             {BUSINESS_FORM.trustItems.map((item) => (
               <div key={item} className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-energy flex-shrink-0" aria-hidden="true" />
-                <span className="font-body text-text-secondary text-base">{item}</span>
+                <CheckCircle2 className="w-6 h-6 text-energy flex-shrink-0" aria-hidden="true" />
+                <span className="font-body text-text-secondary text-base sm:text-lg">{item}</span>
               </div>
             ))}
           </div>
@@ -668,18 +654,19 @@ export function BusinessForm() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-40px' }}
           transition={{ duration: 0.5 }}
-          className="p-5 md:p-8 rounded-3xl border border-white/8 bg-bg-elevated overflow-hidden relative"
+          className="lg:col-span-7 dth-form-navy p-7 md:p-10 rounded-[26px] border overflow-hidden relative w-full"
+          style={{ minWidth: 0 }}
         >
           <div
-            className="absolute top-0 left-0 right-0 h-1 rounded-t-3xl"
-            style={{ background: 'linear-gradient(90deg, #FF6B2B 0%, rgba(255,107,43,0.3) 100%)' }}
+            className="absolute top-0 left-0 right-0 h-1 rounded-t-[20px]"
+            style={{ background: 'linear-gradient(90deg, #F98540 0%, rgba(249,133,64,0.35) 100%)' }}
             aria-hidden="true"
           />
-          <h3 className="font-display font-black text-text-primary text-xl mb-6">
+          <h3 className="font-display font-bold text-text-primary text-xl sm:text-2xl mb-6">
             {BUSINESS_FORM.formHeading}
           </h3>
           <BusinessFormular />
-          <p className="mt-5 font-body text-xs text-text-tertiary leading-relaxed border-t border-white/6 pt-4">
+          <p className="mt-5 font-body text-xs text-text-tertiary leading-relaxed border-t border-[rgba(21,32,51,0.08)] pt-4">
             {BUSINESS_FORM.microcopy}
           </p>
         </motion.div>
