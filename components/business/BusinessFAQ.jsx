@@ -16,28 +16,28 @@ function FaqItem({ question, answer, index }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.35, delay: index * 0.04 }}
-      className={`rounded-2xl border transition-all duration-300 ${
+      className={`rounded-[20px] border transition-all duration-300 ${
         open
-          ? 'bg-bg-elevated border-energy/20 border-l-[3px] border-l-[#FF6B2B]'
-          : 'bg-bg-surface border-white/6 hover:border-white/12'
+          ? 'bg-white border-[rgba(21,32,51,0.12)] border-l-[3px] border-l-[#FF6B2B] shadow-[0_10px_28px_rgba(21,32,51,0.06)]'
+          : 'bg-white border-[rgba(21,32,51,0.10)] hover:border-[rgba(21,32,51,0.16)]'
       }`}
     >
       <button
         onClick={() => setOpen((p) => !p)}
-        className="w-full flex items-center justify-between gap-3 px-4 sm:px-6 py-4 sm:py-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-energy/40 rounded-2xl"
+        className="w-full flex items-center justify-between gap-4 px-5 sm:px-7 py-5 sm:py-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-energy/40 rounded-[20px]"
         aria-expanded={open}
         aria-controls={`business-faq-${index}`}
       >
-        <span className="font-display font-bold text-base md:text-lg text-text-primary pr-4">
+        <span className="font-display font-bold text-lg md:text-xl text-text-primary pr-4 leading-snug">
           {question}
         </span>
         <span
-          className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 ${
-            open ? 'bg-energy text-white' : 'bg-white/8 text-text-secondary'
+          className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+            open ? 'bg-energy text-white' : 'bg-[#EEF0F4] text-text-secondary'
           }`}
           aria-hidden="true"
         >
-          {open ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          {open ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
         </span>
       </button>
       <AnimatePresence initial={false}>
@@ -52,9 +52,9 @@ function FaqItem({ question, answer, index }) {
             transition={{ duration: 0.28 }}
             className="overflow-hidden"
           >
-            <div className="px-4 sm:px-6 pb-4 sm:pb-5 pt-1">
-              <div className="w-full h-px bg-white/6 mb-4" aria-hidden="true" />
-              <p className="font-body text-text-secondary text-sm sm:text-base leading-relaxed">{answer}</p>
+            <div className="px-5 sm:px-7 pb-5 sm:pb-6 pt-1">
+              <div className="w-full h-px bg-[rgba(21,32,51,0.08)] mb-4" aria-hidden="true" />
+              <p className="font-body text-text-secondary text-base sm:text-lg leading-relaxed">{answer}</p>
             </div>
           </motion.div>
         )}
@@ -71,16 +71,16 @@ export function BusinessFAQ() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-40px' }}
         transition={{ duration: 0.45 }}
-        className="text-center mb-10 sm:mb-12 flex flex-col items-center gap-4"
+        className="text-center mb-8 sm:mb-10 flex flex-col items-center gap-4"
       >
         <SectionLabel variant="energy">{BUSINESS_FAQ.label}</SectionLabel>
-        <SectionHeading centered className="max-w-3xl text-[1.75rem] sm:text-4xl md:text-5xl leading-[1.14]">
+        <SectionHeading centered className="dth-section-heading max-w-3xl text-[1.85rem] sm:text-3xl md:text-[2.4rem] leading-[1.14]">
           {BUSINESS_FAQ.title}
         </SectionHeading>
       </motion.div>
 
       <div
-        className="max-w-3xl mx-auto flex flex-col gap-3"
+        className="dth-faq-list max-w-[1040px] mx-auto flex flex-col gap-4"
         role="list"
         aria-label="Häufig gestellte Fragen für Unternehmenskunden"
       >

@@ -1,9 +1,9 @@
 'use client'
 
-import Link from 'next/link'
 import { Instagram, Mail, ExternalLink } from 'lucide-react'
 import { GlowLine } from '@/components/ui/Background'
 import { FOOTER_LINKS } from '@/lib/constants'
+import { BusinessBrandLockup } from '@/components/business/BusinessBrandLockup'
 
 /**
  * Route-local footer for /unternehmen-neu.
@@ -23,31 +23,12 @@ export function BusinessFooter() {
     <footer className="relative w-full bg-bg-base border-t border-white/6" role="contentinfo">
       <GlowLine color="white" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12 mb-12">
-          <div className="flex flex-col gap-5">
-            <Link
-              href="/"
-              className="flex items-center gap-3 group w-fit min-h-14"
-              aria-label="Dein Tarifheld — Startseite"
-            >
-              <img
-                src="/images/tari-nobg.png"
-                alt="Tarifheld Maskottchen"
-                style={{
-                  height: 50,
-                  width: 'auto',
-                  objectFit: 'contain',
-                  flexShrink: 0,
-                  display: 'block',
-                }}
-              />
-              <div className="font-display font-black text-text-primary text-lg leading-none">
-                Dein<span className="text-volt">Tarif</span>held
-              </div>
-            </Link>
+      <div className="dth-biz-container py-12 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16 mb-12">
+          <div className="flex flex-col gap-6">
+            <BusinessBrandLockup href="/" size="footer" />
 
-            <p className="font-body text-text-tertiary text-sm leading-relaxed max-w-xs">
+            <p className="font-body text-text-tertiary text-base sm:text-lg leading-relaxed max-w-sm">
               Klarheit statt Chaos — mit deinem Tarifheld. Kostenlose
               Energieoptimierung für Privat- und Geschäftskunden.
             </p>
@@ -57,25 +38,25 @@ export function BusinessFooter() {
                 href="https://instagram.com/dein.tarifheld"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-xl bg-bg-elevated border border-white/8 flex items-center justify-center text-text-tertiary hover:text-text-primary hover:border-white/20 transition-all duration-200"
+                className="w-11 h-11 rounded-xl bg-bg-elevated border border-white/8 flex items-center justify-center text-text-tertiary hover:text-text-primary hover:border-white/20 transition-all duration-200"
                 aria-label="Dein Tarifheld auf Instagram"
               >
-                <Instagram className="w-4 h-4" aria-hidden="true" />
+                <Instagram className="w-5 h-5" aria-hidden="true" />
               </a>
             </div>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <h3 className="font-display font-bold text-text-primary text-sm tracking-wider uppercase">
+          <div className="flex flex-col gap-5">
+            <h3 className="font-display font-bold text-text-primary text-sm sm:text-base tracking-wider uppercase">
               Navigation
             </h3>
             <nav aria-label="Footer Navigation">
-              <ul className="flex flex-col gap-2.5" role="list">
+              <ul className="flex flex-col gap-3.5" role="list">
                 {PREVIEW_MAIN_LINKS.map((link) => (
                   <li key={link.href}>
                     <a
                       href={link.href}
-                      className="font-body text-text-tertiary text-sm hover:text-text-secondary transition-colors duration-200"
+                      className="font-body text-text-tertiary text-base sm:text-lg hover:text-text-secondary transition-colors duration-200"
                     >
                       {link.label}
                     </a>
@@ -85,23 +66,23 @@ export function BusinessFooter() {
             </nav>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <h3 className="font-display font-bold text-text-primary text-sm tracking-wider uppercase">
+          <div className="flex flex-col gap-5">
+            <h3 className="font-display font-bold text-text-primary text-sm sm:text-base tracking-wider uppercase">
               Kontakt &amp; Recht
             </h3>
 
             <div className="flex flex-col gap-3">
               <a
                 href="mailto:kontakt@deintarifheld.de"
-                className="flex items-center gap-2.5 font-body text-text-tertiary text-sm hover:text-text-secondary transition-colors duration-200"
+                className="flex items-center gap-2.5 font-body text-text-tertiary text-base sm:text-lg hover:text-text-secondary transition-colors duration-200"
               >
-                <Mail className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                <Mail className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
                 kontakt@deintarifheld.de
               </a>
             </div>
 
             <nav aria-label="Rechtliche Links" className="mt-2">
-              <ul className="flex flex-col gap-2" role="list">
+              <ul className="flex flex-col gap-2.5" role="list">
                 {FOOTER_LINKS.legal.map((link) => (
                   <li key={link.label}>
                     {link.label === 'Cookie-Einstellungen' ? (
@@ -111,14 +92,14 @@ export function BusinessFooter() {
                           typeof window.__openCookieBanner === 'function' &&
                           window.__openCookieBanner()
                         }
-                        className="font-body text-text-tertiary text-xs hover:text-text-secondary transition-colors duration-200 underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0"
+                        className="font-body text-text-tertiary text-sm hover:text-text-secondary transition-colors duration-200 underline-offset-2 hover:underline cursor-pointer bg-transparent border-none p-0"
                       >
                         {link.label}
                       </button>
                     ) : (
                       <a
                         href={link.href}
-                        className="font-body text-text-tertiary text-xs hover:text-text-secondary transition-colors duration-200 underline-offset-2 hover:underline"
+                        className="font-body text-text-tertiary text-sm hover:text-text-secondary transition-colors duration-200 underline-offset-2 hover:underline"
                       >
                         {link.label}
                       </a>

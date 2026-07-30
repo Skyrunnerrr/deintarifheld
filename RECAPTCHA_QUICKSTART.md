@@ -25,7 +25,7 @@ Deine Tarifheld-Formulare haben jetzt eine professionelle **reCAPTCHA v3 Bot-Pro
    - Projekt: "deintarifheld - Lead Backend"
    - Zeile ~18 suchen:
      ```javascript
-     RECAPTCHA_SECRET_KEY: '6Le4qjkqAAAAAKqhyujvyjxyKqnJkZJn0UDhXGjk',  // ← ERSETZEN
+     RECAPTCHA_SECRET_KEY: 'REDACTED_SET_VIA_SCRIPT_PROPERTIES',  // ← ERSETZEN
      ```
    - Den langen geheimen Schlüssel eintragen
 

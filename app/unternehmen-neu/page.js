@@ -1,6 +1,7 @@
 'use client'
 
-import { GlowLine } from '@/components/ui/Background'
+import { BusinessThemeShell } from '@/components/business/BusinessThemeShell'
+import { BusinessHeader } from '@/components/business/BusinessHeader'
 import { BusinessHero } from '@/components/business/BusinessHero'
 import { BusinessCase } from '@/components/business/BusinessCase'
 import { BusinessAudience } from '@/components/business/BusinessAudience'
@@ -12,31 +13,36 @@ import { BusinessFAQ } from '@/components/business/BusinessFAQ'
 import { BusinessFinalCTA } from '@/components/business/BusinessFinalCTA'
 import { BusinessFooter } from '@/components/business/BusinessFooter'
 
+function BusinessDivider() {
+  return <div className="dth-biz-divider" aria-hidden="true" />
+}
+
 /**
- * DTH-04 Foundation Preview Route
- * Isoliert unter /unternehmen-neu — bestehende /unternehmen bleibt unverändert.
+ * DTH-04 Foundation Preview + DTH-06 Business visual revision.
+ * Isoliert unter /unternehmen-neu — vorbereitet für spätere Subdomain, ohne Aktivierung.
  */
 export default function UnternehmenNeuPage() {
   return (
-    <>
+    <BusinessThemeShell>
+      <BusinessHeader />
       <BusinessHero />
-      <GlowLine color="energy" />
+      <BusinessDivider />
       <BusinessCase />
-      <GlowLine color="energy" />
+      <BusinessDivider />
       <BusinessAudience />
-      <GlowLine color="energy" />
+      <BusinessDivider />
       <BusinessServices />
-      <GlowLine color="white" />
+      <BusinessDivider />
       <BusinessProcess />
-      <GlowLine color="energy" />
+      <BusinessDivider />
       <BusinessRoleNotice />
-      <GlowLine color="white" />
+      <BusinessDivider />
       <BusinessForm />
-      <GlowLine color="energy" />
+      <BusinessDivider />
       <BusinessFAQ />
-      <GlowLine color="white" />
+      <BusinessDivider />
       <BusinessFinalCTA />
       <BusinessFooter />
-    </>
+    </BusinessThemeShell>
   )
 }

@@ -9,43 +9,47 @@ export function BusinessProcess() {
   return (
     <Section id="ablauf" className="bg-bg-surface">
       <motion.div
-        initial={{ opacity: 1, y: 18 }}
+        initial={{ opacity: 1, y: 14 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-40px' }}
-        transition={{ duration: 0.45 }}
-        className="text-center mb-10 sm:mb-12 flex flex-col items-center gap-4"
+        transition={{ duration: 0.4 }}
+        className="text-center mb-8 sm:mb-10 flex flex-col items-center gap-4"
       >
         <SectionLabel variant="energy">{BUSINESS_PROCESS.label}</SectionLabel>
-        <SectionHeading centered className="max-w-3xl text-[1.75rem] sm:text-4xl md:text-5xl leading-[1.14]">
+        <SectionHeading centered className="dth-section-heading max-w-3xl text-[1.85rem] sm:text-3xl md:text-[2.4rem] leading-[1.14]">
           {BUSINESS_PROCESS.title}
         </SectionHeading>
-        <p className="font-body text-text-secondary text-base sm:text-lg max-w-2xl">
+        <p className="font-body text-text-secondary text-lg sm:text-xl max-w-2xl">
           {BUSINESS_PROCESS.description}
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5">
+      <ol className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6 list-none m-0 p-0 dth-biz-container">
+        <div
+          className="hidden lg:block absolute left-10 right-10 top-6 h-px bg-[rgba(21,32,51,0.12)]"
+          aria-hidden="true"
+        />
         {BUSINESS_PROCESS.steps.map((step, i) => (
-          <motion.div
+          <motion.li
             key={step.nr}
-            initial={{ opacity: 1, y: 16 }}
+            initial={{ opacity: 1, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: i * 0.06 }}
-            className="relative flex flex-col gap-3 p-5 rounded-3xl bg-bg-elevated border border-white/6"
+            transition={{ duration: 0.35, delay: i * 0.04 }}
+            className="relative flex flex-col gap-3.5 pt-1"
           >
-            <div className="font-display font-black text-3xl text-energy/25 leading-none select-none" aria-hidden="true">
+            <span className="dth-process-nr inline-flex items-center justify-center w-11 h-11 rounded-full bg-[#090B15] text-white font-display font-bold text-lg relative z-10">
               {step.nr}
-            </div>
-            <h3 className="font-display font-bold text-text-primary text-base leading-snug">
+            </span>
+            <h3 className="font-display font-bold text-text-primary text-lg sm:text-xl leading-snug">
               {step.title}
             </h3>
-            <p className="font-body text-text-secondary text-[15px] sm:text-sm leading-relaxed">
+            <p className="font-body text-text-secondary text-base sm:text-lg leading-relaxed">
               {step.desc}
             </p>
-          </motion.div>
+          </motion.li>
         ))}
-      </div>
+      </ol>
     </Section>
   )
 }

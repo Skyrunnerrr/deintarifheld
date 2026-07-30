@@ -95,7 +95,7 @@ RECAPTCHA_QUICKSTART.md  (Schnelle Referenz)
 2. Projekt "deintarifheld - Lead Backend" wählen
 3. google-apps-script.js öffnen
 4. Zeile ~18 suchen:
-   RECAPTCHA_SECRET_KEY: '6Le4qjkqAAAAAKqhyujvyjxyKqnJkZJn0UDhXGjk',
+   RECAPTCHA_SECRET_KEY: 'REDACTED_SET_VIA_SCRIPT_PROPERTIES',
 5. Mit echtem Secret Key ersetzen
 6. Ctrl+S speichern
 ```

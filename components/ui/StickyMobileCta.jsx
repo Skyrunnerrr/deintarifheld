@@ -9,7 +9,8 @@ function isBusinessPreviewRoute(pathname) {
 
 export function StickyMobileCta() {
   const pathname = usePathname()
-  const href = isBusinessPreviewRoute(pathname) ? '#formular' : '#rechner'
+  const isBusinessPreview = isBusinessPreviewRoute(pathname)
+  const href = isBusinessPreview ? '#formular' : '#rechner'
 
   return (
     <a
@@ -24,13 +25,15 @@ export function StickyMobileCta() {
         display: 'none', /* wird via CSS auf Mobile eingeblendet */
         alignItems: 'center',
         gap: 8,
-        background: '#D4FF3E',
-        color: '#090B0F',
+        background: isBusinessPreview ? '#F98540' : '#D4FF3E',
+        color: isBusinessPreview ? '#FFFFFF' : '#090B0F',
         fontWeight: 800,
         fontSize: 14,
         padding: '14px 24px',
-        borderRadius: 999,
-        boxShadow: '0 4px 24px rgba(212,255,62,0.35)',
+        borderRadius: isBusinessPreview ? 16 : 999,
+        boxShadow: isBusinessPreview
+          ? '0 6px 22px rgba(255,107,43,0.28)'
+          : '0 4px 24px rgba(212,255,62,0.35)',
         textDecoration: 'none',
         whiteSpace: 'normal',
         textAlign: 'center',

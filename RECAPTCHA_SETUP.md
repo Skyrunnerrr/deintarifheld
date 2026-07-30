@@ -36,11 +36,11 @@
 3. Öffne `google-apps-script.js`
 4. Suche nach Zeile ~18:
    ```javascript
-   RECAPTCHA_SECRET_KEY: '6Le4qjkqAAAAAKqhyujvyjxyKqnJkZJn0UDhXGjk',  // ← HIER
+   RECAPTCHA_SECRET_KEY: 'REDACTED_SET_VIA_SCRIPT_PROPERTIES',  // ← HIER
    ```
 5. Ersetze den Placeholder mit deinem **echten Secret Key**:
    ```javascript
-   RECAPTCHA_SECRET_KEY: '6Le...(dein_geheimer_schlüssel)...qnZU',
+   RECAPTCHA_SECRET_KEY: 'REDACTED_SET_VIA_SCRIPT_PROPERTIES',
    ```
 6. **Bereitstellen** (Deploy) und versionieren
 

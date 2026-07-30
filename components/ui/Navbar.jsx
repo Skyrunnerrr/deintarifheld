@@ -92,8 +92,21 @@ export function Navbar() {
 
   const navLinks = getNavLinks(pathname)
   const isBusinessPreview = isBusinessPreviewRoute(pathname)
-  const primaryCtaHref = isBusinessPreview ? '#formular' : '#funnel'
-  const primaryCtaTargetId = isBusinessPreview ? 'formular' : 'funnel'
+  // DTH-06 revision: Business preview uses route-local BusinessHeader instead.
+  if (isBusinessPreview) return null
+
+  const primaryCtaHref = '#funnel'
+  const primaryCtaTargetId = 'funnel'
+  const brandAccent = '#D4FF3E'
+  const brandText = '#F2F4F8'
+  const linkColor = '#8E97A8'
+  const linkHover = '#F2F4F8'
+  const ctaBg = '#D4FF3E'
+  const ctaHover = '#B8E032'
+  const ctaText = '#090B0F'
+  const ctaShadow = '0 0 20px rgba(212,255,62,0.22)'
+  const ctaShadowHover = '0 0 32px rgba(212,255,62,0.35)'
+  const focusRing = '2px solid rgba(212,255,62,0.4)'
 
   const handlePrimaryCta = (e) => {
     e.preventDefault()
@@ -157,9 +170,9 @@ export function Navbar() {
               fontSize: 21,
               letterSpacing: '-0.03em',
               lineHeight: 1,
-              color: '#F2F4F8',
+              color: brandText,
             }}>
-              Dein<span style={{ color: '#D4FF3E' }}>Tarifheld</span>
+              Dein<span style={{ color: brandAccent }}>Tarifheld</span>
             </span>
           </Link>
 
@@ -180,14 +193,20 @@ export function Navbar() {
                     fontFamily: 'var(--font-outfit, "Outfit", sans-serif)',
                     fontWeight: 600,
                     fontSize: 14,
-                    color: '#8E97A8',
+                    color: linkColor,
                     textDecoration: 'none',
                     transition: 'color 200ms, background 200ms',
                     outline: 'none',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#F2F4F8'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
-                  onMouseLeave={e => { e.currentTarget.style.color = '#8E97A8'; e.currentTarget.style.background = 'transparent' }}
-                  onFocus={e => { e.currentTarget.style.outline = '2px solid rgba(212,255,62,0.4)'; e.currentTarget.style.outlineOffset = '2px' }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.color = linkHover
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.color = linkColor
+                    e.currentTarget.style.background = 'transparent'
+                  }}
+                  onFocus={e => { e.currentTarget.style.outline = focusRing; e.currentTarget.style.outlineOffset = '2px' }}
                   onBlur={e => { e.currentTarget.style.outline = 'none' }}
                 >
                   {link.label}
@@ -208,18 +227,26 @@ export function Navbar() {
                 padding: '10px 22px',
                 borderRadius: 13,
                 border: 'none',
-                background: '#D4FF3E',
-                color: '#090B0F',
+                background: ctaBg,
+                color: ctaText,
                 fontFamily: 'var(--font-cabinet, "Cabinet Grotesk", sans-serif)',
                 fontWeight: 800,
                 fontSize: 14,
                 cursor: 'pointer',
                 textDecoration: 'none',
-                boxShadow: '0 0 20px rgba(212,255,62,0.22)',
+                boxShadow: ctaShadow,
                 transition: 'all 200ms',
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#B8E032'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 0 32px rgba(212,255,62,0.35)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#D4FF3E'; e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 0 20px rgba(212,255,62,0.22)' }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = ctaHover
+                e.currentTarget.style.transform = 'translateY(-1px)'
+                e.currentTarget.style.boxShadow = ctaShadowHover
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = ctaBg
+                e.currentTarget.style.transform = ''
+                e.currentTarget.style.boxShadow = ctaShadow
+              }}
               onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.96)' }}
               onMouseUp={e => { e.currentTarget.style.transform = 'translateY(-1px)' }}
             >
@@ -240,12 +267,18 @@ export function Navbar() {
               padding: 8, borderRadius: 10,
               background: 'transparent',
               border: 'none',
-              color: '#8E97A8',
+              color: linkColor,
               cursor: 'pointer',
               transition: 'color 200ms, background 200ms',
             }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#F2F4F8'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#8E97A8'; e.currentTarget.style.background = 'transparent' }}
+            onMouseEnter={e => {
+              e.currentTarget.style.color = linkHover
+              e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.color = linkColor
+              e.currentTarget.style.background = 'transparent'
+            }}
           >
             {menuOpen ? <IconClose /> : <IconMenu />}
           </button>
@@ -289,13 +322,13 @@ export function Navbar() {
                     fontFamily: 'var(--font-cabinet, "Cabinet Grotesk", sans-serif)',
                     fontWeight: 700,
                     fontSize: 'clamp(20px, 5.5vw, 26px)',
-                    color: '#F2F4F8',
+                    color: brandText,
                     textDecoration: 'none',
                     transition: 'color 200ms',
                     transitionDelay: `${i * 40}ms`,
                   }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#D4FF3E'}
-                  onMouseLeave={e => e.currentTarget.style.color = '#F2F4F8'}
+                  onMouseEnter={e => { e.currentTarget.style.color = brandAccent }}
+                  onMouseLeave={e => { e.currentTarget.style.color = brandText }}
                 >
                   {link.label}
                 </a>
@@ -313,13 +346,13 @@ export function Navbar() {
                 padding: '16px 24px',
                 borderRadius: 16,
                 border: 'none',
-                background: '#D4FF3E',
-                color: '#090B0F',
+                background: ctaBg,
+                color: ctaText,
                 fontFamily: 'var(--font-cabinet, "Cabinet Grotesk", sans-serif)',
                 fontWeight: 800, fontSize: 16,
                 cursor: 'pointer',
                 textDecoration: 'none',
-                boxShadow: '0 0 24px rgba(212,255,62,0.22)',
+                boxShadow: ctaShadow,
               }}
             >
               Kostenlos analysieren
