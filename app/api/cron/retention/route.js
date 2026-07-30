@@ -25,6 +25,7 @@ async function handle(request) {
 
   const result = await runRetention(supabase, {
     retentionDays: Number(process.env.LEADS_RETENTION_DAYS || 90),
+    privateRetentionDays: Number(process.env.LEADS_PRIVATE_RETENTION_DAYS || process.env.LEADS_RETENTION_DAYS || 90),
     careerRetentionDays: Number(process.env.LEADS_CAREER_RETENTION_DAYS || 183),
   })
 
@@ -34,14 +35,19 @@ async function handle(request) {
   }
 
   leadsLog('info', 'retention.completed', {
-    normalDeleted: result.normal,
+    businessDeleted: result.business,
+    privateDeleted: result.private,
     careerDeleted: result.career,
+    normalDeleted: result.normal,
   })
 
   return NextResponse.json({
     ok: true,
-    normalDeleted: result.normal,
+    businessDeleted: result.business,
+    privateDeleted: result.private,
     careerDeleted: result.career,
+    // backward-compatible
+    normalDeleted: result.normal,
   })
 }
 

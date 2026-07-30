@@ -9,15 +9,14 @@ import {
   isTooFastSubmit,
   recordRateLimit,
 } from '@/lib/leads/abuse-guard'
-import { validateUnternehmenPayload } from '@/lib/leads/validate-unternehmen'
-import { isPrivatePageSource, validatePrivatePayload } from '@/lib/leads/validate-private'
+import { validateCareerPayload } from '@/lib/leads/validate-career'
 import {
-  findLeadByIdempotencyKey,
-  findRecentDuplicate,
+  findCareerByIdempotencyKey,
+  findRecentCareerDuplicate,
   getServiceSupabase,
-  insertLead,
+  insertCareerApplication,
   makeLeadRef,
-  updateLeadMailMeta,
+  updateCareerMailMeta,
   writeAudit,
 } from '@/lib/leads/supabase'
 import { sendLeadEmails } from '@/lib/leads/mail'
@@ -56,7 +55,7 @@ function buildIdempotencyKey(request, data) {
   if (header && header.length >= 8 && header.length <= 128) return header
   const window = Math.floor(Date.now() / 60_000)
   return createHash('sha256')
-    .update(`${data.page_source}|${data.email}|${window}`)
+    .update(`career|${data.email}|${window}`)
     .digest('hex')
     .slice(0, 48)
 }
@@ -71,20 +70,6 @@ function mailFields(mailResult) {
   }
 }
 
-function resolveValidator(raw) {
-  const source = typeof raw?.page_source === 'string' ? raw.page_source.trim() : ''
-  if (!source || source === 'unternehmen') {
-    return { channel: 'business', validated: validateUnternehmenPayload(raw) }
-  }
-  if (isPrivatePageSource(source)) {
-    return { channel: 'private', validated: validatePrivatePayload(raw) }
-  }
-  if (source === 'career') {
-    return { channel: null, validated: { ok: false, code: 'use-careers-endpoint' } }
-  }
-  return { channel: null, validated: { ok: false, code: 'unsupported-page-source' } }
-}
-
 export async function OPTIONS(request) {
   return optionsResponse(request)
 }
@@ -92,10 +77,10 @@ export async function OPTIONS(request) {
 export async function GET(request) {
   return json(request, {
     ok: true,
-    service: 'dth-leads',
+    service: 'dth-careers',
     phase: 'B',
-    supported: ['unternehmen', 'privat', 'hero-funnel', 'main_funnel'],
-    careerEndpoint: '/api/careers',
+    supported: ['career'],
+    fileUploads: false,
     mailModeDefault: 'mock',
   })
 }
@@ -104,7 +89,6 @@ export async function POST(request) {
   if (!hasJsonContentType(request)) {
     return errorResponse(request, 'invalid-content-type', 400)
   }
-
   if (isBlockedOrigin(request)) {
     return errorResponse(request, 'request-blocked', 403)
   }
@@ -131,10 +115,10 @@ export async function POST(request) {
     return errorResponse(request, 'invalid-payload', 400)
   }
 
-  const { channel, validated } = resolveValidator(raw)
+  const validated = validateCareerPayload(raw)
   if (!validated.ok) {
     recordRateLimit(rlKey, 'error')
-    return errorResponse(request, validated.code, validated.code === 'use-careers-endpoint' ? 400 : 400)
+    return errorResponse(request, validated.code, 400)
   }
 
   if (validated.honeypotFilled || isTooFastSubmit(validated.data._formLoadedAt)) {
@@ -146,31 +130,27 @@ export async function POST(request) {
     return errorResponse(request, 'storage-not-configured', 500)
   }
 
-  const pageSource = validated.data.page_source
-  const leadType = channel === 'private' ? 'private_energy' : 'business_energy'
   const idempotencyKey = buildIdempotencyKey(request, validated.data)
-
-  const { data: existingByKey } = await findLeadByIdempotencyKey(supabase, idempotencyKey)
+  const { data: existingByKey } = await findCareerByIdempotencyKey(supabase, idempotencyKey)
   if (existingByKey) {
     return json(request, {
       ok: true,
       duplicate: true,
       idempotent: true,
       leadId: existingByKey.id,
-      leadRef: existingByKey.lead_ref,
+      leadRef: existingByKey.application_ref,
       mail: true,
       mailMode: process.env.LEADS_MAIL_MODE || 'mock',
       mailStatus: 'accepted',
     })
   }
 
-  const { duplicate, error: dupErr } = await findRecentDuplicate(supabase, {
+  const { duplicate, error: dupErr } = await findRecentCareerDuplicate(supabase, {
     email: validated.data.email,
-    pageSource,
     withinSeconds: 60,
   })
   if (dupErr) {
-    leadsLog('error', 'leads.duplicate_check_failed', { code: 'storage-failed' })
+    leadsLog('error', 'careers.duplicate_check_failed', { code: 'storage-failed' })
     return errorResponse(request, 'storage-failed', 500)
   }
   if (duplicate) {
@@ -178,7 +158,7 @@ export async function POST(request) {
       ok: true,
       duplicate: true,
       leadId: duplicate.id,
-      leadRef: duplicate.lead_ref,
+      leadRef: duplicate.application_ref,
       mail: true,
       mailMode: process.env.LEADS_MAIL_MODE || 'mock',
       mailStatus: 'accepted',
@@ -187,23 +167,20 @@ export async function POST(request) {
 
   recordRateLimit(rlKey, 'submit')
 
-  const leadRef = makeLeadRef(pageSource)
+  const leadRef = makeLeadRef('career')
   const submittedAt = new Date().toISOString()
   const { _formLoadedAt, ...payloadFields } = validated.data
 
-  const { data: inserted, error: insertError } = await insertLead(supabase, {
-    lead_ref: leadRef,
-    page_source: pageSource,
-    lead_type: leadType,
+  const { data: inserted, error: insertError } = await insertCareerApplication(supabase, {
+    application_ref: leadRef,
     status: 'new',
     email: validated.data.email,
-    firma: validated.data.firma || null,
+    full_name: validated.data.name,
     consent_at: submittedAt,
     source_page: validated.data.source_page,
     idempotency_key: idempotencyKey,
     payload: {
       ...payloadFields,
-      lead_type: leadType,
       _formLoadedAt,
       received_at: submittedAt,
     },
@@ -211,61 +188,51 @@ export async function POST(request) {
 
   if (insertError) {
     if (insertError.code === '23505') {
-      const { data: raced } = await findLeadByIdempotencyKey(supabase, idempotencyKey)
+      const { data: raced } = await findCareerByIdempotencyKey(supabase, idempotencyKey)
       if (raced) {
         return json(request, {
           ok: true,
           duplicate: true,
           idempotent: true,
           leadId: raced.id,
-          leadRef: raced.lead_ref,
+          leadRef: raced.application_ref,
           mail: true,
           mailMode: process.env.LEADS_MAIL_MODE || 'mock',
           mailStatus: 'accepted',
         })
       }
     }
-    leadsLog('error', 'leads.insert_failed', { code: insertError.code || 'unknown' })
+    leadsLog('error', 'careers.insert_failed', { code: insertError.code || 'unknown' })
     await writeAudit(supabase, {
-      eventType: 'lead.insert_failed',
-      detail: { code: insertError.code || 'unknown', page_source: pageSource, lead_type: leadType },
+      eventType: 'career.insert_failed',
+      detail: { code: insertError.code || 'unknown' },
     })
     return errorResponse(request, 'storage-failed', 500)
   }
 
   await writeAudit(supabase, {
-    leadId: inserted.id,
-    eventType: 'lead.accepted',
-    detail: { lead_ref: leadRef, page_source: pageSource, lead_type: leadType },
+    careerId: inserted.id,
+    eventType: 'career.accepted',
+    detail: { application_ref: leadRef },
   })
 
   const mailResult = await sendLeadEmails({
     leadRef,
     data: validated.data,
     submittedAt,
-    channel,
+    channel: 'career',
   })
 
-  await updateLeadMailMeta(supabase, inserted.id, {
+  await updateCareerMailMeta(supabase, inserted.id, {
     mailStatus: mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed'),
     mailMode: mailResult.mode || process.env.LEADS_MAIL_MODE || 'mock',
   })
 
   if (!mailResult.ok) {
     await writeAudit(supabase, {
-      leadId: inserted.id,
-      eventType: 'lead.mail_failed',
-      detail: {
-        code: mailResult.code,
-        lead_ref: leadRef,
-        mode: mailResult.mode || 'mock',
-        lead_type: leadType,
-      },
-    })
-    leadsLog('error', 'leads.mail_failed', {
-      leadRef,
-      code: mailResult.code,
-      retry: 'manual_or_ops',
+      careerId: inserted.id,
+      eventType: 'career.mail_failed',
+      detail: { code: mailResult.code, application_ref: leadRef, mode: mailResult.mode || 'mock' },
     })
     return json(
       request,
@@ -283,17 +250,16 @@ export async function POST(request) {
   }
 
   await writeAudit(supabase, {
-    leadId: inserted.id,
-    eventType: 'lead.mail_sent',
+    careerId: inserted.id,
+    eventType: 'career.mail_sent',
     detail: {
-      lead_ref: leadRef,
+      application_ref: leadRef,
       mode: mailResult.mode || 'mock',
-      lead_type: leadType,
       templateIds: mailResult.templateIds || [],
     },
   })
 
-  leadsLog('info', 'leads.accepted', { leadRef, mail: true, leadType })
+  leadsLog('info', 'careers.accepted', { leadRef, mail: true })
 
   return json(request, {
     ok: true,
