@@ -82,10 +82,19 @@ assert.match(envExample, /LEADS_MAIL_MODE=mock/)
 assert.doesNotMatch(envExample, /LEADS_MAIL_MODE=live/)
 assert.doesNotMatch(envExample, /eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9._-]+/)
 
+const browserApi = read('lib/leads/browser-api.js')
+assert.match(browserApi, /NEXT_PUBLIC_LEADS_API_ORIGIN/)
+assert.match(browserApi, /\/api\/leads\//)
+assert.match(browserApi, /\/api\/careers\//)
+assert.match(browserApi, /Idempotency-Key/)
+assert.match(browserApi, /ensureTrailingSlash|joinOriginPath/)
+
 const form = read('components/business/BusinessForm.jsx')
-assert.match(form, /leadsApiUrl|NEXT_PUBLIC_LEADS_API_URL|\/api\/leads/)
+assert.match(form, /from '@\/lib\/leads\/browser-api'/)
+assert.match(form, /leadsApiUrl|postJsonLead/)
 assert.doesNotMatch(form, /script\.google\.com/)
 assert.doesNotMatch(form, /RecaptchaBox/)
+assert.doesNotMatch(form, /function leadsApiUrl/)
 
 const hero = read('components/sections/Hero.jsx')
 assert.match(hero, /leadsApiUrl|postJsonLead/)
@@ -134,6 +143,24 @@ for (const s of [
 assert.ok(existsSync(join(root, '.github/workflows/dth-phase-a-ci.yml')))
 assert.ok(existsSync(join(root, 'scripts/infra/phase-a/run-all.sh')))
 assert.ok(existsSync(join(root, 'docs/legal/DATENSCHUTZ_PHASE_B_DRAFT.md')))
+assert.ok(existsSync(join(root, 'docs/legal/DATENSCHUTZ_CUTOVER_CANDIDATE.md')))
+const privacyCutover = read('docs/legal/DATENSCHUTZ_CUTOVER_CANDIDATE.md')
+assert.match(privacyCutover, /STATUS=LEGAL_APPROVAL_REQUIRED/)
+assert.match(privacyCutover, /LIVE_PUBLISH_AUTHORIZED=NO/)
+
+assert.ok(existsSync(join(root, 'scripts/build-static-production.sh')))
+assert.ok(existsSync(join(root, 'scripts/deploy/checkdomain/dth-checkdomain.sh')))
+assert.ok(existsSync(join(root, 'app/rechner/page.js')))
+
+const pkgScripts = [
+  'build:static:production',
+  'verify:static:production',
+  'cutover:plan',
+  'browser-api:test',
+]
+for (const s of pkgScripts) {
+  assert.ok(pkg.scripts[s], `missing script ${s}`)
+}
 
 console.log('CONTRACT_TESTS=PASS')
 console.log('PHASE_B_CONTRACT=PASS')
