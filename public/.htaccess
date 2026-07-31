@@ -7,14 +7,18 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 RewriteCond %{HTTP_HOST} ^deintarifheld\.de$ [NC]
 RewriteRule ^(.*)$ https://www.deintarifheld.de/$1 [R=301,L]
 
-# ── Saubere URLs: /datenschutz → datenschutz.html ──────────────
+# ── Canonical career routes (Phase B / cutover) ──────────────────
+RewriteRule ^karriere\.html$ /karriere/ [R=301,L]
+RewriteRule ^karriere$ /karriere/ [R=301,L]
+
+# ── Legacy calculator HTML → /rechner/ (then client → /#rechner) ─
+RewriteRule ^rechner\.html$ /rechner/ [R=301,L]
+
+# ── Saubere URLs: /datenschutz → datenschutz.html (legacy flat) ──
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}.html -f
 RewriteRule ^(.*)$ $1.html [L]
-
-# ── Redirect /karriere ──────────────────────────────────────────
-RewriteRule ^karriere$ /karriere.html [L,R=301]
 
 # Sicherheits-Header
 <IfModule mod_headers.c>
