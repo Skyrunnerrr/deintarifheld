@@ -1,6 +1,19 @@
+/**
+ * HISTORICAL helper for the former Google Apps Script backend.
+ * Not part of the Phase B / Checkdomain production cutover path.
+ * Requires an explicit WEBHOOK_URL — no baked-in script.google.com default.
+ */
 import https from 'https';
 
-const WEBHOOK_URL = process.env.WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbyR4SQWp3pmBFMmQUJL9sCSuZ7dfVDMLarUmNzV3rCPng817qYUEtt-a0tSnf_JPWI0/exec';
+const WEBHOOK_URL = process.env.WEBHOOK_URL
+if (!WEBHOOK_URL) {
+  console.error('HISTORICAL test-backend.mjs: set WEBHOOK_URL explicitly or use npm run leads:smoke* against the Vercel API')
+  process.exit(2)
+}
+if (/script\.google\.com/i.test(WEBHOOK_URL)) {
+  console.error('HISTORICAL test-backend.mjs: refusing script.google.com targets in cutover-era runs')
+  process.exit(3)
+}
 
 function buildPayloadFor(source) {
   const now = new Date().toISOString();

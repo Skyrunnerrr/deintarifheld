@@ -19,12 +19,7 @@ import {
   isTooFast,
 } from '@/lib/security'
 import { BUSINESS_FORM, BUSINESS_TRIGGERS } from '@/lib/business-content'
-
-function leadsApiUrl() {
-  const configured = process.env.NEXT_PUBLIC_LEADS_API_URL
-  if (configured && String(configured).trim()) return String(configured).trim()
-  return '/api/leads'
-}
+import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 
 function IconArrow() {
   return (
@@ -139,10 +134,10 @@ function BusinessFormular() {
     setSending(true)
     recordSubmission('b2b-form')
     try {
-      const apiUrl = leadsApiUrl()
       const payload = sanitizePayload({
         ...form,
         page_source: 'unternehmen',
+        lead_type: 'business_energy',
         form_version: '2.0',
         source_page: typeof window !== 'undefined' ? window.location.pathname : '/unternehmen-neu/',
         timestamp: new Date().toISOString(),
@@ -151,14 +146,9 @@ function BusinessFormular() {
         [HONEYPOT_FIELD_2]: honeypot2,
       })
 
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok || !json.ok) {
-        throw new Error(json.code || `submit-failed-${res.status}`)
+      const { res, json } = await postJsonLead(leadsApiUrl(), payload)
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.code || `submit-failed-${res.status}`)
       }
       setDone(true)
     } catch (error) {
