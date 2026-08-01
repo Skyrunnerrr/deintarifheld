@@ -63,10 +63,14 @@ function buildIdempotencyKey(request, data) {
 function mailFields(mailResult) {
   const mode = mailResult.mode || (process.env.LEADS_MAIL_MODE || 'mock')
   const mailStatus = mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed')
+  const customerConfirmation =
+    mailResult.customerConfirmation ||
+    (mode === 'internal_live' ? 'skipped' : mode === 'live' ? 'sent' : 'n/a')
   return {
     mail: Boolean(mailResult.ok),
     mailMode: mode,
     mailStatus,
+    customerConfirmation,
   }
 }
 
@@ -81,7 +85,7 @@ export async function GET(request) {
     phase: 'B',
     supported: ['career'],
     fileUploads: false,
-    mailModeDefault: 'mock',
+    mailModeDefault: process.env.LEADS_MAIL_MODE || 'mock',
   })
 }
 
@@ -229,11 +233,25 @@ export async function POST(request) {
   })
 
   if (!mailResult.ok) {
+    const failEvent =
+      mailResult.mode === 'internal_live' ? 'career.internal_mail_failed' : 'career.mail_failed'
     await writeAudit(supabase, {
       careerId: inserted.id,
-      eventType: 'career.mail_failed',
-      detail: { code: mailResult.code, application_ref: leadRef, mode: mailResult.mode || 'mock' },
+      eventType: failEvent,
+      detail: {
+        code: mailResult.code,
+        application_ref: leadRef,
+        mode: mailResult.mode || 'mock',
+        customer_confirmation: mailResult.customerConfirmation || 'n/a',
+      },
     })
+    if (mailResult.mode === 'internal_live') {
+      await writeAudit(supabase, {
+        careerId: inserted.id,
+        eventType: 'career.customer_confirmation_skipped',
+        detail: { application_ref: leadRef, mode: 'internal_live', reason: 'temporary_internal_mode' },
+      })
+    }
     return json(
       request,
       {
@@ -249,15 +267,33 @@ export async function POST(request) {
     )
   }
 
-  await writeAudit(supabase, {
-    careerId: inserted.id,
-    eventType: 'career.mail_sent',
-    detail: {
-      application_ref: leadRef,
-      mode: mailResult.mode || 'mock',
-      templateIds: mailResult.templateIds || [],
-    },
-  })
+  if (mailResult.mode === 'internal_live') {
+    await writeAudit(supabase, {
+      careerId: inserted.id,
+      eventType: 'career.internal_mail_sent',
+      detail: {
+        application_ref: leadRef,
+        mode: 'internal_live',
+        templateIds: mailResult.templateIds || [],
+        provider_email_id: mailResult.providerEmailId || null,
+      },
+    })
+    await writeAudit(supabase, {
+      careerId: inserted.id,
+      eventType: 'career.customer_confirmation_skipped',
+      detail: { application_ref: leadRef, mode: 'internal_live', reason: 'temporary_internal_mode' },
+    })
+  } else {
+    await writeAudit(supabase, {
+      careerId: inserted.id,
+      eventType: 'career.mail_sent',
+      detail: {
+        application_ref: leadRef,
+        mode: mailResult.mode || 'mock',
+        templateIds: mailResult.templateIds || [],
+      },
+    })
+  }
 
   leadsLog('info', 'careers.accepted', { leadRef, mail: true })
 
