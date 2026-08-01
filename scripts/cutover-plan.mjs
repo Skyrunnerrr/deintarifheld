@@ -22,7 +22,9 @@ const lines = [
   '13. Decommission Google Apps Script only after traffic proof',
   'FORBIDDEN=ungerged_feature_deploy,force_push,history_rewrite,website_before_main',
   'MAIL_DECISION_REQUIRED=YES',
-  'MAIL_MODE_CHANGED=NO',
+  'MAIL_MODE_PREFERRED=internal_live',
+  'CUSTOMER_CONFIRMATION=OFF_UNTIL_DOMAIN_VERIFIED',
+  'MAIL_MODE_CHANGED=PENDING_VERCEL_ENV',
   'GOOGLE_APPS_SCRIPT_DISABLED=NO',
   'GOOGLE_SHEETS_DELETED=NO',
 ]

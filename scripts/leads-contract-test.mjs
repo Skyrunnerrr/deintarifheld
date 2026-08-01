@@ -41,12 +41,18 @@ const mail = read('lib/leads/mail.js')
 assert.match(mail, /LEADS_MAIL_MODE/)
 assert.match(mail, /mode === 'mock'/)
 assert.match(mail, /mode === 'fail'/)
+assert.match(mail, /mode === 'internal_live'/)
 assert.match(mail, /sandbox_accepted/)
 assert.match(mail, /LEADS_MAIL_MODE \|\| 'mock'/)
 assert.match(mail, /mode !== 'live'|mail-mode-unsupported/)
 assert.match(mail, /buildPrivateMails/)
 assert.match(mail, /buildCareerMails/)
+assert.match(mail, /buildInternalOpsMail/)
+assert.match(mail, /customerConfirmation: 'skipped'/)
+assert.match(mail, /mailStatus: 'internal_sent'/)
 assert.match(mail, /MAIL_TEMPLATE_IDS/)
+assert.match(route, /lead\.internal_mail_sent|customer_confirmation_skipped/)
+assert.match(careers, /career\.internal_mail_sent|customer_confirmation_skipped/)
 
 const cors = read('lib/leads/cors.js')
 assert.match(cors, /Access-Control-Allow-Origin/)
@@ -79,7 +85,8 @@ assert.equal(vercel.crons[0].schedule, '0 3 * * *')
 const envExample = read('.env.example')
 assert.match(envExample, /SUPABASE_SERVICE_ROLE_KEY/)
 assert.match(envExample, /LEADS_MAIL_MODE=mock/)
-assert.doesNotMatch(envExample, /LEADS_MAIL_MODE=live/)
+assert.match(envExample, /internal_live/)
+assert.doesNotMatch(envExample, /^LEADS_MAIL_MODE=live$/m)
 assert.doesNotMatch(envExample, /eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9._-]+/)
 
 const browserApi = read('lib/leads/browser-api.js')
@@ -132,6 +139,7 @@ for (const s of [
   'infra:phase-a:status',
   'infra:phase-a:smoke',
   'leads:contract',
+  'leads:mail:internal-live',
   'leads:smoke:business',
   'leads:smoke:private',
   'leads:smoke:career',
@@ -144,9 +152,21 @@ assert.ok(existsSync(join(root, '.github/workflows/dth-phase-a-ci.yml')))
 assert.ok(existsSync(join(root, 'scripts/infra/phase-a/run-all.sh')))
 assert.ok(existsSync(join(root, 'docs/legal/DATENSCHUTZ_PHASE_B_DRAFT.md')))
 assert.ok(existsSync(join(root, 'docs/legal/DATENSCHUTZ_CUTOVER_CANDIDATE.md')))
+assert.ok(existsSync(join(root, 'docs/legal/DATENSCHUTZ_CUTOVER_FINAL_REVIEW.md')))
+assert.ok(existsSync(join(root, 'docs/legal/DTH_09C_APPROVAL_PACK.md')))
 const privacyCutover = read('docs/legal/DATENSCHUTZ_CUTOVER_CANDIDATE.md')
 assert.match(privacyCutover, /STATUS=LEGAL_APPROVAL_REQUIRED/)
 assert.match(privacyCutover, /LIVE_PUBLISH_AUTHORIZED=NO/)
+const privacyFinal = read('docs/legal/DATENSCHUTZ_CUTOVER_FINAL_REVIEW.md')
+assert.match(privacyFinal, /STATUS=NOAH_AND_LEGAL_APPROVAL_REQUIRED/)
+assert.match(privacyFinal, /LIVE_PUBLISH_AUTHORIZED=NO/)
+assert.match(privacyFinal, /TECHNICAL_STATE=INTERNAL_LIVE_NOTIFICATION/)
+assert.match(privacyFinal, /CUSTOMER_CONFIRMATION=OFF/)
+assert.match(privacyFinal, /RESEND_DOMAIN_VERIFIED=NO/)
+const gate = read('scripts/deploy/checkdomain/common.sh')
+assert.match(gate, /internal_live/)
+assert.match(gate, /INTERNAL_NOTIFICATION=LIVE/)
+assert.match(gate, /TEMPORARY_MODE=YES/)
 
 assert.ok(existsSync(join(root, 'scripts/build-static-production.sh')))
 assert.ok(existsSync(join(root, 'scripts/deploy/checkdomain/dth-checkdomain.sh')))

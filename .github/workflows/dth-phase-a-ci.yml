@@ -62,6 +62,8 @@ jobs:
           echo "SECRET_SCAN=PASS"
       - name: Contract unit checks (business/private/career/mail mock-fail)
         run: npm run leads:contract
+      - name: Internal live mail mode + cutover gate
+        run: npm run leads:mail:internal-live
       - name: Phase B verify
         run: npm run phase-b:verify
       - name: No remote migrate on PR

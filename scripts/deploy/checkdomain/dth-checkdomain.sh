@@ -18,9 +18,11 @@ mkdir -p "$DTH_CD_EVID"
 cmd_preflight() {
   dth_cd_load_config
   dth_cd_require_out
-  dth_cd_mail_gate || true
-  # mail_gate dies on block — for preflight report both states
-  :
+  if dth_cd_mail_gate_status; then
+    dth_cd_log "preflight mail gate PASS"
+  else
+    dth_cd_log "preflight mail gate BLOCK (reported; apply would abort)"
+  fi
 }
 
 cmd_plan() {
@@ -46,7 +48,14 @@ cmd_plan() {
     echo "SWITCH_METHOD=copy_from_staging_assets_first_html_last"
     echo "APPLY=$APPLY"
     echo "CHECKDOMAIN_UPLOAD_EXECUTED=NO"
-    echo "CUSTOMER_TRAFFIC_MAIL_GATE=$([ "${LEADS_MAIL_MODE}" = mock ] && [ "${ALLOW_MOCK_MAIL_CUTOVER}" != YES ] && echo BLOCK || echo PASS)"
+    if dth_cd_mail_gate_status >/tmp/dth-cd-mail-gate-plan.$$ 2>/dev/null; then
+      echo "CUSTOMER_TRAFFIC_MAIL_GATE=PASS"
+    else
+      echo "CUSTOMER_TRAFFIC_MAIL_GATE=BLOCK"
+    fi
+    # shellcheck disable=SC1090
+    cat /tmp/dth-cd-mail-gate-plan.$$
+    rm -f /tmp/dth-cd-mail-gate-plan.$$
   } | tee "$DTH_CD_EVID/checkdomain-deploy-plan.txt"
 }
 
@@ -106,8 +115,10 @@ cmd_upload() {
     echo "ALLOW_MOCK_MAIL_CUTOVER=${ALLOW_MOCK_MAIL_CUTOVER}"
   } | tee -a "$DTH_CD_EVID/checkdomain-deploy-plan.txt"
   if [[ "$APPLY" != "YES" ]]; then
-    if [[ "${LEADS_MAIL_MODE}" == "mock" && "${ALLOW_MOCK_MAIL_CUTOVER}" != "YES" ]]; then
+    if ! dth_cd_mail_gate_status >/dev/null; then
       echo "CUSTOMER_TRAFFIC_MAIL_GATE=BLOCK (dry-run; apply would abort)"
+    else
+      echo "CUSTOMER_TRAFFIC_MAIL_GATE=PASS (dry-run; apply would proceed on mail gate)"
     fi
     dth_cd_log "upload dry-run only (UPLOAD_EXECUTED=NO)"
     echo "UPLOAD_EXECUTED=NO"
