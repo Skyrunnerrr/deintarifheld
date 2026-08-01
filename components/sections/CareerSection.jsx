@@ -37,12 +37,12 @@ const schema = z.object({
   email:      z.string().email('Bitte gib eine gültige E-Mail ein'),
   phone:      z.string().min(6, 'Bitte gib deine Telefonnummer ein'),
   motivation: z.string().min(10, 'Bitte schreib uns kurz, warum dich das interessiert'),
-  gdpr:       z.literal(true, { errorMap: () => ({ message: 'Bitte stimme der Datenschutzerklärung zu' }) }),
+  gdpr:       z.literal(true, { errorMap: () => ({ message: 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.' }) }),
 })
 
 const BENEFITS = [
   { icon: <TrendingUp className="w-5 h-5" />, title: '1.400 – 5.500 €', sub: 'monatlich möglich', color: '#0A5ADB' },
-  { icon: <Clock className="w-5 h-5" />,      title: 'Flexibel',         sub: 'Zeit & Arbeitsort frei wählen', color: '#217CFF' },
+  { icon: <Clock className="w-5 h-5" />,      title: 'Flexibel',         sub: 'Zeit & Ort frei wählen', color: '#217CFF' },
   { icon: <Users className="w-5 h-5" />,      title: 'Quereinsteiger',   sub: 'Keine Vorkenntnisse nötig', color: '#0A5ADB' },
   { icon: <Zap className="w-5 h-5" />,        title: 'Vollausbildung',   sub: 'Persönliche Schulungen inklusive', color: '#217CFF' },
   { icon: <MapPin className="w-5 h-5" />,     title: 'Deutschlandweit',  sub: 'Remote oder vor Ort möglich', color: '#0A5ADB' },
@@ -138,7 +138,7 @@ export function CareerSection({ headingLevel = 'h1' }) {
               style={{ background: 'rgba(10,90,219,0.12)', border: '1px solid rgba(10,90,219,0.3)', color: '#5B9BFF', backdropFilter: 'blur(8px)' }}
             >
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#217CFF', display: 'inline-block', animation: 'career-pulse 2s infinite' }} />
-              Karriere im Energiemarkt
+              Partner werden im Energiemarkt
             </div>
           </motion.div>
 
@@ -153,11 +153,11 @@ export function CareerSection({ headingLevel = 'h1' }) {
               className="font-display font-black leading-none tracking-tight"
               style={{ fontSize: 'clamp(2.4rem, 6vw, 5rem)', color: '#F0F4FF' }}
             >
-              Dein{' '}
+              Als{' '}
               <span style={{ background: 'linear-gradient(135deg, #217CFF 0%, #0A5ADB 50%, #5B9BFF 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                Karrieresprung
+                Partner
               </span>
-              <br />im Energiemarkt
+              <br />selbstständig starten
             </HeadingTag>
           </motion.div>
 
@@ -168,8 +168,9 @@ export function CareerSection({ headingLevel = 'h1' }) {
             className="text-center max-w-2xl mx-auto mb-10 sm:mb-12 font-body text-base sm:text-lg leading-relaxed"
             style={{ color: 'rgba(180,200,255,0.75)' }}
           >
-            Starte neben- oder hauptberuflich als Energieberater. Wir begleiten dich von Tag 1 —
-            mit Schulungen, Leads und einem Team, das anzieht.
+            Interessierst du dich für eine selbstständige Tätigkeit als Energieberater oder
+            Vertriebspartner? Über dieses Formular kannst du unverbindlich Kontakt aufnehmen.
+            Es wird kein Arbeitsverhältnis angeboten.
           </motion.p>
 
           {/* ── MAIN GRID ─────────────────────────────────────── */}
@@ -237,9 +238,9 @@ export function CareerSection({ headingLevel = 'h1' }) {
                 </p>
                 <div className="flex items-center gap-2 mt-3">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(10,90,219,0.3)', color: '#5B9BFF' }}>M</div>
-                  <div>
-                    <div className="font-body text-xs font-semibold" style={{ color: '#F0F4FF' }}>Markus T.</div>
-                    <div className="font-body text-xs" style={{ color: 'rgba(180,200,255,0.5)' }}>Energieberater seit 2024</div>
+                    <div>
+                      <div className="font-body text-xs font-semibold" style={{ color: '#F0F4FF' }}>Markus T.</div>
+                    <div className="font-body text-xs" style={{ color: 'rgba(180,200,255,0.5)' }}>Selbstständiger Energieberater seit 2024</div>
                   </div>
                 </div>
               </motion.div>
@@ -264,8 +265,8 @@ export function CareerSection({ headingLevel = 'h1' }) {
                       <CheckCircle className="w-10 h-10" style={{ color: '#217CFF' }} />
                     </div>
                     <div>
-                      <h3 className="font-display font-bold text-2xl mb-2" style={{ color: '#F0F4FF' }}>Bewerbung gesendet! 🎉</h3>
-                      <p className="font-body text-base" style={{ color: 'rgba(180,200,255,0.65)' }}>Wir melden uns innerhalb von 48 Stunden bei dir.</p>
+                      <h3 className="font-display font-bold text-2xl mb-2" style={{ color: '#F0F4FF' }}>Partneranfrage gesendet</h3>
+                      <p className="font-body text-base" style={{ color: 'rgba(180,200,255,0.65)' }}>Wir melden uns innerhalb von 48 Stunden für ein Kennenlerngespräch.</p>
                     </div>
                   </div>
                 ) : (
@@ -276,10 +277,12 @@ export function CareerSection({ headingLevel = 'h1' }) {
                         style={{ background: 'rgba(10,90,219,0.15)', color: '#5B9BFF', border: '1px solid rgba(10,90,219,0.25)' }}
                       >
                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#217CFF', display: 'inline-block' }} />
-                        Jetzt bewerben
+                        Partneranfrage
                       </div>
-                      <h3 className="font-display font-bold text-2xl" style={{ color: '#F0F4FF' }}>Starte deine Karriere</h3>
-                      <p className="font-body text-sm mt-1" style={{ color: 'rgba(180,200,255,0.55)' }}>Kostenlos & unverbindlich — wir melden uns bei dir.</p>
+                      <h3 className="font-display font-bold text-2xl" style={{ color: '#F0F4FF' }}>Interesse an Zusammenarbeit</h3>
+                      <p className="font-body text-sm mt-1" style={{ color: 'rgba(180,200,255,0.55)' }}>
+                        Unverbindliche Anfrage für eine selbstständige Tätigkeit — kein Arbeitsverhältnis, keine Datei-Uploads.
+                      </p>
                     </div>
 
                     <div className="flex flex-col gap-4">
@@ -326,11 +329,11 @@ export function CareerSection({ headingLevel = 'h1' }) {
                       <Checkbox
                         label={
                           <>
-                            Ich stimme der Verarbeitung meiner Daten gemäß der{' '}
+                            Ich habe die{' '}
                             <a href="/datenschutz" style={{ color: '#5B9BFF' }} className="underline underline-offset-2 hover:opacity-80" target="_blank" rel="noopener noreferrer">
                               Datenschutzerklärung
                             </a>{' '}
-                            zu.
+                            zur Kenntnis genommen.*
                           </>
                         }
                         required
@@ -351,7 +354,7 @@ export function CareerSection({ headingLevel = 'h1' }) {
                         className="w-full justify-center mt-1"
                         loading={loading}
                       >
-                        Bewerbung senden
+                        Partneranfrage senden
                         <ArrowRight className="w-5 h-5" aria-hidden="true" />
                       </Button>
 

@@ -178,7 +178,7 @@ export function Hero() {
     if (!formData.firstName.trim()) newErrors.firstName = 'Bitte gib deinen Vornamen ein'
     if (!formData.phone.trim() || formData.phone.trim().length < 6) newErrors.phone = 'Bitte gib deine Telefonnummer ein'
     if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) newErrors.email = 'Bitte gib eine gültige E-Mail ein'
-    if (!formData.gdprStep1) newErrors.gdprStep1 = 'Bitte stimme der Datenschutzerklärung zu'
+    if (!formData.gdprStep1) newErrors.gdprStep1 = 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.'
     setErrors(newErrors)
     if (Object.keys(newErrors).length === 0) setStep(2)
   }
@@ -192,7 +192,7 @@ export function Hero() {
     if (!formData.provider.trim()) newErrors.provider = 'Bitte gib deinen Anbieter ein'
     if (!formData.usage.trim()) newErrors.usage = 'Bitte gib deinen Verbrauch ein'
     if (!formData.zip.trim() || !/^\d{5}$/.test(formData.zip.trim())) newErrors.zip = 'Bitte gib eine gültige 5-stellige PLZ ein'
-    if (!formData.gdpr) newErrors.gdpr = 'Bitte stimme der Datenschutzerklärung zu'
+    if (!formData.gdpr) newErrors.gdpr = 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.'
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
 
@@ -523,9 +523,9 @@ export function Hero() {
                         style={{ marginTop: 3, flexShrink: 0, width: 15, height: 15, accentColor: '#D4FF3E', cursor: 'pointer' }}
                       />
                       <span style={{ fontSize: 12, color: 'var(--text-tertiary, #5A6272)', lineHeight: 1.5 }}>
-                        Ich stimme der Verarbeitung meiner Daten gemäß der{' '}
+                        Ich habe die{' '}
                         <a href="/datenschutz" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(212,255,62,0.6)', textDecoration: 'underline' }}>Datenschutzerklärung</a>{' '}
-                        zu.*
+                        zur Kenntnis genommen.*
                       </span>
                     </label>
                     {errors.gdprStep1 && (
@@ -557,9 +557,9 @@ export function Hero() {
                         style={{ marginTop: 3, flexShrink: 0, width: 15, height: 15, accentColor: '#D4FF3E', cursor: 'pointer' }}
                       />
                       <span style={{ fontSize: 12, color: 'var(--text-tertiary, #5A6272)', lineHeight: 1.5 }}>
-                        Ich stimme der Verarbeitung meiner Daten gemäß der{' '}
+                        Ich habe die{' '}
                         <a href="/datenschutz" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(212,255,62,0.6)', textDecoration: 'underline' }}>Datenschutzerklärung</a>{' '}
-                        zu. Die Einwilligung kann jederzeit widerrufen werden.*
+                        zur Kenntnis genommen.*
                       </span>
                     </label>
                     {errors.gdpr && (

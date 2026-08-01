@@ -441,12 +441,13 @@ export function SavingsCalculator() {
               style={{ marginTop: 2, flexShrink: 0, width: 15, height: 15, accentColor: '#D4FF3E', cursor: 'pointer' }}
             />
             <span style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>
-              Ich stimme der Verarbeitung meiner Daten gemäß der{' '}
-              <a href="/datenschutz" style={{ color: 'rgba(212,255,62,0.7)', textDecoration: 'underline' }}>Datenschutzerklärung</a> zu. Die Einwilligung kann jederzeit widerrufen werden.*
+              Ich habe die{' '}
+              <a href="/datenschutz" style={{ color: 'rgba(212,255,62,0.7)', textDecoration: 'underline' }}>Datenschutzerklärung</a>
+              {' '}zur Kenntnis genommen.*
             </span>
           </label>
           {calcDsgvoError && (
-            <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 2 }}>Bitte stimme der Datenschutzerklärung zu.</p>
+            <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 2 }}>Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.</p>
           )}
 
           {/* CTA */}

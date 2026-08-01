@@ -23,14 +23,14 @@ const step1Schema = z.object({
   firstName: z.string().min(2, 'Bitte gib deinen Vornamen ein'),
   email:     z.string().email('Bitte gib eine gültige E-Mail ein'),
   phone:     z.string().min(6, 'Bitte gib deine Telefonnummer ein'),
-  gdpr:      z.literal(true, { errorMap: () => ({ message: 'Bitte stimme der Datenschutzerklärung zu' }) }),
+  gdpr:      z.literal(true, { errorMap: () => ({ message: 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.' }) }),
 })
 
 const step2Schema = z.object({
   provider:    z.string().min(1, 'Bitte gib deinen aktuellen Anbieter ein'),
   consumption: z.string().regex(/^\d+$/, 'Bitte gib nur Zahlen ein').min(1, 'Verbrauch erforderlich'),
   zip:         z.string().regex(/^\d{5}$/, 'Bitte gib eine gültige 5-stellige PLZ ein'),
-  gdpr:        z.literal(true, { errorMap: () => ({ message: 'Bitte stimme der Datenschutzerklärung zu' }) }),
+  gdpr:        z.literal(true, { errorMap: () => ({ message: 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.' }) }),
 })
 
 // ─── Success Screen ───────────────────────────────────────────────
@@ -117,11 +117,11 @@ function Step1({ onNext }) {
         <Checkbox
           label={
             <>
-              Ich stimme der Verarbeitung meiner Daten gemäß der{' '}
+              Ich habe die{' '}
               <a href="/datenschutz" className="text-volt underline underline-offset-2 hover:text-volt/80" target="_blank" rel="noopener noreferrer">
                 Datenschutzerklärung
               </a>{' '}
-              zu.*
+              zur Kenntnis genommen.*
             </>
           }
           required
@@ -271,11 +271,11 @@ function Step2({ step1Data, onSuccess }) {
         <Checkbox
           label={
             <>
-              Ich stimme der Verarbeitung meiner Daten gemäß der{' '}
+              Ich habe die{' '}
               <a href="/datenschutz" className="text-volt underline underline-offset-2 hover:text-volt/80" target="_blank" rel="noopener noreferrer">
                 Datenschutzerklärung
               </a>{' '}
-              zu. Die Einwilligung kann jederzeit widerrufen werden.
+              zur Kenntnis genommen.*
             </>
           }
           required

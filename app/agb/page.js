@@ -215,26 +215,22 @@ export default function AGBPage() {
         </LegalSection>
 
         {/* § 6 */}
-        <LegalSection title="§ 6 Datenschutz und DSGVO-Einwilligung">
+        <LegalSection title="§ 6 Datenschutz und Kenntnisnahme">
           <p style={{ marginBottom: '0.75rem' }}>
             (1) Der Anbieter verarbeitet personenbezogene Daten des Nutzers ausschließlich
             im Einklang mit den geltenden datenschutzrechtlichen Bestimmungen, insbesondere
             der DSGVO, dem BDSG und dem TTDSG.
           </p>
           <p style={{ marginBottom: '0.75rem' }}>
-            (2) Vor der Absendung jedes Formulars wird der Nutzer aufgefordert, seine
-            Einwilligung in die Verarbeitung seiner personenbezogenen Daten gemäß Art. 6
-            Abs. 1 S. 1 lit. a DSGVO durch aktives Setzen einer Checkbox zu erteilen.
-            Ohne diese Einwilligung ist eine Absendung des Formulars technisch nicht möglich.
-          </p>
-          <p style={{ marginBottom: '0.75rem' }}>
-            (3) Die erteilte Einwilligung kann jederzeit mit Wirkung für die Zukunft
-            widerrufen werden. Durch den Widerruf wird die Rechtmäßigkeit der aufgrund
-            der Einwilligung bis zum Widerruf erfolgten Verarbeitung nicht berührt.
+            (2) Vor Absenden eines Formulars ist die Kenntnisnahme der Datenschutzerklärung
+            durch aktives Setzen einer Checkbox zu bestätigen. Ohne diese Bestätigung ist
+            eine Absendung des Formulars technisch nicht möglich. Die Checkbox stellt keine
+            datenschutzrechtliche Einwilligung dar und ist nicht die Rechtsgrundlage der
+            Verarbeitung.
           </p>
           <p style={{ margin: 0 }}>
-            (4) Ausführliche Informationen zum Umgang mit personenbezogenen Daten finden
-            Sie in unserer{' '}
+            (3) Ausführliche Informationen zu Zwecken, Rechtsgrundlagen, Empfängern,
+            Speicherdauer und Betroffenenrechten finden Sie in unserer{' '}
             <Link href="/datenschutz" style={{ color: '#8E97A8', textDecoration: 'none' }}>
               Datenschutzerklärung
             </Link>.
@@ -300,9 +296,12 @@ export default function AGBPage() {
             ist jedoch nicht Adressat des Widerrufs.
           </p>
           <p style={{ margin: 0 }}>
-            (4) Die datenschutzrechtliche Einwilligung (DSGVO) kann jederzeit unabhängig
-            vom Widerruf eines Energievertrags mit Wirkung für die Zukunft widerrufen
-            werden (Art. 7 Abs. 3 DSGVO). Der Widerruf ist zu richten an:{' '}
+            (4) Datenschutzrechtliche Betroffenenrechte, einschließlich etwaiger
+            Widerspruchsrechte, richten sich nach der{' '}
+            <Link href="/datenschutz" style={{ color: '#8E97A8', textDecoration: 'none' }}>
+              Datenschutzerklärung
+            </Link>
+            . Datenschutzbezogene Anfragen können gerichtet werden an:{' '}
             <ObfuscatedEmail style={{ color: '#8E97A8', textDecoration: 'none' }} />
           </p>
         </LegalSection>

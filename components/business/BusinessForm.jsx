@@ -528,7 +528,7 @@ function BusinessFormular() {
                   }}
                   className="sr-only"
                   required
-                  aria-label="Datenschutzerklärung akzeptieren"
+                  aria-label="Kenntnisnahme der Datenschutzerklärung bestätigen"
                 />
                 <div
                   className={`w-5 h-5 rounded-md border-2 transition-all duration-200 flex items-center justify-center ${
@@ -555,7 +555,7 @@ function BusinessFormular() {
 
             {dsgvoError && (
               <p role="alert" className="font-body text-[#EF4444] text-xs mt-2 pl-8">
-                Bitte stimmen Sie der Datenschutzerklärung zu.
+                Bitte bestätigen Sie, dass Sie die Datenschutzerklärung zur Kenntnis genommen haben.
               </p>
             )}
 

@@ -461,7 +461,7 @@ function B2BFormular() {
                   onChange={e => { set('dsgvo', e.target.checked); if (e.target.checked) setDsgvoError(false) }}
                   className="sr-only"
                   required
-                  aria-label="Datenschutzerklärung akzeptieren"
+                  aria-label="Kenntnisnahme der Datenschutzerklärung bestätigen"
                 />
                 <div
                   className={`w-5 h-5 rounded-md border-2 transition-all duration-200 flex items-center justify-center ${
@@ -478,17 +478,17 @@ function B2BFormular() {
                 </div>
               </div>
               <span className="font-body text-sm text-text-secondary leading-relaxed">
-                Ich stimme der Verarbeitung meiner Daten gemäß der{' '}
+                Ich habe die{' '}
                 <Link href="/datenschutz" className="text-[#FF6B2B] hover:underline" target="_blank" rel="noopener noreferrer">
                   Datenschutzerklärung
                 </Link>{' '}
-                zu. Die Einwilligung kann jederzeit widerrufen werden.*
+                zur Kenntnis genommen.*
               </span>
             </label>
 
             {dsgvoError && (
               <p role="alert" className="font-body text-[#EF4444] text-xs mt-2 pl-8">
-                Bitte stimmen Sie der Datenschutzerklärung zu.
+                Bitte bestätigen Sie, dass Sie die Datenschutzerklärung zur Kenntnis genommen haben.
               </p>
             )}
 

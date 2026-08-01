@@ -49,7 +49,7 @@ const JOB_TILES = [
 
 // ─── Dein Weg zu uns ──────────────────────────────────────────────
 const STEPS = [
-  { num: '01', title: 'Bewerbung senden', desc: 'Fülle das Formular unten aus — dauert keine 2 Minuten.' },
+  { num: '01', title: 'Partneranfrage senden', desc: 'Fülle das Formular unten aus — dauert keine 2 Minuten.' },
   { num: '02', title: 'Kennenlerngespräch', desc: 'Wir melden uns innerhalb von 48h für ein kurzes Telefonat.' },
   { num: '03', title: 'Onboarding & Start', desc: 'Du bekommst Zugang zu allen Tools, Schulungen und deinen ersten Kunden.' },
 ]
@@ -204,7 +204,7 @@ export function JobDescription() {
             className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-[#0A5ADB] text-white font-display font-bold text-sm hover:bg-[#0A5ADB]/85 transition-colors duration-200"
           >
             <Zap className="w-4 h-4" aria-hidden="true" />
-            Jetzt bewerben
+            Partneranfrage senden
           </a>
         </motion.div>
       </motion.div>
