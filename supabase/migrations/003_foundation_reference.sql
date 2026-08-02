@@ -1,0 +1,24 @@
+-- P3-F2B promoted migration
+-- SOURCE_DRAFT=packages/db/migrations/drafts/p3-f2a/010_foundation_reference.sql
+-- PROMOTED_AS=supabase/migrations/003_foundation_reference.sql
+-- KILL_STATE_INCLUDED=NO
+-- LOCAL_APPLY_ONLY=YES
+
+-- TRANCHE=P3-F2B_PROMOTED_FROM_F2A
+-- MIGRATION_ID=p3_f2a_010_foundation_reference
+-- PURPOSE=Document actor/status conventions used by subsequent draft tables
+-- ADDITIVE_ONLY=YES
+-- EXISTING_OBJECTS_TOUCHED=none
+--
+-- Actor type values must align with P3-F1 PrincipalType string constants:
+--   PERSON_PRINCIPAL | SERVICE_PRINCIPAL | BREAK_GLASS_PRINCIPAL
+-- Person-id columns store opaque DTH person ids (text), never foreign-provider ids.
+-- Person-only columns (created_by_person_id, assigned_person_id, decided_by_person_id)
+-- MUST NOT store SERVICE or BREAK_GLASS principal identifiers.
+-- Status values on cases/tasks are FOUNDATION-ONLY and intentionally extensible later.
+-- No unproven business status machine is claimed here.
+-- STRONG_AUTHZ_COMPLETE=NO · PRODUCTION_RLS_READY=NO
+--
+-- No DDL in this file (reference draft only).
+
+SELECT 'P3_F2A_FOUNDATION_REFERENCE_DO_NOT_APPLY' AS draft_status;
