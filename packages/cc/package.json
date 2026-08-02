@@ -10,12 +10,18 @@
   },
   "scripts": {
     "build": "node -e \"console.log('[@deintarifheld/cc] skeleton build OK')\"",
-    "typecheck": "node -e \"process.exit(0)\""
+    "typecheck": "node -e \"process.exit(0)\"",
+    "test": "node --test src/authn.test.js"
   },
   "dth": {
     "tranche": "P3-F0",
     "skeletonOnly": true,
     "productiveLogic": false,
-    "activationAuthorized": false
+    "activationAuthorized": false,
+    "authnFoundation": true,
+    "uiIncluded": false
+  },
+  "dependencies": {
+    "@deintarifheld/shared": "*"
   }
 }

@@ -1,6 +1,3 @@
-/** P3-F0 skeleton marker for @deintarifheld/cc. No productive exports. */
-export const DTH_PACKAGE_SKELETON = Object.freeze({
-  name: '@deintarifheld/cc',
-  tranche: 'P3-F0',
-  skeletonOnly: true,
-});
+/** @deintarifheld/cc — AuthN contracts only in P3-F1 (no UI) */
+export { DTH_PACKAGE_SKELETON } from './skeleton.js';
+export { CcAuthContract, acceptCcAuthSession } from './auth/contracts.js';
