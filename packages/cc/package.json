@@ -1,0 +1,21 @@
+{
+  "name": "@deintarifheld/cc",
+  "version": "0.0.0",
+  "private": true,
+  "description": "P3-F0 skeleton \u2014 DeinTarifHeld Command Center UI package boundary (skeleton only; no UI logic)",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "build": "node -e \"console.log('[@deintarifheld/cc] skeleton build OK')\"",
+    "typecheck": "node -e \"process.exit(0)\""
+  },
+  "dth": {
+    "tranche": "P3-F0",
+    "skeletonOnly": true,
+    "productiveLogic": false,
+    "activationAuthorized": false
+  }
+}

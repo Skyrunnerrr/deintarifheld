@@ -1,0 +1,21 @@
+{
+  "name": "@deintarifheld/workers",
+  "version": "0.0.0",
+  "private": true,
+  "description": "P3-F0 skeleton \u2014 Automation workers package boundary (skeleton only; activation forbidden)",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "build": "node -e \"console.log('[@deintarifheld/workers] skeleton build OK')\"",
+    "typecheck": "node -e \"process.exit(0)\""
+  },
+  "dth": {
+    "tranche": "P3-F0",
+    "skeletonOnly": true,
+    "productiveLogic": false,
+    "activationAuthorized": false
+  }
+}

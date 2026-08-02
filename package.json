@@ -38,7 +38,9 @@
     "infra:phase-a:dns": "bash scripts/infra/phase-a/configure-dns.sh",
     "infra:phase-a:apply": "bash scripts/infra/phase-a/apply.sh",
     "infra:phase-a:status": "bash scripts/infra/phase-a/status.sh",
-    "infra:phase-a:smoke": "bash scripts/infra/phase-a/smoke-preview.sh"
+    "infra:phase-a:smoke": "bash scripts/infra/phase-a/smoke-preview.sh",
+    "packages:build": "npm run build --workspaces --if-present",
+    "packages:boundary:check": "node packages/shared/scripts/check-boundaries.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -64,5 +66,8 @@
     "next-sitemap": "^4.2.3",
     "postcss": "^8",
     "tailwindcss": "^3.4.1"
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }
