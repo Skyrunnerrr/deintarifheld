@@ -42,7 +42,8 @@
     "packages:build": "npm run build --workspaces --if-present",
     "packages:boundary:check": "node packages/shared/scripts/check-boundaries.mjs",
     "authn:test": "npm run test -w @deintarifheld/shared -w @deintarifheld/ops-api -w @deintarifheld/cc",
-    "db:draft:test": "npm run test -w @deintarifheld/db"
+    "db:draft:test": "npm run test -w @deintarifheld/db",
+    "kill:test": "npm run test -w @deintarifheld/shared -w @deintarifheld/ops-api -w @deintarifheld/cc"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
