@@ -41,7 +41,8 @@
     "infra:phase-a:smoke": "bash scripts/infra/phase-a/smoke-preview.sh",
     "packages:build": "npm run build --workspaces --if-present",
     "packages:boundary:check": "node packages/shared/scripts/check-boundaries.mjs",
-    "authn:test": "npm run test -w @deintarifheld/shared -w @deintarifheld/ops-api -w @deintarifheld/cc"
+    "authn:test": "npm run test -w @deintarifheld/shared -w @deintarifheld/ops-api -w @deintarifheld/cc",
+    "db:draft:test": "npm run test -w @deintarifheld/db"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

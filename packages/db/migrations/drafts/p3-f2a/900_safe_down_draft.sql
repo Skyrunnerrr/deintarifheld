@@ -1,0 +1,31 @@
+-- DRAFT_ONLY
+-- DO_NOT_APPLY
+-- P3_F2B_OWNER_AUTHORIZATION_REQUIRED
+-- TRANCHE=P3-F2A
+-- MIGRATION_ID=p3_f2a_900_safe_down_draft
+-- PURPOSE=Ordered reverse draft for local/dev rollback AFTER a future authorized F2b apply
+-- SAFE_DOWN_AVAILABLE=YES (local/dev only; never against production without Owner gate)
+-- SAFE_DOWN_LIMITATIONS=
+--   - Drops first-slice objects created by this pack only
+--   - Does NOT touch public.leads, public.career_applications, public.audit_events
+--   - Requires zero dependent application traffic
+--   - Not a substitute for backup/restore evidence
+-- PUBLIC_SPINE_RISK=LOW if only draft objects exist; HIGH if misapplied against wrong DB
+-- ROLLBACK_ORDER=outbox → approvals → ops_audit → communication_events → status_history
+--                 → assignments → reminders → tasks → notes → cases
+--
+-- WARNING: This file is also DRAFT_ONLY. F2a never executes it.
+
+-- DROP TABLE IF EXISTS public.transactional_outbox CASCADE;
+-- DROP TABLE IF EXISTS public.approval_decisions CASCADE;
+-- DROP TABLE IF EXISTS public.approval_requests CASCADE;
+-- DROP TABLE IF EXISTS public.ops_audit_events CASCADE;
+-- DROP TABLE IF EXISTS public.communication_events CASCADE;
+-- DROP TABLE IF EXISTS public.status_history CASCADE;
+-- DROP TABLE IF EXISTS public.case_assignments CASCADE;
+-- DROP TABLE IF EXISTS public.task_reminders CASCADE;
+-- DROP TABLE IF EXISTS public.tasks CASCADE;
+-- DROP TABLE IF EXISTS public.case_notes CASCADE;
+-- DROP TABLE IF EXISTS public.cases CASCADE;
+
+SELECT 'P3_F2A_SAFE_DOWN_DRAFT_COMMENTED_DO_NOT_APPLY' AS draft_status;
