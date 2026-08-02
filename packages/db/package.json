@@ -2,23 +2,27 @@
   "name": "@deintarifheld/db",
   "version": "0.0.0",
   "private": true,
-  "description": "DTH-owned database package — P3-F2a draft migrations only (DO_NOT_APPLY)",
+  "description": "DTH-owned database package — drafts + P3-F5 local outbox claim adapter",
   "type": "module",
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js"
   },
   "scripts": {
-    "build": "node -e \"console.log('[@deintarifheld/db] draft-metadata build OK')\"",
+    "build": "node -e \"console.log('[@deintarifheld/db] draft+claim build OK')\"",
     "typecheck": "node -e \"process.exit(0)\"",
     "test": "node --test tests/p3-f2a-static.test.js"
   },
   "dth": {
-    "tranche": "P3-F2A",
+    "tranche": "P3-F5",
     "skeletonOnly": true,
     "draftMigrationsOnly": true,
     "migrationApplicationAuthorized": false,
     "productiveLogic": false,
     "activationAuthorized": false
+  },
+  "dependencies": {
+    "@deintarifheld/shared": "*",
+    "pg": "^8.22.0"
   }
 }

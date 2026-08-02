@@ -1,7 +1,7 @@
-/** @deintarifheld/db — P3-F0 boundary + P3-F2a draft metadata (no apply). */
+/** @deintarifheld/db — draft metadata + P3-F5 local outbox claim adapter */
 export const DTH_PACKAGE_SKELETON = Object.freeze({
   name: '@deintarifheld/db',
-  tranche: 'P3-F2A',
+  tranche: 'P3-F5',
   skeletonOnly: true,
   draftMigrationsOnly: true,
   migrationApplicationAuthorized: false,
@@ -16,3 +16,10 @@ export {
   P3_F2A_PROTECTED_SPINE_TABLES,
   P3_F2A_CLAIMS,
 } from './draft-catalog.js';
+
+export {
+  createLocalOutboxPool,
+  claimOneSyntheticNoop,
+  markOutboxProcessed,
+  markOutboxFailed,
+} from './outbox-claim.js';

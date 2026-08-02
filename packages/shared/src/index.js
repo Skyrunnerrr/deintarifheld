@@ -34,3 +34,22 @@ export {
   buildInboxItemFromLead,
   buildInboxItemFromCareer,
 } from './cc-read-models.js';
+export {
+  SYNTHETIC_NOOP_EVENT_TYPE,
+  SYNTHETIC_NOOP_PAYLOAD,
+  isAuthorizedSyntheticNoopEvent,
+} from './synthetic-noop.js';
+export {
+  AutomationActivation,
+  LOCAL_TEST_FLAG_NAME,
+  PersistenceAdapterKind,
+  ExternalEffectAdapterKind,
+  resolveAutomationActivation,
+  resolveLocalTestFlag,
+  evaluateWorkerMayProcess,
+} from './worker-activation.js';
+export {
+  WorkerRunResultCode,
+  WorkerErrorClass,
+  MAX_JOBS_PER_TEST_RUN,
+} from './outbox-consumer-contracts.js';
