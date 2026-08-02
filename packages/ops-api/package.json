@@ -2,25 +2,27 @@
   "name": "@deintarifheld/ops-api",
   "version": "0.0.0",
   "private": true,
-  "description": "P3-F0 skeleton \u2014 Command Center BFF package boundary (skeleton only; no BFF routes/logic)",
+  "description": "DTH Ops/CC BFF — AuthN, kill-switch, P3-F3 SoT Alias Lock (local/dev)",
   "type": "module",
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js"
   },
   "scripts": {
-    "build": "node -e \"console.log('[@deintarifheld/ops-api] skeleton build OK')\"",
+    "build": "node -e \"console.log('[@deintarifheld/ops-api] bff build OK')\"",
     "typecheck": "node -e \"process.exit(0)\"",
-    "test": "node --test src/authn.test.js src/kill/kill-switch.test.js"
+    "test": "node --test src/authn.test.js src/kill/kill-switch.test.js src/bff/bff-unit.test.js"
   },
   "dth": {
-    "tranche": "P3-F1",
+    "tranche": "P3-F3",
     "skeletonOnly": true,
     "productiveLogic": false,
     "activationAuthorized": false,
-    "authnFoundation": true
+    "authnFoundation": true,
+    "bffLocalDevOnly": true
   },
   "dependencies": {
-    "@deintarifheld/shared": "*"
+    "@deintarifheld/shared": "*",
+    "pg": "^8.22.0"
   }
 }

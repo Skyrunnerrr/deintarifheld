@@ -18,3 +18,11 @@ export {
 } from './kill-domains.js';
 export { KillState, isKillState, evaluateCapabilityEnabled } from './kill-state.js';
 export { LOCAL_DEV_KILL_DEFAULTS, createDefaultKillRegistry } from './kill-defaults.js';
+export {
+  SotResourceType,
+  SotPersistenceTarget,
+  SOT_ALIAS_MAP,
+  COMMUNICATION_EVENT_SOT_TYPE,
+  CASE_NOTE_SOT_TYPE,
+  resolveSotAlias,
+} from './sot-alias.js';
