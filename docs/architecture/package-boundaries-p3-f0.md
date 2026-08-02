@@ -37,3 +37,6 @@ Package folders are boundaries only; no route/behavior move in this tranche.
 ## J-F-03
 
 STATUS=CLOSED_WITH_EVIDENCE via this artifact + `packages/*` skeleton including `ops-api` and `workers`.
+
+P3-F7 reaffirmation (no reopen): see [phase-3-j-findings-register.md](./phase-3-j-findings-register.md).  
+J_F03_REOPENED=NO · J_F03_RUNTIME_ACTION=NONE · IMPLEMENTATION_COMMIT=501c1a6
