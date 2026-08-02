@@ -26,3 +26,11 @@ export {
   CASE_NOTE_SOT_TYPE,
   resolveSotAlias,
 } from './sot-alias.js';
+export {
+  CcPrimaryView,
+  InboxRequestKind,
+  InboxAssignmentStatus,
+  redactEmail,
+  buildInboxItemFromLead,
+  buildInboxItemFromCareer,
+} from './cc-read-models.js';

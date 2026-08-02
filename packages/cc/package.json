@@ -2,24 +2,26 @@
   "name": "@deintarifheld/cc",
   "version": "0.0.0",
   "private": true,
-  "description": "P3-F0 skeleton \u2014 DeinTarifHeld Command Center UI package boundary (skeleton only; no UI logic)",
+  "description": "DTH Command Center — P3-F4 read-only local/dev UI (Inbox, Vorgänge, Aufgaben)",
   "type": "module",
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js"
   },
   "scripts": {
-    "build": "node -e \"console.log('[@deintarifheld/cc] skeleton build OK')\"",
+    "build": "node -e \"console.log('[@deintarifheld/cc] read-only UI build OK')\"",
     "typecheck": "node -e \"process.exit(0)\"",
-    "test": "node --test src/authn.test.js src/kill/kill-contracts.test.js"
+    "test": "node --test src/authn.test.js src/kill/kill-contracts.test.js src/ui/ui-read-only.test.js",
+    "dev:local": "node src/ui/dev-server.mjs"
   },
   "dth": {
-    "tranche": "P3-F0",
+    "tranche": "P3-F4",
     "skeletonOnly": true,
     "productiveLogic": false,
     "activationAuthorized": false,
     "authnFoundation": true,
-    "uiIncluded": false
+    "uiIncluded": true,
+    "uiMode": "READ_ONLY_LOCAL_DEV"
   },
   "dependencies": {
     "@deintarifheld/shared": "*"

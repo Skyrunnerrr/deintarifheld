@@ -45,7 +45,9 @@
     "db:draft:test": "npm run test -w @deintarifheld/db",
     "kill:test": "npm run test -w @deintarifheld/shared -w @deintarifheld/ops-api -w @deintarifheld/cc",
     "ops:bff:test": "npm run test -w @deintarifheld/shared -w @deintarifheld/ops-api",
-    "ops:bff:tg04": "node packages/db/tests/run-p3-f3-tg04-integration.mjs"
+    "ops:bff:tg04": "node packages/db/tests/run-p3-f3-tg04-integration.mjs",
+    "cc:ui:test": "npm run test -w @deintarifheld/shared -w @deintarifheld/ops-api -w @deintarifheld/cc",
+    "cc:ui:tg05": "node packages/db/tests/run-p3-f4-tg05-integration.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

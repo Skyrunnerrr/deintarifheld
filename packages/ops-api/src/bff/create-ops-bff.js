@@ -115,8 +115,16 @@ export function createOpsBff({
     }
 
     // Reads
+    if (method === 'GET' && path === `${INTERNAL_BFF_PREFIX}/inbox`) {
+      return json(200, await reads.listInbox({ limit: query.limit }));
+    }
     if (method === 'GET' && path === `${INTERNAL_BFF_PREFIX}/cases`) {
       return json(200, await reads.listCases({ limit: query.limit }));
+    }
+    const caseDetail = match(path, `${INTERNAL_BFF_PREFIX}/cases/:id/detail`);
+    if (method === 'GET' && caseDetail) {
+      const r = await reads.getCaseDetail(caseDetail.id);
+      return json(r.status, r);
     }
     const caseGet = match(path, `${INTERNAL_BFF_PREFIX}/cases/:id`);
     if (method === 'GET' && caseGet) {
@@ -129,6 +137,11 @@ export function createOpsBff({
     if (method === 'GET' && path === `${INTERNAL_BFF_PREFIX}/tasks`) {
       return json(200, await reads.listTasks({ caseId: query.case_id, limit: query.limit }));
     }
+    const taskDetail = match(path, `${INTERNAL_BFF_PREFIX}/tasks/:id/detail`);
+    if (method === 'GET' && taskDetail) {
+      const r = await reads.getTaskDetail(taskDetail.id);
+      return json(r.status, r);
+    }
     if (method === 'GET' && path === `${INTERNAL_BFF_PREFIX}/reminders`) {
       return json(200, await reads.listReminders({ limit: query.limit }));
     }
@@ -136,10 +149,23 @@ export function createOpsBff({
       return json(200, await reads.listAssignments({ caseId: query.case_id, limit: query.limit }));
     }
     if (method === 'GET' && path === `${INTERNAL_BFF_PREFIX}/status-history`) {
-      return json(200, await reads.listStatusHistory({ limit: query.limit }));
+      return json(
+        200,
+        await reads.listStatusHistory({
+          caseId: query.case_id,
+          targetType: query.target_type || 'case',
+          limit: query.limit,
+        }),
+      );
     }
     if (method === 'GET' && path === `${INTERNAL_BFF_PREFIX}/communication-events`) {
-      return json(200, await reads.listCommunicationEvents({ limit: query.limit }));
+      return json(
+        200,
+        await reads.listCommunicationEvents({
+          caseId: query.case_id,
+          limit: query.limit,
+        }),
+      );
     }
     if (method === 'GET' && path === `${INTERNAL_BFF_PREFIX}/ops-audit-events`) {
       return json(200, await reads.listOpsAuditEvents({ limit: query.limit }));

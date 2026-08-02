@@ -1,11 +1,32 @@
 # @deintarifheld/cc
 
-**P3-F0 package boundary skeleton only.**
+DeinTarifHeld Command Center package.
 
-Purpose: DeinTarifHeld Command Center UI package boundary (skeleton only; no UI logic)
+## P3-F4 (current)
 
-- No productive business logic
-- No secrets
+Local/dev **read-only** UI for:
+
+- Inbox
+- Vorgänge (Cases)
+- Aufgaben (Tasks)
+
+Consumes `/ops/v1` via the local HTTP read adapter in `@deintarifheld/ops-api`.
+
+### Local run (dev only)
+
+```bash
+# Terminal A — Ops HTTP read adapter (requires local DB URL)
+DTH_LOCAL_DATABASE_URL=... DTH_LOCAL_AUTH_ENABLED=true npm run dev:http-read -w @deintarifheld/ops-api
+
+# Terminal B — CC UI
+DTH_CC_LOCAL_UI_ENABLED=true npm run dev:local -w @deintarifheld/cc
+```
+
+Open `http://127.0.0.1:3100/inbox`.
+
+### Boundaries
+
+- No production deployment
+- No write UI
 - No Averion dependencies
-- No activation of mail/workers/automation
-- Canonical shared package name is `shared` (not `dth-shared`)
+- `COMMAND_CENTER_WRITE_ACTIONS` may remain `ACTIVE` during F4 tests

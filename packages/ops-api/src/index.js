@@ -1,4 +1,4 @@
-/** @deintarifheld/ops-api — AuthN + kill-switch + P3-F3 Ops BFF (local/dev) */
+/** @deintarifheld/ops-api — AuthN + kill-switch + P3-F3 Ops BFF + P3-F4 local HTTP read adapter */
 export { DTH_PACKAGE_SKELETON } from './skeleton.js';
 export {
   SYNTHETIC_OWNER_PERSON_ID,
@@ -17,3 +17,7 @@ export { createKillSwitchService } from './kill/service.js';
 export { INTERNAL_BFF_PREFIX, LimitedWriteOperation } from './bff/constants.js';
 export { createOpsBff } from './bff/create-ops-bff.js';
 export { gateOpsRequest } from './bff/auth-gate.js';
+export {
+  createLocalOpsHttpReadAdapter,
+  encodeLocalAuthToken,
+} from './bff/http-read-adapter.js';
