@@ -53,3 +53,46 @@ export {
   WorkerErrorClass,
   MAX_JOBS_PER_TEST_RUN,
 } from './outbox-consumer-contracts.js';
+
+/* P4-H0a — local production-identity foundation (synthetic provider evidence) */
+export {
+  IdentityProvider,
+  PRODUCTION_CC_ORIGIN,
+  PRODUCTION_AUTH_UI_ORIGIN,
+  PASSKEY_RP_ID,
+  EXPECTED_AUTHORIZED_PARTY,
+  PRODUCTION_AUDIENCE_VALUE_DEFINED,
+  SESSION_INACTIVITY_TIMEOUT_MINUTES,
+  SESSION_MAXIMUM_LIFETIME_HOURS,
+  MAX_ACTIVE_SESSIONS_PER_DTH_PERSON,
+  MULTI_SESSION_ALLOWED,
+  LinkStatus,
+  PasskeyPolicy,
+  AuthAssuranceMethod,
+} from './identity/h0a-constants.js';
+export { TokenErrorCode } from './identity/token-errors.js';
+export { createStaticJwksAdapter } from './identity/jwks-adapter.js';
+export { validateProviderToken } from './identity/token-validator.js';
+export {
+  createInMemoryPersonMappingAdapter,
+  rejectEmailBasedAutoMapping,
+  rejectAutomaticPersonCreation,
+} from './identity/person-mapping.js';
+export {
+  createInMemoryActiveSessionAdapter,
+  evaluateSessionPolicy,
+  PRODUCTION_CONCURRENT_SESSION_RESOLUTION,
+} from './identity/session-policy.js';
+export {
+  getPasskeyEnrollmentPolicyContract,
+  evaluateOperationalPasskeyAssurance,
+} from './identity/passkey-policy.js';
+export {
+  authenticateProviderTokenToPersonPrincipal,
+  rejectNonPersonAsPersonSession,
+} from './identity/authenticate-provider-token.js';
+export {
+  createEphemeralRs256TestFixture,
+  SYNTHETIC_ISSUER,
+  SYNTHETIC_AUDIENCE,
+} from './identity/synthetic-test-keys.js';

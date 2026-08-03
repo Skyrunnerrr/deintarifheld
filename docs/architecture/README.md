@@ -19,6 +19,7 @@ This directory holds in-repo Phase-3 local foundation architecture notes.
 | [architecture-lexicon-sot-alias.md](./architecture-lexicon-sot-alias.md) | P3-F7 J-F-05 lexicon |
 | [phase-3-j-findings-register.md](./phase-3-j-findings-register.md) | P3-F7 J-F-03…05 final register |
 | [phase-3-local-foundation-closure.md](./phase-3-local-foundation-closure.md) | P3-F7 local closure boundary |
+| [p4-h0a-local-identity-foundation.md](./p4-h0a-local-identity-foundation.md) | P4-H0a local identity / token foundation |
 
 ## Non-authorization reminder
 

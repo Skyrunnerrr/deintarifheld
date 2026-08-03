@@ -11,7 +11,7 @@
   "scripts": {
     "build": "node -e \"console.log('[@deintarifheld/shared] skeleton build OK')\"",
     "typecheck": "node -e \"process.exit(0)\"",
-    "test": "node --test src/authn.test.js src/kill-switch.test.js src/sot-alias.test.js src/cc-read-models.test.js src/worker-activation.test.js"
+    "test": "node --test src/authn.test.js src/kill-switch.test.js src/sot-alias.test.js src/cc-read-models.test.js src/worker-activation.test.js src/identity/h0a.test.js"
   },
   "dth": {
     "tranche": "P3-F0",
