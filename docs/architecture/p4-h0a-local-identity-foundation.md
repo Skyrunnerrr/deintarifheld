@@ -33,7 +33,8 @@ Local, fail-closed identity foundation that can later attach to Clerk (P4-H0b) w
 - PRODUCTION_RLS_READY=NO
 - PERSISTENT_PERSON_MAPPING=NO
 - CLERK_TENANT_CREATED=NO
-- PRODUCTION_AUDIENCE_VALUE_DEFINED=NO (injected synthetic audience policy for local tests)
+- PRODUCTION_AUDIENCE_VALUE_DEFINED=YES (`EXPECTED_AUDIENCE=urn:deintarifheld:ops-api` via P4-H0b2a)
+- Remote Development JWKS adapter: see `p4-h0b2a-development-jwks.md` (live session-token evidence deferred to H0b2b)
 
 ## AuthZ ownership
 

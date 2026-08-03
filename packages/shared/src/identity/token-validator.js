@@ -4,19 +4,35 @@
 import { parseJwtUnverified, verifyRs256Signature } from './jwt-crypto.js';
 import { createExternalProviderIdentity } from './provider-identity.js';
 import { TokenErrorCode, fail } from './token-errors.js';
-import { IdentityProvider, EXPECTED_AUTHORIZED_PARTY } from './h0a-constants.js';
+import {
+  IdentityProvider,
+  AUTHORIZED_PARTY_ALLOWLIST,
+} from './h0a-constants.js';
 
 const ALLOWED_ALG = 'RS256';
 /** Max skew for iat-in-future rejection (seconds). */
 const IAT_FUTURE_SKEW_SECONDS = 60;
 
+function normalizeAuthorizedPartyAllowlist(expectedAuthorizedParty) {
+  if (expectedAuthorizedParty == null) {
+    return [...AUTHORIZED_PARTY_ALLOWLIST];
+  }
+  if (Array.isArray(expectedAuthorizedParty)) {
+    return expectedAuthorizedParty.filter((x) => typeof x === 'string' && x.length > 0);
+  }
+  if (typeof expectedAuthorizedParty === 'string' && expectedAuthorizedParty) {
+    return [expectedAuthorizedParty];
+  }
+  return [];
+}
+
 /**
  * @param {object} opts
  * @param {string} opts.token
- * @param {object} opts.jwksAdapter — createStaticJwksAdapter result
+ * @param {object} opts.jwksAdapter — static or remote JWKS adapter
  * @param {string} opts.expectedIssuer
- * @param {string} opts.expectedAudience — injected policy (production audience may be undefined)
- * @param {string} [opts.expectedAuthorizedParty]
+ * @param {string} opts.expectedAudience — required (H0b2a: urn:deintarifheld:ops-api)
+ * @param {string|string[]} [opts.expectedAuthorizedParty] — exact allowlist; default AUTHORIZED_PARTY_ALLOWLIST
  * @param {() => number} [opts.nowSeconds] — deterministic clock
  */
 export async function validateProviderToken({
@@ -24,11 +40,15 @@ export async function validateProviderToken({
   jwksAdapter,
   expectedIssuer,
   expectedAudience,
-  expectedAuthorizedParty = EXPECTED_AUTHORIZED_PARTY,
+  expectedAuthorizedParty,
   nowSeconds = () => Math.floor(Date.now() / 1000),
 }) {
   if (!expectedIssuer || !expectedAudience) {
     return fail(TokenErrorCode.TOKEN_MALFORMED, 'EXPECTED_ISSUER_AND_AUDIENCE_POLICY_REQUIRED');
+  }
+  const azpAllowlist = normalizeAuthorizedPartyAllowlist(expectedAuthorizedParty);
+  if (azpAllowlist.length === 0) {
+    return fail(TokenErrorCode.TOKEN_MALFORMED, 'AUTHORIZED_PARTY_ALLOWLIST_REQUIRED');
   }
   if (!jwksAdapter || typeof jwksAdapter.getKeyByKid !== 'function') {
     return fail(TokenErrorCode.TOKEN_MALFORMED, 'JWKS_ADAPTER_REQUIRED');
@@ -82,6 +102,9 @@ export async function validateProviderToken({
   }
 
   const aud = payload.aud;
+  if (aud == null || aud === '') {
+    return fail(TokenErrorCode.TOKEN_AUDIENCE_INVALID);
+  }
   const audOk = Array.isArray(aud)
     ? aud.includes(expectedAudience)
     : aud === expectedAudience;
@@ -89,7 +112,10 @@ export async function validateProviderToken({
     return fail(TokenErrorCode.TOKEN_AUDIENCE_INVALID);
   }
 
-  if (payload.azp !== expectedAuthorizedParty) {
+  if (payload.azp == null || payload.azp === '') {
+    return fail(TokenErrorCode.TOKEN_AUTHORIZED_PARTY_INVALID);
+  }
+  if (!azpAllowlist.includes(payload.azp)) {
     return fail(TokenErrorCode.TOKEN_AUTHORIZED_PARTY_INVALID);
   }
 

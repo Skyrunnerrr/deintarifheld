@@ -36,7 +36,7 @@ export function rejectNonPersonAsPersonSession(kind) {
  * @param {object} opts.mappingAdapter
  * @param {string} opts.expectedIssuer
  * @param {string} opts.expectedAudience
- * @param {string} [opts.expectedAuthorizedParty]
+ * @param {string|string[]} [opts.expectedAuthorizedParty] — exact allowlist
  * @param {object} [opts.activeSessionAdapter]
  * @param {number} [opts.sessionStartedAtSeconds]
  * @param {number} [opts.lastActivityAtSeconds]

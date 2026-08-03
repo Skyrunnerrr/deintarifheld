@@ -61,7 +61,11 @@ export {
   PRODUCTION_AUTH_UI_ORIGIN,
   PASSKEY_RP_ID,
   EXPECTED_AUTHORIZED_PARTY,
+  EXPECTED_AUDIENCE,
   PRODUCTION_AUDIENCE_VALUE_DEFINED,
+  DEVELOPMENT_AUTHORIZED_PARTY,
+  AUTHORIZED_PARTY_ALLOWLIST,
+  AUTHORIZED_PARTY_WILDCARDS_ALLOWED,
   SESSION_INACTIVITY_TIMEOUT_MINUTES,
   SESSION_MAXIMUM_LIFETIME_HOURS,
   MAX_ACTIVE_SESSIONS_PER_DTH_PERSON,
@@ -72,6 +76,22 @@ export {
 } from './identity/h0a-constants.js';
 export { TokenErrorCode } from './identity/token-errors.js';
 export { createStaticJwksAdapter } from './identity/jwks-adapter.js';
+export {
+  deriveDevelopmentJwksEndpoints,
+  validateExactDevelopmentJwksUrl,
+} from './identity/jwks-url-policy.js';
+export {
+  createRemoteJwksAdapter,
+  parseAndValidateJwks,
+  JWKS_CACHE_TTL_SECONDS,
+  JWKS_TOTAL_TIMEOUT_MILLISECONDS,
+  JWKS_MAX_RESPONSE_BYTES,
+  JWKS_MAX_KEYS,
+  UNKNOWN_KID_FORCED_REFRESH_COUNT,
+  AUTOMATIC_RETRY_COUNT,
+  STALE_JWKS_AFTER_TTL_ALLOWED,
+  REDIRECTS_ALLOWED,
+} from './identity/remote-jwks-adapter.js';
 export { validateProviderToken } from './identity/token-validator.js';
 export {
   createInMemoryPersonMappingAdapter,

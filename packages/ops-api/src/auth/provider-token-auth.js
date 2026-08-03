@@ -1,21 +1,25 @@
 /**
- * P4-H0a Ops-API boundary: validated provider token → P3-F1 Person Principal.
- * No Clerk SDK, no remote JWKS, no Strong AuthZ.
+ * P4-H0a/H0b2a Ops-API boundary: validated provider token → P3-F1 Person Principal.
+ * H0b2a: remote JWKS adapter may be injected; no Clerk SDK; no secret-key verify.
+ * Real Clerk session-token evidence deferred to P4-H0b2b after H0b3.
  */
 import {
   authenticateProviderTokenToPersonPrincipal,
   rejectNonPersonAsPersonSession,
-  EXPECTED_AUTHORIZED_PARTY,
+  AUTHORIZED_PARTY_ALLOWLIST,
+  EXPECTED_AUDIENCE,
 } from '@deintarifheld/shared';
 import { authenticateLocalOwner, authenticateSharedSecretAsOwner } from './local-owner-auth.js';
 
 /**
- * Authenticate via injected local validation stack (synthetic or future H0b adapters).
+ * Authenticate via injected validation stack (synthetic static JWKS or remote Development JWKS).
+ * Unknown real Clerk subjects remain rejected until mapping exists (H0b-MAP / later gates).
  */
 export async function authenticateOpsPersonFromProviderToken(opts) {
   return authenticateProviderTokenToPersonPrincipal({
-    expectedAuthorizedParty: EXPECTED_AUTHORIZED_PARTY,
     ...opts,
+    expectedAudience: opts.expectedAudience ?? EXPECTED_AUDIENCE,
+    expectedAuthorizedParty: opts.expectedAuthorizedParty ?? AUTHORIZED_PARTY_ALLOWLIST,
   });
 }
 

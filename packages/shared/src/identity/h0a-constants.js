@@ -11,8 +11,23 @@ export const PRODUCTION_AUTH_UI_ORIGIN = 'https://cc.deintarifheld.de';
 export const PASSKEY_RP_ID = 'cc.deintarifheld.de';
 export const EXPECTED_AUTHORIZED_PARTY = 'https://cc.deintarifheld.de';
 
-/** Production audience value is not frozen — inject per environment/tests. */
-export const PRODUCTION_AUDIENCE_VALUE_DEFINED = false;
+/**
+ * P4-H0b2a Owner-decided audience for Ops/CC provider tokens.
+ * Configured as Clerk custom session-token claim `aud` in Development.
+ */
+export const EXPECTED_AUDIENCE = 'urn:deintarifheld:ops-api';
+export const PRODUCTION_AUDIENCE_VALUE_DEFINED = true;
+
+/**
+ * Exact azp allowlist — no wildcards.
+ * Development local CC origin from accepted packages/cc defaults (127.0.0.1:3100).
+ */
+export const DEVELOPMENT_AUTHORIZED_PARTY = 'http://127.0.0.1:3100';
+export const AUTHORIZED_PARTY_ALLOWLIST = Object.freeze([
+  DEVELOPMENT_AUTHORIZED_PARTY,
+  EXPECTED_AUTHORIZED_PARTY,
+]);
+export const AUTHORIZED_PARTY_WILDCARDS_ALLOWED = false;
 
 export const SESSION_INACTIVITY_TIMEOUT_MINUTES = 30;
 export const SESSION_MAXIMUM_LIFETIME_HOURS = 12;
