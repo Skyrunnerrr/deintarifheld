@@ -84,9 +84,9 @@ describe('P4-H0b2a constants', () => {
   it('EXPECTED_AUDIENCE_AND_AZP_ALLOWLIST', () => {
     assert.equal(EXPECTED_AUDIENCE, 'urn:deintarifheld:ops-api');
     assert.equal(PRODUCTION_AUDIENCE_VALUE_DEFINED, true);
-    assert.equal(DEVELOPMENT_AUTHORIZED_PARTY, 'http://127.0.0.1:3100');
+    assert.equal(DEVELOPMENT_AUTHORIZED_PARTY, 'http://localhost:3100');
     assert.deepEqual([...AUTHORIZED_PARTY_ALLOWLIST], [
-      'http://127.0.0.1:3100',
+      'http://localhost:3100',
       'https://cc.deintarifheld.de',
     ]);
     assert.equal(AUTHORIZED_PARTY_WILDCARDS_ALLOWED, false);

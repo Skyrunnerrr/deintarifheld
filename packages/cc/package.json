@@ -11,7 +11,7 @@
   "scripts": {
     "build": "node -e \"console.log('[@deintarifheld/cc] read-only UI build OK')\"",
     "typecheck": "node -e \"process.exit(0)\"",
-    "test": "node --test src/authn.test.js src/kill/kill-contracts.test.js src/ui/ui-read-only.test.js",
+    "test": "node --test src/authn.test.js src/auth/passkey-gate-policy.test.js src/kill/kill-contracts.test.js src/ui/ui-read-only.test.js src/ui/passkey-gate.test.js",
     "dev:local": "node src/ui/dev-server.mjs"
   },
   "dth": {

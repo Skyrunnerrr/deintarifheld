@@ -81,7 +81,7 @@ export function createLocalOpsHttpReadAdapter({
   host = '127.0.0.1',
   port = 3099,
   env = process.env,
-  corsOrigin = 'http://127.0.0.1:3100',
+  corsOrigin = 'http://localhost:3100',
 } = {}) {
   if (isProduction(env)) {
     return {

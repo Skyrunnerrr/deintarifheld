@@ -6,7 +6,7 @@ Status: implementation tranche (live session-token evidence deferred to P4-H0b2b
 
 - `EXPECTED_AUDIENCE` = `urn:deintarifheld:ops-api` (Clerk custom session-token claim)
 - `AUTHORIZED_PARTY_ALLOWLIST` (exact, no wildcards):
-  - Development: `http://127.0.0.1:3100` (accepted local CC defaults)
+  - Development: `http://localhost:3100` (local CC; localhost required for WebAuthn)
   - Production target: `https://cc.deintarifheld.de`
 - Remote JWKS: exact public Development Frontend API `/.well-known/jwks.json` only
 - Cache TTL 300s; total timeout 5000ms; max 262144 bytes; max 10 keys

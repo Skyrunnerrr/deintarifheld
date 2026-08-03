@@ -42,7 +42,7 @@ async function withAdapter(env, fn) {
     host: '127.0.0.1',
     port: 0,
     env,
-    corsOrigin: 'http://127.0.0.1:3100',
+    corsOrigin: 'http://localhost:3100',
   });
   if (!adapter.ok) return fn(adapter, null);
   await new Promise((resolve, reject) => {

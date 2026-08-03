@@ -20,9 +20,11 @@ export const PRODUCTION_AUDIENCE_VALUE_DEFINED = true;
 
 /**
  * Exact azp allowlist — no wildcards.
- * Development local CC origin from accepted packages/cc defaults (127.0.0.1:3100).
+ * Development local CC origin must be localhost (not 127.0.0.1) so WebAuthn/passkeys
+ * can use a valid RP ID hostname. Production azp remains cc.deintarifheld.de.
  */
-export const DEVELOPMENT_AUTHORIZED_PARTY = 'http://127.0.0.1:3100';
+export const DEVELOPMENT_AUTHORIZED_PARTY = 'http://localhost:3100';
+export const LOCAL_CC_ORIGIN = DEVELOPMENT_AUTHORIZED_PARTY;
 export const AUTHORIZED_PARTY_ALLOWLIST = Object.freeze([
   DEVELOPMENT_AUTHORIZED_PARTY,
   EXPECTED_AUTHORIZED_PARTY,

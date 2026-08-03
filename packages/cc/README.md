@@ -22,7 +22,7 @@ DTH_LOCAL_DATABASE_URL=... DTH_LOCAL_AUTH_ENABLED=true npm run dev:http-read -w 
 DTH_CC_LOCAL_UI_ENABLED=true npm run dev:local -w @deintarifheld/cc
 ```
 
-Open `http://127.0.0.1:3100/inbox`.
+Open `http://localhost:3100/inbox` (use `localhost`, not `127.0.0.1`, for passkey/WebAuthn).
 
 ### Boundaries
 
