@@ -81,3 +81,41 @@ test('auth routes available even when gate flag off (enrollment path)', async ()
     await srv.close();
   }
 });
+
+test('H0b2b validate-provider-session rejects missing auth and never echoes token fields', async () => {
+  const srv = createLocalCcServer({
+    host: '127.0.0.1',
+    port: 0,
+    env: {
+      NODE_ENV: 'test',
+      DTH_CC_LOCAL_UI_ENABLED: 'true',
+      DTH_CC_PASSKEY_GATE_ENABLED: 'true',
+    },
+  });
+  await new Promise((resolve, reject) => {
+    srv.server.listen(0, '127.0.0.1', resolve);
+    srv.server.once('error', reject);
+  });
+  const { port } = srv.server.address();
+  try {
+    const getRes = await fetch(`http://127.0.0.1:${port}/auth/validate-provider-session`);
+    assert.equal(getRes.status, 405);
+
+    const missing = await fetch(`http://127.0.0.1:${port}/auth/validate-provider-session`, {
+      method: 'POST',
+    });
+    assert.equal(missing.status, 401);
+    const body = await missing.json();
+    assert.equal(body.liveProviderAuthentication, 'FAIL');
+    assert.equal(body.code, 'MISSING_AUTHORIZATION');
+    assert.equal(body.dthAuthorization, 'DENIED');
+    assert.equal(body.operationalApiAccessAllowed, false);
+    assert.equal(body.tokenBodyPresent, false);
+    assert.equal(body.rawClaimsPresent, false);
+    assert.equal('token' in body, false);
+    assert.equal('authorization' in body, false);
+    assert.equal('claims' in body, false);
+  } finally {
+    await srv.close();
+  }
+});

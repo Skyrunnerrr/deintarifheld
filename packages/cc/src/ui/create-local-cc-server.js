@@ -7,6 +7,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderShell, renderStateBlock, countMutationControls } from './render.js';
 import { renderPasskeyGatePage } from './render-passkey-gate.js';
+import {
+  validateLiveProviderSession,
+  readAuthorizationHeader,
+} from '../auth/live-session-validate.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -88,8 +92,50 @@ export function createLocalCcServer({
     res.end(html);
   }
 
-  const server = http.createServer((req, res) => {
+  const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '/', `http://${host}:${port}`);
+
+    // P4-H0b2b — same-origin live session validation (POST only). Never log Authorization.
+    if (url.pathname === '/auth/validate-provider-session') {
+      if (req.method !== 'POST') {
+        res.writeHead(405, { 'content-type': 'application/json', allow: 'POST' });
+        res.end(JSON.stringify({ ok: false, code: 'VALIDATE_POST_ONLY' }));
+        return;
+      }
+      try {
+        const result = await validateLiveProviderSession({
+          authorizationHeader: readAuthorizationHeader(req),
+        });
+        const status =
+          result.liveProviderAuthentication === 'PASS' && result.dthAuthorization === 'DENIED_EXPECTED'
+            ? 200
+            : result.code === 'MISSING_AUTHORIZATION' || result.code === 'AUTHORIZATION_SCHEME_REJECTED'
+              ? 401
+              : 401;
+        res.writeHead(status, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+          'x-dth-h0b2b': 'live-session-validate',
+        });
+        res.end(JSON.stringify(result));
+      } catch {
+        res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(
+          JSON.stringify({
+            ok: false,
+            liveProviderAuthentication: 'FAIL',
+            code: 'VALIDATOR_INTERNAL_ERROR',
+            dthAuthorization: 'DENIED',
+            tokenBodyPresent: false,
+            rawClaimsPresent: false,
+            operationalApiAccessAllowed: false,
+            operationalWritesAllowed: false,
+          }),
+        );
+      }
+      return;
+    }
+
     if (req.method !== 'GET') {
       res.writeHead(405, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ ok: false, code: 'CC_UI_GET_ONLY' }));

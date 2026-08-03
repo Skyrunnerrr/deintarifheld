@@ -489,8 +489,71 @@
       '<p>Explizite Passkey-Verifikation abgeschlossen. Operative API-/Schreibzugriffe bleiben verweigert.</p>',
     );
     showShell(true);
+    addButton('Live JWKS-Validierung (H0b2b)', () => runLiveJwksValidation(), { primary: true });
     addButton('Abmelden', () => signOut());
     if (cfg.mode === 'hub') addLink('CC-Eingang', '/auth/entry', { primary: true });
+  }
+
+  async function runLiveJwksValidation() {
+    if (!clerk?.session?.getToken) {
+      setStatus('LIVE_SESSION_GETTOKEN_UNAVAILABLE', 'deny');
+      return;
+    }
+    setStatus('LIVE_JWKS_VALIDATION_IN_PROGRESS', 'deny');
+    setMessage('<p>Transient Session-Token → lokaler Validator (Token wird nicht angezeigt).</p>');
+    let token = null;
+    try {
+      token = await clerk.session.getToken();
+      if (!token) {
+        setStatus('LIVE_SESSION_TOKEN_UNAVAILABLE', 'deny');
+        setMessage('<p class="deny-note">Keine Session-Token von Clerk erhalten.</p>');
+        return;
+      }
+      const res = await fetch('/auth/validate-provider-session', {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer ' + token,
+          accept: 'application/json',
+        },
+      });
+      // Drop local token reference immediately after request start/completion.
+      token = null;
+      const body = await res.json();
+      if (body && body.liveProviderAuthentication === 'PASS' && body.dthAuthorization === 'DENIED_EXPECTED') {
+        setStatus('LIVE_PROVIDER_AUTHENTICATION=PASS · DTH_AUTHORIZATION=DENIED_EXPECTED', 'ok');
+        setMessage(
+          '<p>Live JWKS/Claims gültig. Unknown subject rejected. Operativer Zugriff verweigert (erwartet).</p>' +
+            '<p class="status" data-tone="ok">remoteJwks=' +
+            String(body.remoteDevelopmentJwksUsed) +
+            ' · mapping=' +
+            String(body.realSubjectHasDthPersonMapping) +
+            ' · unknownRejected=' +
+            String(body.unknownRealSubjectRejected) +
+            '</p>',
+        );
+      } else {
+        setStatus(
+          'LIVE_PROVIDER_AUTHENTICATION=' +
+            String(body && body.liveProviderAuthentication) +
+            ' · CODE=' +
+            String(body && body.code),
+          'deny',
+        );
+        setMessage(
+          '<p class="deny-note">Validierung nicht im erwarteten AuthN-PASS / Mapping-Deny-Zustand.</p>',
+        );
+      }
+    } catch (err) {
+      token = null;
+      setStatus('LIVE_JWKS_VALIDATION_FAILED', 'deny');
+      setMessage(
+        '<p class="deny-note">Validator-Request fehlgeschlagen (' +
+          formatClerkError(err) +
+          ').</p>',
+      );
+    } finally {
+      token = null;
+    }
   }
 
   function waitForClerkGlobal(timeoutMs) {
