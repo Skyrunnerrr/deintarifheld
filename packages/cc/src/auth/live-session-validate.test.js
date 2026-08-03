@@ -5,6 +5,7 @@ import {
   AuthAssuranceMethod,
   EXPECTED_AUDIENCE,
   DEVELOPMENT_AUTHORIZED_PARTY,
+  createInMemoryProviderSessionRegistry,
 } from '@deintarifheld/shared';
 import {
   validateLiveProviderSession,
@@ -15,13 +16,27 @@ import {
 const FIXED_NOW = 1_700_000_000;
 
 function fixtureForDevShape() {
-  // Synthetic fixture with H0a issuer; adapter overridden — claim tests use fixture issuer.
   return createEphemeralRs256TestFixture();
+}
+
+function baseOpts(fx, registry) {
+  return {
+    jwksAdapter: fx.jwksAdapter,
+    mappingAdapter: createEmptyPersonMappingAdapter(),
+    sessionRegistry: registry,
+    expectedIssuer: fx.expectedIssuer,
+    expectedAudience: fx.expectedAudience,
+    expectedAuthorizedParty: [DEVELOPMENT_AUTHORIZED_PARTY, 'https://cc.deintarifheld.de'],
+    nowSeconds: () => FIXED_NOW,
+  };
 }
 
 describe('P4-H0b2b live session validate (synthetic)', () => {
   it('MISSING_SESSION_REJECTED / SIGNED_OUT', async () => {
-    const r = await validateLiveProviderSession({ authorizationHeader: null });
+    const r = await validateLiveProviderSession({
+      authorizationHeader: null,
+      sessionRegistry: createInMemoryProviderSessionRegistry(),
+    });
     assert.equal(r.liveProviderAuthentication, 'FAIL');
     assert.equal(r.liveTokenReceivedTransiently, false);
     assert.equal(r.code, 'MISSING_AUTHORIZATION');
@@ -31,21 +46,17 @@ describe('P4-H0b2b live session validate (synthetic)', () => {
 
   it('valid signature+claims with empty mapping → AuthN PASS, DTH DENIED_EXPECTED', async () => {
     const fx = fixtureForDevShape();
+    const registry = createInMemoryProviderSessionRegistry();
     const token = fx.mintToken({
       _now: FIXED_NOW,
       amr: AuthAssuranceMethod.PASSKEY,
       azp: DEVELOPMENT_AUTHORIZED_PARTY,
       aud: fx.expectedAudience,
+      sid: 'sess_a',
     });
-    // Override expected issuer to synthetic fixture issuer for unit test.
     const r = await validateLiveProviderSession({
       authorizationHeader: `Bearer ${token}`,
-      jwksAdapter: fx.jwksAdapter,
-      mappingAdapter: createEmptyPersonMappingAdapter(),
-      expectedIssuer: fx.expectedIssuer,
-      expectedAudience: fx.expectedAudience,
-      expectedAuthorizedParty: [DEVELOPMENT_AUTHORIZED_PARTY, 'https://cc.deintarifheld.de'],
-      nowSeconds: () => FIXED_NOW,
+      ...baseOpts(fx, registry),
     });
     assert.equal(r.liveProviderAuthentication, 'PASS');
     assert.equal(r.liveTokenReceivedTransiently, true);
@@ -59,10 +70,56 @@ describe('P4-H0b2b live session validate (synthetic)', () => {
     assert.equal(r.realSubjectHasDthPersonMapping, false);
     assert.equal(r.unknownRealSubjectRejected, true);
     assert.equal(r.dthAuthorization, 'DENIED_EXPECTED');
+    assert.equal(r.sessionLifecycleOk, true);
+    assert.equal(r.activeSessionCount, 1);
     assert.equal(r.operationalApiAccessAllowed, false);
     assert.equal(r.tokenBodyPresent, false);
     assert.equal(r.rawClaimsPresent, false);
     assert.doesNotMatch(JSON.stringify(r), /eyJ/);
+  });
+
+  it('H0b4 REVOKE_OLD_ALLOW_NEW: session B accepts; session A rejected', async () => {
+    const fx = fixtureForDevShape();
+    const registry = createInMemoryProviderSessionRegistry();
+    const tokenA = fx.mintToken({
+      _now: FIXED_NOW,
+      azp: DEVELOPMENT_AUTHORIZED_PARTY,
+      aud: fx.expectedAudience,
+      sid: 'sess_a',
+      sub: 'user_same',
+    });
+    const tokenB = fx.mintToken({
+      _now: FIXED_NOW + 5,
+      azp: DEVELOPMENT_AUTHORIZED_PARTY,
+      aud: fx.expectedAudience,
+      sid: 'sess_b',
+      sub: 'user_same',
+    });
+    const a = await validateLiveProviderSession({
+      authorizationHeader: `Bearer ${tokenA}`,
+      ...baseOpts(fx, registry),
+      nowSeconds: () => FIXED_NOW,
+    });
+    assert.equal(a.liveProviderAuthentication, 'PASS');
+    assert.equal(a.activeSessionCount, 1);
+
+    const b = await validateLiveProviderSession({
+      authorizationHeader: `Bearer ${tokenB}`,
+      ...baseOpts(fx, registry),
+      nowSeconds: () => FIXED_NOW + 5,
+    });
+    assert.equal(b.liveProviderAuthentication, 'PASS');
+    assert.equal(b.priorSessionRevokedCount, 1);
+    assert.equal(b.activeSessionCount, 1);
+
+    const aAgain = await validateLiveProviderSession({
+      authorizationHeader: `Bearer ${tokenA}`,
+      ...baseOpts(fx, registry),
+      nowSeconds: () => FIXED_NOW + 10,
+    });
+    assert.equal(aAgain.liveProviderAuthentication, 'FAIL');
+    assert.equal(aAgain.code, 'SESSION_REVOKED');
+    assert.equal(aAgain.sessionLifecycleOk, false);
   });
 
   it('WRONG_AUDIENCE_REJECTED', async () => {
@@ -74,11 +131,7 @@ describe('P4-H0b2b live session validate (synthetic)', () => {
     });
     const r = await validateLiveProviderSession({
       authorizationHeader: `Bearer ${token}`,
-      jwksAdapter: fx.jwksAdapter,
-      expectedIssuer: fx.expectedIssuer,
-      expectedAudience: fx.expectedAudience,
-      expectedAuthorizedParty: DEVELOPMENT_AUTHORIZED_PARTY,
-      nowSeconds: () => FIXED_NOW,
+      ...baseOpts(fx, createInMemoryProviderSessionRegistry()),
     });
     assert.equal(r.liveProviderAuthentication, 'FAIL');
     assert.equal(r.code, 'TOKEN_AUDIENCE_INVALID');
@@ -94,11 +147,8 @@ describe('P4-H0b2b live session validate (synthetic)', () => {
     });
     const r = await validateLiveProviderSession({
       authorizationHeader: `Bearer ${token}`,
-      jwksAdapter: fx.jwksAdapter,
-      expectedIssuer: fx.expectedIssuer,
-      expectedAudience: fx.expectedAudience,
+      ...baseOpts(fx, createInMemoryProviderSessionRegistry()),
       expectedAuthorizedParty: DEVELOPMENT_AUTHORIZED_PARTY,
-      nowSeconds: () => FIXED_NOW,
     });
     assert.equal(r.liveProviderAuthentication, 'FAIL');
     assert.equal(r.code, 'TOKEN_AUTHORIZED_PARTY_INVALID');
@@ -114,11 +164,8 @@ describe('P4-H0b2b live session validate (synthetic)', () => {
     });
     const r = await validateLiveProviderSession({
       authorizationHeader: `Bearer ${token}`,
-      jwksAdapter: fx.jwksAdapter,
-      expectedIssuer: fx.expectedIssuer,
-      expectedAudience: fx.expectedAudience,
+      ...baseOpts(fx, createInMemoryProviderSessionRegistry()),
       expectedAuthorizedParty: DEVELOPMENT_AUTHORIZED_PARTY,
-      nowSeconds: () => FIXED_NOW,
     });
     assert.equal(r.liveProviderAuthentication, 'FAIL');
     assert.equal(r.code, 'TOKEN_ISSUER_INVALID');
@@ -135,11 +182,8 @@ describe('P4-H0b2b live session validate (synthetic)', () => {
     });
     const r = await validateLiveProviderSession({
       authorizationHeader: `Bearer ${token}`,
-      jwksAdapter: fx.jwksAdapter,
-      expectedIssuer: fx.expectedIssuer,
-      expectedAudience: fx.expectedAudience,
+      ...baseOpts(fx, createInMemoryProviderSessionRegistry()),
       expectedAuthorizedParty: DEVELOPMENT_AUTHORIZED_PARTY,
-      nowSeconds: () => FIXED_NOW,
     });
     assert.equal(r.liveProviderAuthentication, 'FAIL');
     assert.ok(
@@ -157,11 +201,8 @@ describe('P4-H0b2b live session validate (synthetic)', () => {
     });
     const r = await validateLiveProviderSession({
       authorizationHeader: `Bearer ${token}`,
-      jwksAdapter: fx.jwksAdapter,
-      expectedIssuer: fx.expectedIssuer,
-      expectedAudience: fx.expectedAudience,
+      ...baseOpts(fx, createInMemoryProviderSessionRegistry()),
       expectedAuthorizedParty: DEVELOPMENT_AUTHORIZED_PARTY,
-      nowSeconds: () => FIXED_NOW,
     });
     assert.equal(r.liveProviderAuthentication, 'FAIL');
     assert.equal(r.code, 'TOKEN_EXPIRED');

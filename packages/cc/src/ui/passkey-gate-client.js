@@ -497,6 +497,9 @@
   async function runLiveJwksValidation() {
     if (!clerk?.session?.getToken) {
       setStatus('LIVE_SESSION_GETTOKEN_UNAVAILABLE', 'deny');
+      setMessage(
+        '<p class="deny-note">Keine aktive Clerk-Session / getToken nicht verfügbar (z. B. nach Provider-Revoke).</p>',
+      );
       return;
     }
     setStatus('LIVE_JWKS_VALIDATION_IN_PROGRESS', 'deny');
@@ -519,6 +522,30 @@
       // Drop local token reference immediately after request start/completion.
       token = null;
       const body = await res.json();
+      const diag = body && body.diagnostic ? body.diagnostic : null;
+      const diagLine = diag
+        ? '<p class="status" data-tone="ok">diag proc=' +
+          String(diag.VALIDATOR_PROCESS_INSTANCE_ID) +
+          ' · subFp=' +
+          String(diag.SUBJECT_FINGERPRINT) +
+          ' · sessFp=' +
+          String(diag.SESSION_FINGERPRINT) +
+          ' · priorPresent=' +
+          String(diag.PRIOR_ACTIVE_SESSION_PRESENT) +
+          ' · priorFp=' +
+          String(diag.PRIOR_SESSION_FINGERPRINT) +
+          ' · different=' +
+          String(diag.NEW_SESSION_DIFFERENT_FROM_PRIOR) +
+          ' · markedRevoked=' +
+          String(diag.PRIOR_SESSION_MARKED_REVOKED) +
+          ' · reg=' +
+          String(diag.REGISTRY_SIZE_BEFORE) +
+          '→' +
+          String(diag.REGISTRY_SIZE_AFTER) +
+          ' · ctrl=' +
+          String(diag.H0B4_CONTROLLER_REACHED) +
+          '</p>'
+        : '';
       if (body && body.liveProviderAuthentication === 'PASS' && body.dthAuthorization === 'DENIED_EXPECTED') {
         setStatus('LIVE_PROVIDER_AUTHENTICATION=PASS · DTH_AUTHORIZATION=DENIED_EXPECTED', 'ok');
         setMessage(
@@ -529,7 +556,16 @@
             String(body.realSubjectHasDthPersonMapping) +
             ' · unknownRejected=' +
             String(body.unknownRealSubjectRejected) +
-            '</p>',
+            ' · sessionLifecycle=' +
+            String(body.sessionLifecycleOk) +
+            ' · activeSessions=' +
+            String(body.activeSessionCount) +
+            ' · priorRevoked=' +
+            String(body.priorSessionRevokedCount) +
+            ' · policy=' +
+            String(body.concurrentSessionPolicy) +
+            '</p>' +
+            diagLine,
         );
       } else {
         setStatus(
@@ -540,7 +576,8 @@
           'deny',
         );
         setMessage(
-          '<p class="deny-note">Validierung nicht im erwarteten AuthN-PASS / Mapping-Deny-Zustand.</p>',
+          '<p class="deny-note">Validierung nicht im erwarteten AuthN-PASS / Mapping-Deny-Zustand.</p>' +
+            diagLine,
         );
       }
     } catch (err) {

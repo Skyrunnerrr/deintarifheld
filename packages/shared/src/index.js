@@ -103,7 +103,13 @@ export {
   createInMemoryActiveSessionAdapter,
   evaluateSessionPolicy,
   PRODUCTION_CONCURRENT_SESSION_RESOLUTION,
+  CONCURRENT_SESSION_POLICY,
 } from './identity/session-policy.js';
+export {
+  createInMemoryProviderSessionRegistry,
+  applyProviderSessionLifecycle,
+  markProviderSessionRevoked,
+} from './identity/provider-session-lifecycle.js';
 export {
   getPasskeyEnrollmentPolicyContract,
   evaluateOperationalPasskeyAssurance,

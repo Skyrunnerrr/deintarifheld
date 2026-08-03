@@ -6,7 +6,12 @@ import assert from 'node:assert/strict';
 import { createEphemeralRs256TestFixture, SYNTHETIC_ISSUER, SYNTHETIC_AUDIENCE } from './synthetic-test-keys.js';
 import { validateProviderToken } from './token-validator.js';
 import { createInMemoryPersonMappingAdapter, rejectEmailBasedAutoMapping, rejectAutomaticPersonCreation } from './person-mapping.js';
-import { createInMemoryActiveSessionAdapter, evaluateSessionPolicy, PRODUCTION_CONCURRENT_SESSION_RESOLUTION } from './session-policy.js';
+import {
+  createInMemoryActiveSessionAdapter,
+  evaluateSessionPolicy,
+  PRODUCTION_CONCURRENT_SESSION_RESOLUTION,
+  CONCURRENT_SESSION_POLICY,
+} from './session-policy.js';
 import { authenticateProviderTokenToPersonPrincipal, rejectNonPersonAsPersonSession } from './authenticate-provider-token.js';
 import { getPasskeyEnrollmentPolicyContract, evaluateOperationalPasskeyAssurance } from './passkey-policy.js';
 import { AuthAssuranceMethod, IdentityProvider, LinkStatus, EXPECTED_AUTHORIZED_PARTY, SESSION_INACTIVITY_TIMEOUT_MINUTES, SESSION_MAXIMUM_LIFETIME_HOURS, MAX_ACTIVE_SESSIONS_PER_DTH_PERSON } from './h0a-constants.js';
@@ -369,8 +374,20 @@ describe('P4-H0a session policy', () => {
     assert.equal(SESSION_INACTIVITY_TIMEOUT_MINUTES, 30);
   });
 
-  it('INACTIVITY_OVER_30_MINUTES rejected', () => {
-    const r = evaluateSessionPolicy({
+  it('INACTIVITY_AT_OR_AFTER_30_MINUTES rejected', () => {
+    const atBoundary = evaluateSessionPolicy({
+      sessionId: 's1',
+      dthPersonId: 'p1',
+      sessionStartedAtSeconds: FIXED_NOW - 100,
+      lastActivityAtSeconds: FIXED_NOW - 30 * 60,
+      tokenExpiresAtSeconds: FIXED_NOW + 1000,
+      linkStatus: LinkStatus.ACTIVE,
+      nowSeconds: clock(),
+    });
+    assert.equal(atBoundary.ok, false);
+    assert.equal(atBoundary.code, 'SESSION_INACTIVITY_EXCEEDED');
+
+    const over = evaluateSessionPolicy({
       sessionId: 's1',
       dthPersonId: 'p1',
       sessionStartedAtSeconds: FIXED_NOW - 100,
@@ -379,8 +396,8 @@ describe('P4-H0a session policy', () => {
       linkStatus: LinkStatus.ACTIVE,
       nowSeconds: clock(),
     });
-    assert.equal(r.ok, false);
-    assert.equal(r.code, 'SESSION_INACTIVITY_EXCEEDED');
+    assert.equal(over.ok, false);
+    assert.equal(over.code, 'SESSION_INACTIVITY_EXCEEDED');
   });
 
   it('SESSION_AGE_UNDER_12_HOURS pass', () => {
@@ -397,8 +414,20 @@ describe('P4-H0a session policy', () => {
     assert.equal(SESSION_MAXIMUM_LIFETIME_HOURS, 12);
   });
 
-  it('SESSION_AGE_OVER_12_HOURS rejected', () => {
-    const r = evaluateSessionPolicy({
+  it('SESSION_AT_OR_AFTER_12_HOURS rejected', () => {
+    const atBoundary = evaluateSessionPolicy({
+      sessionId: 's1',
+      dthPersonId: 'p1',
+      sessionStartedAtSeconds: FIXED_NOW - 12 * 3600,
+      lastActivityAtSeconds: FIXED_NOW,
+      tokenExpiresAtSeconds: FIXED_NOW + 1000,
+      linkStatus: LinkStatus.ACTIVE,
+      nowSeconds: clock(),
+    });
+    assert.equal(atBoundary.ok, false);
+    assert.equal(atBoundary.code, 'SESSION_MAX_LIFETIME_EXCEEDED');
+
+    const over = evaluateSessionPolicy({
       sessionId: 's1',
       dthPersonId: 'p1',
       sessionStartedAtSeconds: FIXED_NOW - (12 * 3600 + 1),
@@ -407,8 +436,8 @@ describe('P4-H0a session policy', () => {
       linkStatus: LinkStatus.ACTIVE,
       nowSeconds: clock(),
     });
-    assert.equal(r.ok, false);
-    assert.equal(r.code, 'SESSION_MAX_LIFETIME_EXCEEDED');
+    assert.equal(over.ok, false);
+    assert.equal(over.code, 'SESSION_MAX_LIFETIME_EXCEEDED');
   });
 
   it('ONE_ACTIVE_SESSION pass', () => {
@@ -428,7 +457,7 @@ describe('P4-H0a session policy', () => {
     assert.equal(MAX_ACTIVE_SESSIONS_PER_DTH_PERSON, 1);
   });
 
-  it('MULTIPLE_ACTIVE_SESSIONS rejected', () => {
+  it('REVOKE_OLD_ALLOW_NEW accepts new and revokes prior active session', () => {
     const adapter = createInMemoryActiveSessionAdapter();
     adapter.setActive('p1', [{ sessionId: 's1', dthPersonId: 'p1' }]);
     const r = evaluateSessionPolicy({
@@ -441,9 +470,29 @@ describe('P4-H0a session policy', () => {
       activeSessionAdapter: adapter,
       nowSeconds: clock(),
     });
+    assert.equal(r.ok, true);
+    assert.deepEqual(r.revokedSessionIds, ['s1']);
+    assert.deepEqual(adapter.listActive('p1'), [{ sessionId: 's2', dthPersonId: 'p1' }]);
+    assert.equal(CONCURRENT_SESSION_POLICY, 'REVOKE_OLD_ALLOW_NEW');
+    assert.equal(PRODUCTION_CONCURRENT_SESSION_RESOLUTION, 'REVOKE_OLD_ALLOW_NEW');
+  });
+
+  it('REJECT_NEW still rejects when explicitly selected', () => {
+    const adapter = createInMemoryActiveSessionAdapter();
+    adapter.setActive('p1', [{ sessionId: 's1', dthPersonId: 'p1' }]);
+    const r = evaluateSessionPolicy({
+      sessionId: 's2',
+      dthPersonId: 'p1',
+      sessionStartedAtSeconds: FIXED_NOW,
+      lastActivityAtSeconds: FIXED_NOW,
+      tokenExpiresAtSeconds: FIXED_NOW + 1000,
+      linkStatus: LinkStatus.ACTIVE,
+      activeSessionAdapter: adapter,
+      nowSeconds: clock(),
+      concurrentSessionPolicy: 'REJECT_NEW',
+    });
     assert.equal(r.ok, false);
     assert.equal(r.code, 'SESSION_MULTI_ACTIVE_REJECTED');
-    assert.equal(PRODUCTION_CONCURRENT_SESSION_RESOLUTION, 'NOT_IMPLEMENTED_IN_H0A');
   });
 
   it('DISABLED_MAPPING_INVALIDATES_SESSION', () => {

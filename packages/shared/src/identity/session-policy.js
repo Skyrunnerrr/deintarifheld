@@ -1,6 +1,6 @@
 /**
  * Local session policy evaluator (injected clock).
- * Concurrent-session conflict resolution for live Clerk is NOT implemented (H0b).
+ * P4-H0b4: concurrent conflict resolution = REVOKE_OLD_ALLOW_NEW.
  */
 import {
   SESSION_INACTIVITY_TIMEOUT_MINUTES,
@@ -11,7 +11,11 @@ import {
 } from './h0a-constants.js';
 import { TokenErrorCode, fail } from './token-errors.js';
 
-export const PRODUCTION_CONCURRENT_SESSION_RESOLUTION = 'NOT_IMPLEMENTED_IN_H0A';
+/** Owner-decided H0b4 concurrent policy. */
+export const CONCURRENT_SESSION_POLICY = 'REVOKE_OLD_ALLOW_NEW';
+
+/** @deprecated use CONCURRENT_SESSION_POLICY — retained export name for H0a callers */
+export const PRODUCTION_CONCURRENT_SESSION_RESOLUTION = CONCURRENT_SESSION_POLICY;
 
 export function createInMemoryActiveSessionAdapter() {
   /** @type {Map<string, { sessionId: string, dthPersonId: string }[]>} */
@@ -24,6 +28,18 @@ export function createInMemoryActiveSessionAdapter() {
     },
     setActive(dthPersonId, sessions) {
       byPerson.set(dthPersonId, [...sessions]);
+    },
+    /**
+     * REVOKE_OLD_ALLOW_NEW: keep only the provided session as active.
+     * @returns {{ revokedSessionIds: string[] }}
+     */
+    replaceActive(dthPersonId, session) {
+      const prev = this.listActive(dthPersonId);
+      const revokedSessionIds = prev
+        .map((s) => s.sessionId)
+        .filter((id) => id && id !== session.sessionId);
+      this.setActive(dthPersonId, [session]);
+      return { revokedSessionIds };
     },
   };
 }
@@ -38,6 +54,7 @@ export function createInMemoryActiveSessionAdapter() {
  * @param {string} input.linkStatus
  * @param {object} [input.activeSessionAdapter]
  * @param {() => number} [input.nowSeconds]
+ * @param {'REVOKE_OLD_ALLOW_NEW'|'REJECT_NEW'} [input.concurrentSessionPolicy]
  */
 export function evaluateSessionPolicy({
   sessionId,
@@ -48,6 +65,7 @@ export function evaluateSessionPolicy({
   linkStatus,
   activeSessionAdapter,
   nowSeconds = () => Math.floor(Date.now() / 1000),
+  concurrentSessionPolicy = CONCURRENT_SESSION_POLICY,
 }) {
   if (!sessionId) {
     return fail(TokenErrorCode.TOKEN_SESSION_ID_MISSING);
@@ -65,45 +83,59 @@ export function evaluateSessionPolicy({
   }
 
   const maxAgeSeconds = SESSION_MAXIMUM_LIFETIME_HOURS * 3600;
-  if (now - sessionStartedAtSeconds > maxAgeSeconds) {
+  if (now - sessionStartedAtSeconds >= maxAgeSeconds) {
     return fail(TokenErrorCode.SESSION_MAX_LIFETIME_EXCEEDED);
   }
 
   const inactivitySeconds = SESSION_INACTIVITY_TIMEOUT_MINUTES * 60;
-  if (now - lastActivityAtSeconds > inactivitySeconds) {
+  if (now - lastActivityAtSeconds >= inactivitySeconds) {
     return fail(TokenErrorCode.SESSION_INACTIVITY_EXCEEDED);
   }
 
+  /** @type {string[]} */
+  let revokedSessionIds = [];
+
   if (!MULTI_SESSION_ALLOWED && activeSessionAdapter) {
     const active = activeSessionAdapter.listActive(dthPersonId);
-    const distinct = new Set(active.map((s) => s.sessionId));
-    // Count other sessions plus this one if not already listed
-    if (!distinct.has(sessionId)) {
-      distinct.add(sessionId);
-    }
-    // If adapter already has multiple distinct sessions, or would exceed max
-    if (distinct.size > MAX_ACTIVE_SESSIONS_PER_DTH_PERSON) {
-      return fail(TokenErrorCode.SESSION_MULTI_ACTIVE_REJECTED, PRODUCTION_CONCURRENT_SESSION_RESOLUTION);
-    }
-    // Also reject if adapter reports >1 without this session (already multi)
-    const existingDistinct = new Set(active.map((s) => s.sessionId));
+    const existingDistinct = new Set(active.map((s) => s.sessionId).filter(Boolean));
+
     if (existingDistinct.size > MAX_ACTIVE_SESSIONS_PER_DTH_PERSON) {
-      return fail(TokenErrorCode.SESSION_MULTI_ACTIVE_REJECTED, PRODUCTION_CONCURRENT_SESSION_RESOLUTION);
+      // Corrupt multi-active state → fail closed unless we can normalize via revoke-old.
+      if (concurrentSessionPolicy !== 'REVOKE_OLD_ALLOW_NEW' || typeof activeSessionAdapter.replaceActive !== 'function') {
+        return fail(TokenErrorCode.SESSION_MULTI_ACTIVE_REJECTED, concurrentSessionPolicy);
+      }
     }
-    if (existingDistinct.size === 1 && !existingDistinct.has(sessionId)) {
-      // One other active session exists → policy-invalid (resolution deferred to H0b)
-      return fail(TokenErrorCode.SESSION_MULTI_ACTIVE_REJECTED, PRODUCTION_CONCURRENT_SESSION_RESOLUTION);
+
+    const otherActive = [...existingDistinct].filter((id) => id !== sessionId);
+    if (otherActive.length > 0 || (existingDistinct.size >= 1 && !existingDistinct.has(sessionId))) {
+      if (concurrentSessionPolicy === 'REVOKE_OLD_ALLOW_NEW' && typeof activeSessionAdapter.replaceActive === 'function') {
+        const replaced = activeSessionAdapter.replaceActive(dthPersonId, {
+          sessionId,
+          dthPersonId,
+        });
+        revokedSessionIds = replaced.revokedSessionIds || otherActive;
+      } else {
+        return fail(TokenErrorCode.SESSION_MULTI_ACTIVE_REJECTED, concurrentSessionPolicy);
+      }
+    } else if (!existingDistinct.has(sessionId)) {
+      if (typeof activeSessionAdapter.replaceActive === 'function') {
+        activeSessionAdapter.replaceActive(dthPersonId, { sessionId, dthPersonId });
+      } else {
+        activeSessionAdapter.setActive(dthPersonId, [{ sessionId, dthPersonId }]);
+      }
     }
   }
 
   return {
     ok: true,
+    revokedSessionIds: Object.freeze([...revokedSessionIds]),
     policy: Object.freeze({
       inactivityTimeoutMinutes: SESSION_INACTIVITY_TIMEOUT_MINUTES,
       maximumLifetimeHours: SESSION_MAXIMUM_LIFETIME_HOURS,
       maxActiveSessions: MAX_ACTIVE_SESSIONS_PER_DTH_PERSON,
       multiSessionAllowed: MULTI_SESSION_ALLOWED,
-      productionConcurrentSessionResolution: PRODUCTION_CONCURRENT_SESSION_RESOLUTION,
+      concurrentSessionPolicy: CONCURRENT_SESSION_POLICY,
+      productionConcurrentSessionResolution: CONCURRENT_SESSION_POLICY,
     }),
   };
 }
