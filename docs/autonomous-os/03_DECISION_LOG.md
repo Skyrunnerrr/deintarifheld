@@ -259,3 +259,13 @@ DATE=2026-08-13
 DECISION=Archive never-governed 003–013 from active supabase/migrations to archive/supabase-migrations/pre-m11-security/ (byte-identical). Active queue = 001,002. Future migrations timestamp-based; no version reuse. Staging dry-run pending=0. No DB/history mutation.  
 STATUS=ACCEPTED  
 NEXT=M11E-R1
+
+---
+
+## DTH-M11E-R1A — Security Migration Pre-Apply Freeze
+
+DATE=2026-08-13  
+DECISION=Author and freeze timestamp migration 20260813104040_m11e_private_schema_default_privileges.sql (SHA256 04c8dd4b03f840ba641f934d5e1d8bd1ebefb95854f39b1b4c21dd02f44aa4db): create private schemas ops/security/workflow/audit fail-closed; revoke postgres/public schema-specific default privileges for anon/authenticated/service_role on TABLES/SEQUENCES/ROUTINES. Do NOT globally revoke builtin PUBLIC routine EXECUTE. Do NOT touch existing object grants (ACL-02/M11G). R1B may apply exactly this hash to Staging only.  
+STATUS=ACCEPTED  
+MUTATION=NO (repo + dry-run only)  
+NEXT=M11E-R1B

@@ -203,3 +203,19 @@ OPEN:
 - FUNCTION_PUBLIC_EXECUTE_DEFAULT_DESIGN → M11E-R1 blast-radius decision
 - ACL-02 → M11G
 - service_role debt / later security risks / M6
+
+## M11E-R1A RISK POSITION
+
+FROZEN_PENDING_R1B_R2:
+- ACL-01 implementation migration authored/hashed; not yet applied
+
+CLOSED_AS_DESIGN_DECISION (R1A):
+- Global postgres PUBLIC routine EXECUTE default revoke → DEFER (provider blast radius unproven)
+- Mitigation: DTH_ROUTINES_IN_PUBLIC_BY_DEFAULT=FORBIDDEN; private schema USAGE deny; explicit per-object review
+
+OPEN:
+- DTH-RISK-FUNCTION-PUBLIC-EXECUTE (builtin PUBLIC EXECUTE remains; not claimed solved)
+- DTH-RISK-TYPE-PUBLIC-USAGE (low; prefer private schemas; no global type default change)
+- ACL-01 proof → R1B/R2
+- ACL-02 → M11G
+- service_role debt / M6

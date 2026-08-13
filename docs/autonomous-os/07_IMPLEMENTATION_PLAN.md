@@ -362,3 +362,15 @@ ACTIVE_MIGRATIONS=001,002
 LEGACY_003_013=archive/supabase-migrations/pre-m11-security/
 NEXT=M11E-R1 Private Schema + Default Privileges
 ```
+
+## M11E-R1A PASS (pre-apply freeze)
+
+```text
+M11E=IN_PROGRESS
+M11E-R1A=PASS
+MIGRATION=20260813104040_m11e_private_schema_default_privileges.sql
+SHA256=04c8dd4b03f840ba641f934d5e1d8bd1ebefb95854f39b1b4c21dd02f44aa4db
+STAGING_APPLY=NO
+NEXT=M11E-R1B Staging apply of exact authorized hash only
+THEN=M11E-R2 readback + negative tests → M11E-F freeze
+```
