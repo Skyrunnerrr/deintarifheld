@@ -281,3 +281,17 @@ STILL_OPEN:
 - ACL-02 → M11G
 - PRIVATE_SCHEMA_DATA_API_EXPOSURE=UNPROVEN
 - service_role debt / M6
+
+## M11E-R3C RISK POSITION
+
+CLOSED_IN_STAGING_BEHAVIORAL:
+- DTH-RISK-FUNCTION-PUBLIC-EXECUTE = CLOSED_FOR_FUTURE_POSTGRES_CREATED_ROUTINES
+- ACL_01_FULL_FAIL_CLOSED=YES (future postgres-created tables/sequences/routines)
+
+RESIDUAL_LOW_RISK:
+- Future CREATE EXTENSION / provider routines created as postgres may need explicit GRANT if execution is intended
+
+STILL_OPEN:
+- ACL-02 → M11G
+- PRIVATE_SCHEMA_DATA_API_EXPOSURE=UNPROVEN (next: M11E-R4 provider readback)
+- service_role debt / M6

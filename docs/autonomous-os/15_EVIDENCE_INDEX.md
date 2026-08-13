@@ -152,11 +152,13 @@
 | R2 behavioral tests | docs/autonomous-os/evidence-reports/DTH-M11E-R2.md |
 | R3A routine default decision | docs/autonomous-os/evidence-reports/DTH-M11E-R3A.md |
 | R3B pre-apply freeze | docs/autonomous-os/evidence-reports/DTH-M11E-R3B.md |
+| R3C Staging apply + re-proof | docs/autonomous-os/evidence-reports/DTH-M11E-R3C.md |
 | R3B migration | supabase/migrations/20260813171649_m11e_global_routine_default_hardening.sql |
-| R3B SHA256 | 871c20524ee8c4c98a36e795051fa545f205676c988082854ec8034969b6dca5 |
+| R3B/R3C SHA256 | 871c20524ee8c4c98a36e795051fa545f205676c988082854ec8034969b6dca5 |
 | R2 non-applying SQL | scripts/security-tests/dth-m11e-r2-transactional-negative-test.sql |
 | R3A non-applying SQL | scripts/security-tests/dth-m11e-r3a-transactional-global-routine-default-test.sql |
+| R3C non-applying SQL | scripts/security-tests/dth-m11e-r3c-transactional-routine-reproof.sql |
 | R1A migration | supabase/migrations/20260813104040_m11e_private_schema_default_privileges.sql |
 | R1A/R1B SHA256 | 04c8dd4b03f840ba641f934d5e1d8bd1ebefb95854f39b1b4c21dd02f44aa4db |
 | Archive | archive/supabase-migrations/pre-m11-security/ |
-| Next | M11E-R3C |
+| Next | M11E-R4 |

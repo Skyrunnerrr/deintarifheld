@@ -309,3 +309,13 @@ DECISION=Author and freeze timestamp migration 20260813171649_m11e_global_routin
 STATUS=ACCEPTED  
 MUTATION=NO  
 NEXT=M11E-R3C
+
+---
+
+## DTH-M11E-R3C — Staging Routine Default Apply + Behavioral Re-Proof
+
+DATE=2026-08-13  
+DECISION=Apply exact authorized migration 20260813171649 (SHA256 871c20524ee8c4c98a36e795051fa545f205676c988082854ec8034969b6dca5) to Staging uunpbmfvbfkideylhtbl only. Behavioral re-proof (ROLLBACK): new postgres routines in public and ops have PUBLIC EXECUTE=NO and API-role effective EXECUTE=false; existing routine ACLs and other creator defaults unchanged; residue=0; persistent global revoke survived test ROLLBACK. ACL-01 full fail-closed for future postgres-created objects=YES. ACL-02 remains OPEN (M11G). PRIVATE_SCHEMA_DATA_API_EXPOSURE remains UNPROVEN. Production untouched. Do not start M11F; next is R4 hosted Data API exposure readback.  
+STATUS=ACCEPTED  
+MUTATION=STAGING_ONLY  
+NEXT=M11E-R4
