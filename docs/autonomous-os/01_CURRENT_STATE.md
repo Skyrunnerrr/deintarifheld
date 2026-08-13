@@ -36,12 +36,13 @@ WORKTREE=CLEAN
 | P4-H0b4 | `955e849` | Accepted / frozen |
 | Authn tests | 125/125 at H0b4 close | E2 |
 
-## H0b3d (OBSERVED / OPEN)
+## H0b3d (OBSERVED / OPEN — Track A)
 
-- Owner reported account deletion + associated passkey removal during prior interactive cleanup.
-- Final Users-overview readback (`H0B3_TEST_USER_COUNT=0`) was **not** completed before interruption.
-- Invitation final status unproven.
-- `/tmp` evidence for H0b3d/H0b4 is **gone** (temp loss). Persistent reconstruction is M6–M7.
+- Owner reported account deletion + associated passkey removal during prior interactive cleanup (**HINT**, not E3/E4 proof).
+- Final Users-overview readback (`H0B3_TEST_USER_COUNT=0`) still **UNPROVEN** (M6 AWAITING_OWNER_READBACK).
+- Invitation final status **UNPROVEN**.
+- `/tmp` evidence lost; **M7** reconstructed persistent local inventories/gaps (see `evidence-reports/DTH-M7.md`).
+- Per D-009: M6 does **not** globally block Track B documentation/architecture work.
 
 ## Explicit non-claims
 
@@ -53,6 +54,29 @@ PRODUCTION_IDP_READY=NO
 AUTOMATION_ACTIVATION=NO
 CUSTOMER_MAIL_PRODUCTION=E0
 GDPR_COMPLIANT=BOOLEAN_FORBIDDEN
+PERSISTENT_PERSON_MAPPING=NOT_IMPLEMENTED
+CREATE_POLICY_COUNT=0
+SESSION_REGISTRY=IN_MEMORY_LOCAL_ONLY
+```
+
+## Phase-4 exit (from M8 / M8C freeze)
+
+```text
+PHASE4_LOCAL_FOUNDATION=PASS
+PHASE4_REMOTE_DEV_EVIDENCE=PARTIAL
+PHASE4_STAGING_READY=NO
+PHASE4_PRODUCTION_READY=NO
+PHASE4_EXIT_TO_ARCHITECTURE_ALLOWED=YES
+PHASE4_EXIT_TO_IMPLEMENTATION_ALLOWED=NO
+PHASE4_EXIT_TO_STAGING_ALLOWED=NO
+PHASE4_EXIT_TO_PRODUCTION_ALLOWED=NO
+M8=PASS
+M8C=PASS_PENDING_REMOTE_VERIFY
+M6=OPEN (Track A)
+H0B2A_SECRET_DEPENDENCY=NOT_REQUIRED
+IN_MEMORY_SESSION_REGISTRY=LOCAL_DEVELOPMENT_ONLY
+IN_MEMORY_KILL_SWITCH=LOCAL_DEVELOPMENT_ONLY
+SERVICE_ROLE_BYPASS_RISK=YES
 ```
 
 ## Safety backup (M0–M5)
