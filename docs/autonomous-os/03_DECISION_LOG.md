@@ -319,3 +319,13 @@ DECISION=Apply exact authorized migration 20260813171649 (SHA256 871c20524ee8c4c
 STATUS=ACCEPTED  
 MUTATION=STAGING_ONLY  
 NEXT=M11E-R4
+
+---
+
+## DTH-M11E-R4 — Hosted Data API Exposure Readback
+
+DATE=2026-08-13  
+DECISION=Read-only Staging proof: authenticator has no pgrst.db_schemas / pgrst.db_extra_search_path override. Owner Dashboard Data API readback (no Save): DATA_API_ENABLED=ON; EXPOSED_SCHEMAS=graphql_public,public; EXTRA_SEARCH_PATH=public,extensions; AUTOMATIC_EXPOSURE_SETTING=OFF. Private schemas ops/security/workflow/audit absent from exposure and extra search path. DB privileges remain USAGE/CREATE denied. UI OFF matches fail-closed DB defaults (no material mismatch). PRIVATE_SCHEMA_DATA_API_EXPOSURE=PROVEN_NOT_EXPOSED. ACL-02 remains OPEN (M11G). No DB/provider mutation. Secret-bearing /postgrest Management API not used. Do not start M11F; next is M11E-F freeze.  
+STATUS=ACCEPTED  
+MUTATION=NO  
+NEXT=M11E-F
