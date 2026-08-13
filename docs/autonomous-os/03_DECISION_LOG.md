@@ -100,3 +100,30 @@ DECISION=
 3) In-memory session/kill = local/dev only.  
 4) Dual runtime (root public vs packages Ops) and dual migration ownership are ADR inputs for M9/M10.  
 FORBIDDEN=Starting M9 before M8C remote safety freeze verifies.
+
+## D-013 — Canonical runtime = Evolutionary Dual-Plane (DTH-ERA-A)
+
+DATE=2026-08-13  
+STATUS=PROPOSED_PENDING_OWNER_REVIEW  
+DECISION=Select DTH-ERA-A: root Next remains canonical public runtime; packages ops-api/cc/workers/shared/db become canonical Ops runtime; deprecate packages/web and packages/api skeletons; public→Ops via durable intake + async handoff; Postgres-backed session/kill; Postgres+worker workflow first; agents only via Ops tools.  
+REJECTED=Full consolidation into packages/web|api now; permanent public+Ops monolith.  
+EVIDENCE=docs/autonomous-os/evidence-reports/DTH-M9.md + docs/architecture/adr/ADR-001…016  
+IMPLEMENTATION_AUTHORIZED=NO
+
+## D-014 — M9R hardening accepted; freeze pending Owner
+
+DATE=2026-08-13  
+STATUS=PROPOSED_PENDING_OWNER_REVIEW  
+DECISION=M9R=PASS. Keep DTH-ERA-A. Apply hardenings: Clerk vs DTH session authority; Worker→Domain Service (no mandatory HTTP hairpin); M10-compatible handoff; outbox-before-provider; last-mile control check; execution generation for takeover; kill fail-closed for risky automation; audit=append-only-for-runtime; Postgres-first with upgrade triggers; public intake capability ceiling.  
+NEXT=Owner review → M9F freeze (commit + safety branch) → M10.  
+M10_AUTHORIZED=NO
+
+---
+
+## DTH-M9F — Canonical Runtime Architecture Freeze
+
+DATE=2026-08-13  
+DECISION=Freeze DTH-ERA-A Evolutionary Dual-Plane as governed contract. ADRs ACCEPTED / ACCEPTED_WITH_M10_DEPENDENCY as listed in DTH-M9F. No new architecture. No implementation. M10 owns data/SoT/grants/RLS/lineage.  
+STATUS=ACCEPTED  
+M6=OPEN (unchanged)
+
