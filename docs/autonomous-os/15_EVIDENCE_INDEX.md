@@ -131,3 +131,12 @@
 | Staging ref | uunpbmfvbfkideylhtbl |
 | Staging fingerprint | f59f5e619c4a5909bec409c797cc094726b2dd7f9d6a2493bab9dc092863e8de |
 | Next | M11D after freeze |
+
+## DTH-M11D
+
+| Artifact | Path |
+|---|---|
+| R0 audit | docs/autonomous-os/evidence-reports/DTH-M11D-R0.md |
+| R1 freeze | docs/autonomous-os/evidence-reports/DTH-M11D-R1.md |
+| Model | MODEL_A / postgres DDL authority V1 |
+| Next | M11E |

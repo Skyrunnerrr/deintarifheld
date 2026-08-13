@@ -341,3 +341,14 @@ M11D_TARGET=STAGING_ONLY
 M11D_FIRST_DUTY=inventory Supabase-managed owner/migration roles; prove what may change before inventing DDL_OWNER
 SEQUENCE_UNCHANGED=M11D→E→F→G→H→I→J→K→L→M→N→O→P→Q→R→T→S→U→V
 ```
+
+## M11D PASS — MODEL A
+
+```text
+M11D=PASS
+M11D_MODEL=MODEL_A POSTGRES_AS_DDL_OWNER
+NEW_ROLES_CREATED=NO
+M11E_DEFAULT_PRIVILEGE_OWNER_PRINCIPAL=postgres
+NEXT=M11E Private Schema + Default Privileges (Staging-first; before/after tests required)
+M11E=NOT_STARTED
+```

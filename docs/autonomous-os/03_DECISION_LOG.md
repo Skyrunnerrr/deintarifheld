@@ -221,3 +221,23 @@ DECISION=Freeze clean Staging baseline (DTH-STG-A / deintarifheld-staging / uunp
 STATUS=ACCEPTED  
 M6=OPEN (unchanged)  
 M11D=NOT_STARTED
+
+---
+
+## DTH-M11D-R0 — Ownership/Migration Custody Audit
+
+DATE=2026-08-13  
+DECISION=Recommend MODEL_A (postgres remains DDL/migration authority for V1). Custom NOLOGIN/LOGIN owner models deferred; runtime separation remains the primary security boundary (M11F+). Provider-managed roles are DO_NOT_MODIFY.  
+STATUS=ACCEPTED_AS_MODEL_A_VIA_M11D_R1  
+M11D_R1=PASS  
+MUTATION=NO
+
+---
+
+## M11D-V1-MODEL-A — Migration Custody Freeze
+
+DATE=2026-08-13  
+DECISION=Retain provider-managed postgres as DTH DDL/migration authority for V1 (MODEL_A). Reject MODEL_B/C/D for V1 (not permanently). Runtime separation remains primary security boundary (M11F+). No new roles/secrets. No ownership transfer. Production DB mutation default=DENY; Staging-first for security migrations. M11E default-privilege principal=postgres.  
+STATUS=ACCEPTED  
+EXECUTABLE_MIGRATION_GUARD=DEFERRED  
+M11E=NOT_STARTED

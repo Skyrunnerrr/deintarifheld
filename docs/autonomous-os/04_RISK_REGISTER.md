@@ -180,3 +180,15 @@ OPEN (expected pre-M11D+):
 - Staging external provider safety not yet configured for future runtime
 - M6 OPEN
 - retention legal review
+
+## M11D RISK NORMALIZATION
+
+OPEN:
+- ADMIN_POSTGRES_CREDENTIAL_BLAST_RADIUS — postgres remains powerful admin principal; mitigate via Owner custody, no runtime distribution, Staging-first gates, future CI/custom-runner reconsideration triggers
+- M11B-ACL-01 / M11B-ACL-02 (M11E/M11G)
+- service_role runtime debt (M11S)
+- runtime roles / private schemas / Strong AuthZ / target RLS not implemented
+- M6 OPEN
+
+CLOSED by M11D:
+- uncertainty whether V1 requires custom DDL owner / migration LOGIN — resolved as MODEL_A (no)
