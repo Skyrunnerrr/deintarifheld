@@ -232,3 +232,21 @@ STILL_OPEN:
 - DTH-RISK-TYPE-PUBLIC-USAGE
 - ACL-02 → M11G
 - service_role debt / M6
+
+## M11E-R2 RISK POSITION
+
+PROVEN_RESOLVED (Staging behavior):
+- ACL_01 table default auto-grants to anon/authenticated/service_role
+- ACL_01 sequence default auto-grants to anon/authenticated/service_role
+- ACL_01 explicit routine API-role default grants
+
+CONFIRMED_OPEN (single canonical risk — do not duplicate):
+- DTH-RISK-FUNCTION-PUBLIC-EXECUTE / PUBLIC_ROUTINE_FAIL_CLOSED_GAP
+  - Evidence: new public.__dth_m11e_r2_fn has proacl=NULL (no explicit API grants) but has_function_privilege(...EXECUTE)=true for anon/authenticated/service_role via PUBLIC
+  - Supabase guidance recommends creator-role global REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC for opt-in; not applied in R2
+  - Private schemas: object EXECUTE may be true via PUBLIC, but USAGE=false → call path blocked by schema boundary
+
+STILL_OPEN:
+- ACL-02 → M11G
+- DTH-RISK-TYPE-PUBLIC-USAGE (low)
+- service_role debt / M6

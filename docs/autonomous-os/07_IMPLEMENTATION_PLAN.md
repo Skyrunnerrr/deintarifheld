@@ -386,3 +386,15 @@ ACL_01_RESOLVED=NO
 NEXT=M11E-R2 Readback + disposable-object negative security tests
 THEN=M11E-F freeze
 ```
+
+## M11E-R2 PASS (behavioral proof + gap classification)
+
+```text
+M11E=IN_PROGRESS
+M11E-R2=PASS
+ACL_01_CORE_API_ROLE_DEFAULTS_RESOLVED=YES
+PUBLIC_ROUTINE_FAIL_CLOSED_GAP=CONFIRMED
+ACL_01_FULL_FAIL_CLOSED=NO
+NEXT=M11E-R3 Public routine default hardening decision
+THEN=M11E-F freeze only after gap closed or Owner accepts residual risk
+```

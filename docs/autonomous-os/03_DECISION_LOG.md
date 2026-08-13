@@ -279,3 +279,13 @@ DECISION=Apply exact authorized migration 20260813104040 (SHA256 04c8dd4b03f840b
 STATUS=ACCEPTED  
 MUTATION=STAGING_ONLY  
 NEXT=M11E-R2
+
+---
+
+## DTH-M11E-R2 — Behavioral Negative Security Tests
+
+DATE=2026-08-13  
+DECISION=Transactional Staging negative tests (ROLLBACK, residue=0) prove: new public tables/sequences receive no API-role privileges; new public routines receive no explicit API-role EXECUTE but retain effective EXECUTE via PostgreSQL builtin PUBLIC. Private schema USAGE deny blocks call path despite object-level PUBLIC EXECUTE. ACL-01 core API-role defaults proven; PUBLIC_ROUTINE_FAIL_CLOSED_GAP=CONFIRMED. M11E remains IN_PROGRESS pending R3 decision on global PUBLIC EXECUTE revoke.  
+STATUS=ACCEPTED  
+MUTATION=NO_PERSISTENT  
+NEXT=M11E-R3

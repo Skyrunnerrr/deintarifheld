@@ -149,7 +149,9 @@
 | P0 queue reconciliation | docs/autonomous-os/evidence-reports/DTH-M11E-P0.md |
 | R1A pre-apply freeze | docs/autonomous-os/evidence-reports/DTH-M11E-R1A.md |
 | R1B Staging apply | docs/autonomous-os/evidence-reports/DTH-M11E-R1B.md |
+| R2 behavioral tests | docs/autonomous-os/evidence-reports/DTH-M11E-R2.md |
+| R2 non-applying SQL | scripts/security-tests/dth-m11e-r2-transactional-negative-test.sql |
 | R1A migration | supabase/migrations/20260813104040_m11e_private_schema_default_privileges.sql |
 | R1A/R1B SHA256 | 04c8dd4b03f840ba641f934d5e1d8bd1ebefb95854f39b1b4c21dd02f44aa4db |
 | Archive | archive/supabase-migrations/pre-m11-security/ |
-| Next | M11E-R2 |
+| Next | M11E-R3 |
