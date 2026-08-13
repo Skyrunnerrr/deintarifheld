@@ -140,3 +140,12 @@
 | R1 freeze | docs/autonomous-os/evidence-reports/DTH-M11D-R1.md |
 | Model | MODEL_A / postgres DDL authority V1 |
 | Next | M11E |
+
+## DTH-M11E
+
+| Artifact | Path |
+|---|---|
+| R0 audit | docs/autonomous-os/evidence-reports/DTH-M11E-R0.md |
+| P0 queue reconciliation | docs/autonomous-os/evidence-reports/DTH-M11E-P0.md |
+| Archive | archive/supabase-migrations/pre-m11-security/ |
+| Next | M11E-R1 |

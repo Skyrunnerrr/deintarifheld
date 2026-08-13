@@ -192,3 +192,14 @@ OPEN:
 
 CLOSED by M11D:
 - uncertainty whether V1 requires custom DDL owner / migration LOGIN — resolved as MODEL_A (no)
+
+## M11E-P0 RISK NORMALIZATION
+
+CLOSED:
+- ACTIVE_MIGRATION_QUEUE_CONTAINS_NEVER_GOVERNED_003_013 (archived; Staging dry-run pending=0)
+
+OPEN:
+- ACL-01 (POSTGRES_PUBLIC_SCHEMA_DEFAULT) → M11E-R1
+- FUNCTION_PUBLIC_EXECUTE_DEFAULT_DESIGN → M11E-R1 blast-radius decision
+- ACL-02 → M11G
+- service_role debt / later security risks / M6

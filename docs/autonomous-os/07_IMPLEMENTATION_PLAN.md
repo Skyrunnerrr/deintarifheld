@@ -352,3 +352,13 @@ M11E_DEFAULT_PRIVILEGE_OWNER_PRINCIPAL=postgres
 NEXT=M11E Private Schema + Default Privileges (Staging-first; before/after tests required)
 M11E=NOT_STARTED
 ```
+
+## M11E-P0 PASS
+
+```text
+M11E=IN_PROGRESS
+M11E-P0=PASS
+ACTIVE_MIGRATIONS=001,002
+LEGACY_003_013=archive/supabase-migrations/pre-m11-security/
+NEXT=M11E-R1 Private Schema + Default Privileges
+```

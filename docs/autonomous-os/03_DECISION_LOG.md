@@ -241,3 +241,21 @@ DECISION=Retain provider-managed postgres as DTH DDL/migration authority for V1 
 STATUS=ACCEPTED  
 EXECUTABLE_MIGRATION_GUARD=DEFERRED  
 M11E=NOT_STARTED
+
+---
+
+## DTH-M11E-R0 — Pre-Mutation Audit
+
+DATE=2026-08-13  
+DECISION=Recommend OPTION_C: quarantine never-governed 003–013 from active supabase/migrations before any M11E security migration. ACL-01 causal source proven as postgres IN SCHEMA public default privileges (no global defaults). Existing object grants remain M11G.  
+STATUS=ACCEPTED_AND_EXECUTED_VIA_M11E_P0  
+MUTATION=NO (repo paths only)
+
+---
+
+## DTH-M11E-P0 — Migration Queue Reconciliation
+
+DATE=2026-08-13  
+DECISION=Archive never-governed 003–013 from active supabase/migrations to archive/supabase-migrations/pre-m11-security/ (byte-identical). Active queue = 001,002. Future migrations timestamp-based; no version reuse. Staging dry-run pending=0. No DB/history mutation.  
+STATUS=ACCEPTED  
+NEXT=M11E-R1

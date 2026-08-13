@@ -1,0 +1,72 @@
+# DTH-M11E-P0 — Migration Queue Reconciliation
+
+```text
+TRANCHE=DTH-M11E-P0
+DATE=2026-08-13
+BASELINE_BEFORE=c30aff08712ceb994e03bc4c7f280813677744d2
+M11E_R0=PASS
+MIGRATION_STRATEGY=OPTION_C
+STATUS=PASS (post-commit gates)
+STAGING_DB_MUTATION=NO
+PRODUCTION_MUTATION=NO
+MIGRATION_REPAIR_EXECUTED=NO
+REMOTE_HISTORY_MUTATED=NO
+```
+
+## Before / after
+
+```text
+ACTIVE_MIGRATION_COUNT_BEFORE=13
+ACTIVE_MIGRATION_COUNT_AFTER=2
+ACTIVE_AFTER=001_leads_phase_a.sql, 002_leads_phase_b.sql
+ARCHIVE_PATH=archive/supabase-migrations/pre-m11-security/
+EXECUTABLE_PATH_DEPENDENCY=NO
+```
+
+## Pre-move hashes (byte-identical post-move)
+
+```text
+003_foundation_reference.sql=19b95fd4ecb49e48ec6b77355c109b97cea1e85ad947f4d6047434a6ea756743
+004_cases.sql=b97b9129f01ed7f6652f78e4cad10f14fa00828973c456824023eaa793298b30
+005_case_notes.sql=1c6707f24f3ba3b45af877ac0eceb15d9d5077e9b604502ab8d917d3dd82f971
+006_tasks_and_reminders.sql=4a0a890a7a4cf1a3aabf9d8aa8c8b99984cebbf5bb862bd32e7315318520e9c3
+007_assignments.sql=82df9446faaef5d28745dd9c76989fd74fb4579c796422fab70c8b75fc322c75
+008_status_history.sql=8c9215499d5850986e9a22cf3ef0ac0c40b7a35f3cd909a4269465f29f9f9d2e
+009_communication_events.sql=4d67f9c4b61e96119e4f5ff863bfb4d858904ae48ae2e2dace970c676d1ef205
+010_ops_audit_events.sql=b9da9f6ab3fb1a82dfc8279e27d6a047613fc8c45726cfdae81661f020ff4d6c
+011_approvals.sql=8f59509afb947adb26a11c80cd9e47e0cff8056e78db7a9eb34e57d6505728e4
+012_transactional_outbox.sql=0594cd43e925176a73d79bd78531420cebaa320565e03dcd64acf12c65a3e690
+013_indexes_and_validation.sql=e38bf2a247fb9f3daf83b44ce414909e20cf5e3edfb4b4d5d68e4b88944f4e7b
+```
+
+## Validation (isolated temp workdir → Staging)
+
+```text
+LINKED_PROJECT_REF=uunpbmfvbfkideylhtbl
+LOCAL_REMOTE_MIGRATION_ALIGNMENT=PASS
+STAGING_DRY_RUN=Remote database is up to date
+PENDING_MIGRATION_COUNT=0
+```
+
+## Future versioning
+
+```text
+NEW_GOVERNED_MIGRATION_VERSIONING=TIMESTAMP_BASED
+VERSION_REUSE_ALLOWED=NO
+```
+
+## Preserved R0 privilege findings
+
+```text
+ACL_01_CAUSAL_SOURCE=POSTGRES_PUBLIC_SCHEMA_DEFAULT
+GLOBAL_DEFAULT_ACL_COUNT=0
+FUNCTION_PUBLIC_EXECUTE_R1_DECISION_REQUIRED=YES
+```
+
+## Next
+
+```text
+RECOMMENDED_NEXT_TRANCHE=DTH-M11E-R1_PRIVATE_SCHEMA_DEFAULT_PRIVILEGE_IMPLEMENTATION
+```
+
+Do NOT start R1 in this tranche.
