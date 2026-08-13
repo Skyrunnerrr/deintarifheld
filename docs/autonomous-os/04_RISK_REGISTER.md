@@ -250,3 +250,21 @@ STILL_OPEN:
 - ACL-02 → M11G
 - DTH-RISK-TYPE-PUBLIC-USAGE (low)
 - service_role debt / M6
+
+## M11E-R3A RISK POSITION
+
+ENGINE_PROVEN_FIX (not yet persisted):
+- OPTION_A global postgres PUBLIC EXECUTE revoke closes R2 gap for future postgres-created routines
+- Existing routines / other creator defaults unaffected
+- Rollback exact
+
+CANONICAL_OPEN_UNTIL_PERSIST:
+- DTH-RISK-FUNCTION-PUBLIC-EXECUTE remains OPEN until R3B/R3C apply+behavioral re-proof
+
+RESIDUAL_LOW:
+- Future CREATE EXTENSION as postgres may need explicit GRANTs if extension scripts omit them
+
+STILL_OPEN:
+- ACL-02 → M11G
+- PRIVATE_SCHEMA_DATA_API_EXPOSURE=UNPROVEN
+- service_role debt / M6

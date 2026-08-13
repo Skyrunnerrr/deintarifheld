@@ -398,3 +398,14 @@ ACL_01_FULL_FAIL_CLOSED=NO
 NEXT=M11E-R3 Public routine default hardening decision
 THEN=M11E-F freeze only after gap closed or Owner accepts residual risk
 ```
+
+## M11E-R3A PASS (decision + transactional proof)
+
+```text
+M11E=IN_PROGRESS
+M11E-R3A=PASS
+DECISION=OPTION_A_ADOPT_GLOBAL_POSTGRES_PUBLIC_EXECUTE_REVOKE
+PERSISTENT_MUTATION=NO
+NEXT=M11E-R3B Routine default security migration pre-apply freeze
+THEN=R3C Staging apply → re-proof → M11E-F
+```

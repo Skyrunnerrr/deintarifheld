@@ -289,3 +289,13 @@ DECISION=Transactional Staging negative tests (ROLLBACK, residue=0) prove: new p
 STATUS=ACCEPTED  
 MUTATION=NO_PERSISTENT  
 NEXT=M11E-R3
+
+---
+
+## DTH-M11E-R3A — Public Routine Default Hardening Decision
+
+DATE=2026-08-13  
+DECISION=Adopt OPTION_A: global `ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE ON ROUTINES FROM PUBLIC` (no IN SCHEMA). Transactional Staging proof: before-fn effective PUBLIC EXECUTE=YES; after-fn effective PUBLIC/API EXECUTE=NO; existing function ACLs unchanged; other creator defaults unchanged; rollback restores NONE_EXPLICIT global state; residue=0. Schema-scoped PUBLIC revoke rejected as ineffective per PostgreSQL. Persistent apply deferred to R3B pre-apply migration.  
+STATUS=ACCEPTED  
+MUTATION=NO_PERSISTENT  
+NEXT=M11E-R3B
