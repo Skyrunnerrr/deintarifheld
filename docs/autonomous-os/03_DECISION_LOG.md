@@ -269,3 +269,13 @@ DECISION=Author and freeze timestamp migration 20260813104040_m11e_private_schem
 STATUS=ACCEPTED  
 MUTATION=NO (repo + dry-run only)  
 NEXT=M11E-R1B
+
+---
+
+## DTH-M11E-R1B — Staging Security Migration Apply
+
+DATE=2026-08-13  
+DECISION=Apply exact authorized migration 20260813104040 (SHA256 04c8dd4b03f840ba641f934d5e1d8bd1ebefb95854f39b1b4c21dd02f44aa4db) to Staging uunpbmfvbfkideylhtbl only. Private schemas created fail-closed; postgres/public API-role default ACLs removed. Existing public object grants unchanged (ACL-02 open). Global PUBLIC EXECUTE not changed. ACL-01 configuration applied; negative proof deferred to R2. Production untouched.  
+STATUS=ACCEPTED  
+MUTATION=STAGING_ONLY  
+NEXT=M11E-R2

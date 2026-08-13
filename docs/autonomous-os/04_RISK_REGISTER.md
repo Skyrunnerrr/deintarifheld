@@ -219,3 +219,16 @@ OPEN:
 - ACL-01 proof → R1B/R2
 - ACL-02 → M11G
 - service_role debt / M6
+
+## M11E-R1B RISK POSITION
+
+CLOSED_IN_STAGING_CONFIG:
+- Private schemas ops/security/workflow/audit present + API-role USAGE/CREATE denied
+- postgres/public explicit API-role default ACLs removed (tables/sequences/routines)
+
+STILL_OPEN:
+- ACL-01_RESOLVED=NO until R2 disposable-object negative tests
+- DTH-RISK-FUNCTION-PUBLIC-EXECUTE (global builtin PUBLIC EXECUTE unchanged by design)
+- DTH-RISK-TYPE-PUBLIC-USAGE
+- ACL-02 → M11G
+- service_role debt / M6

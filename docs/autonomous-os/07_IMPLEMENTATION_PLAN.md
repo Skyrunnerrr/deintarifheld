@@ -374,3 +374,15 @@ STAGING_APPLY=NO
 NEXT=M11E-R1B Staging apply of exact authorized hash only
 THEN=M11E-R2 readback + negative tests → M11E-F freeze
 ```
+
+## M11E-R1B PASS (Staging apply)
+
+```text
+M11E=IN_PROGRESS
+M11E-R1B=PASS
+STAGING_REMOTE_HISTORY=001,002,20260813104040
+ACL_01_CONFIGURATION_APPLIED=YES
+ACL_01_RESOLVED=NO
+NEXT=M11E-R2 Readback + disposable-object negative security tests
+THEN=M11E-F freeze
+```
