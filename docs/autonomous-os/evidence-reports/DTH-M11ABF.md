@@ -1,0 +1,91 @@
+# DTH-M11ABF — Implementation Plan + Production Baseline Freeze
+
+```text
+TRANCHE=DTH-M11ABF
+DATE=2026-08-13
+BASELINE_BEFORE=c3b26a4f6e3c53b76c5bb71099f6900c5824fae8
+M11A=PASS
+M11B=PASS
+STATUS=PASS (post-commit gates)
+IMPLEMENTATION_AUTHORIZED=NO
+M11C_AUTHORIZED=AFTER_THIS_FREEZE_ONLY
+```
+
+## Frozen Production baseline
+
+```text
+PRODUCTION_MIGRATION_STATE=PROVEN
+REMOTE_DRIFT_CLASS=NO_DRIFT_OBSERVED
+MATERIAL_UNEXPLAINED_DRIFT=NO
+PROD_DB_BASELINE_ID=DTH-PROD-DB-20260813-de5e6bd1ecf4
+MIGRATION_HISTORY_HASH=3164aeb0f4d85eabb8bcc255402e83170729ffe8cb076483b98caf2407eca512
+SCHEMA_FINGERPRINT_HASH=de5e6bd1ecf430f620c95f914cf4f89f38e55cbf94058292bc34b4d98af77fb4
+PROJECT=deintarifheld-phase-a / PRODUCTION
+REMOTE_HISTORY=001 YES, 002 YES, 003–013 NO
+TABLES=public.leads, public.career_applications, public.audit_events
+PRIVATE_SCHEMAS=ABSENT
+OPS_TABLES=ABSENT
+RLS=enabled FORCE=false POLICY_COUNT=0
+OWNER=postgres
+service_role BYPASSRLS=true
+dth_*=NONE
+```
+
+## ACL findings (preserved)
+
+```text
+M11B-ACL-01 → M11E (default privileges)
+M11B-ACL-02 → M11G (object grants)
+PRODUCTION_MUTATION_NOW=NO
+```
+
+## Implementation sequence (frozen)
+
+M11B PASS → M11C Staging → M11D DDL custody → M11E private schemas+defaults → M11F LOGIN roles → M11G grants → M11H OPERATOR_PERSON → M11I capabilities → M11J AuthZ → M11K request context/pooler → M11L/M RLS → M11N session → M11O kill/CONTROL_VERSION → M11P staging E2E → M11Q PUBLIC_INTAKE atomic → M11R career → M11T outbox → M11S service_role retire → M11U EXTERNAL_PARTY → M11V workflow.
+
+## M11C entry contract
+
+```text
+M11C_ENVIRONMENT=STAGING
+PRODUCTION_*_MUTATION_ALLOWED=NO
+PRODUCTION_PII_ALLOWED=NO
+```
+
+## Evidence limitation
+
+```text
+PERSISTENT_RAW_EVIDENCE_LOCATION=DEGRADED_WORKSPACE_GITIGNORED
+NORMALIZED_COMMITTABLE_EVIDENCE=YES (canonical)
+RAW_SCREENSHOTS_CLASS=SUPPORTING_OWNER_EVIDENCE
+```
+
+## Hygiene (pre-commit)
+
+```text
+M11ABF_SECRET_SCAN=PASS
+M11ABF_PII_SCAN=PASS
+```
+
+## Commit / safety
+
+```text
+COMMIT_SHA=(git tip of this freeze; identity = safety branch tip)
+REMOTE_SAFETY_BRANCH=safety/dth-m11ab-canonical-<shortsha>
+REMOTE_BACKUP_VERIFIED=PASS_REQUIRED_AT_PUSH
+```
+
+## M6
+
+```text
+M6=OPEN
+OWNER_READBACK_PENDING=YES
+BLOCKING_CLASS=BLOCKING_BEFORE_PRODUCTION_IDENTITY_CLOSURE
+```
+
+## Next
+
+```text
+RECOMMENDED_NEXT_TRANCHE=DTH-M11C_STAGING_ENVIRONMENT_FOUNDATION
+```
+
+Do NOT start M11C in this tranche.

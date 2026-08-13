@@ -155,3 +155,40 @@ DECISION=Freeze DTH-DT-A Physically Segmented Runtime Domains as governed data c
 STATUS=ACCEPTED  
 M6=OPEN (unchanged)
 
+---
+
+## DTH-M11A — Database Migration & Access-Control Implementation Plan
+
+DATE=2026-08-13  
+DECISION=Adopt ordered expand-migrate-contract implementation plan in 07_IMPLEMENTATION_PLAN.md. PRODUCTION_MIGRATION_STATE=PARTIAL → next tranche M11B read-only reconciliation. No SQL in M11A.  
+STATUS=PROPOSED_PENDING_OWNER  
+SQL=NO
+
+---
+
+## DTH-M11B — Production Migration State Reconciliation (in progress)
+
+DATE=2026-08-13  
+DECISION=Project identity verified from existing link metadata; remote migration/schema readback unavailable without CLI/Owner-assisted metadata. M11B=OPEN. No mutation.  
+STATUS=OPEN  
+SQL=NO
+
+---
+
+## DTH-M11B — Production Migration State Reconciliation (FINAL)
+
+DATE=2026-08-13  
+DECISION=M11B=PASS. PRODUCTION_MIGRATION_STATE=PROVEN. Baseline DTH-PROD-DB-20260813-de5e6bd1ecf4. 001/002 match Git; 003–013 absent; ACL-01/02 legacy hardening inputs for M11E/G. No mutation.  
+STATUS=ACCEPTED_PENDING_OWNER_FREEZE_WITH_M11A  
+M11C=NOT_STARTED
+
+---
+
+## DTH-M11ABF — Implementation Plan + Production Baseline Freeze
+
+DATE=2026-08-13  
+DECISION=Freeze M11A implementation plan + M11B proven Production baseline DTH-PROD-DB-20260813-de5e6bd1ecf4. 001/002 spine; 003–013 absent; no unexplained drift; ACL-01→M11E; ACL-02→M11G. Staging next; Production security mutation still forbidden.  
+STATUS=ACCEPTED  
+M6=OPEN (unchanged)  
+M11C=NOT_STARTED
+

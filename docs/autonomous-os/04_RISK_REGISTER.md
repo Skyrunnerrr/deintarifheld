@@ -101,3 +101,48 @@ Open implementation / evidence risks:
 - M6 OPEN
 - Retention durations LEGAL_REVIEW_REQUIRED
 
+## M11A PLAN RISK UPDATE
+
+New explicit planning risks (not architecture undecided):
+- PRODUCTION_MIGRATION_STATE=PARTIAL until M11B
+- Pooler mode vs request-scoped set_config unproven until M11K
+- Hybrid public intake table location during transition (compatibility phase)
+- Owner/provider actions required for staging + Data API exposure config
+
+Mitigation: M11B first; staging before cutover; no service_role retirement before gates.
+
+## M11B RISK UPDATE
+
+- Remote production migration history / schema metadata not yet observed in this environment (CLI absent; no new credentials).
+- Until Owner readback: cannot confirm 003–013 absence or 001–002 schema match.
+- Dual-apply risk of drafts vs 003–013 remains (bodies equivalent) — still DO_NOT_APPLY drafts.
+
+## M11B FINAL RISK UPDATE
+
+Closed: unknown Production migration apply-state for 001–013 (now PROVEN: 001–002 present, 003–013 absent).
+
+Open implementation risks (not architecture undecided):
+- M11B-ACL-01 broad public default privileges → M11E
+- M11B-ACL-02 broad anon/authenticated/service_role table grants → M11G
+- Live service_role BYPASSRLS path remains until M11S
+- FORCE_RLS=false (expected current; later review)
+- No dth_* LOGIN roles yet
+
+## M11ABF RISK NORMALIZATION
+
+CLOSED as uncertainty:
+- Production migration apply-state for 001–013 (now PROVEN via M11B)
+
+OPEN implementation / evidence risks:
+- M11B-ACL-01 broad public default privileges → M11E
+- M11B-ACL-02 broad object grants → M11G
+- Live service_role BYPASSRLS path → M11S
+- No private schemas / no dth_* LOGIN roles
+- No Strong AuthZ / no RLS policies
+- In-memory session/kill
+- No staging environment
+- FORCE_RLS=false (current; later review)
+- PERSISTENT_RAW_EVIDENCE_LOCATION=DEGRADED_WORKSPACE_GITIGNORED
+- M6 OPEN
+- Retention durations LEGAL_REVIEW_REQUIRED
+

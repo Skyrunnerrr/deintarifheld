@@ -69,3 +69,37 @@
 | Data architecture | docs/autonomous-os/06_DATA_ARCHITECTURE.md |
 | ADRs | ADR-017 … ADR-034 |
 
+## DTH-M11A
+
+| Artifact | Path |
+|---|---|
+| Implementation plan | docs/autonomous-os/07_IMPLEMENTATION_PLAN.md |
+| Evidence | docs/autonomous-os/evidence-reports/DTH-M11A.md |
+
+## DTH-M11B
+
+| Artifact | Path |
+|---|---|
+| Evidence report | docs/autonomous-os/evidence-reports/DTH-M11B.md |
+| Local manifest | docs/autonomous-os/evidence/DTH-M11B/local-migration-manifest.txt |
+| Owner readback packet | docs/autonomous-os/evidence/DTH-M11B/OWNER_READBACK_PACKET.md |
+
+## DTH-M11B Final
+
+| Artifact | Path |
+|---|---|
+| Final report | docs/autonomous-os/evidence-reports/DTH-M11B.md |
+| R2 reconciliation | docs/autonomous-os/evidence/DTH-M11B/r2-reconciliation.json |
+| Baseline ID | DTH-PROD-DB-20260813-de5e6bd1ecf4 |
+
+## DTH-M11ABF
+
+| Artifact | Path |
+|---|---|
+| Freeze report | docs/autonomous-os/evidence-reports/DTH-M11ABF.md |
+| Implementation plan | docs/autonomous-os/07_IMPLEMENTATION_PLAN.md |
+| M11A | docs/autonomous-os/evidence-reports/DTH-M11A.md |
+| M11B | docs/autonomous-os/evidence-reports/DTH-M11B.md |
+| Baseline ID | DTH-PROD-DB-20260813-de5e6bd1ecf4 |
+| Raw evidence limitation | DEGRADED_WORKSPACE_GITIGNORED |
+

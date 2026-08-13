@@ -107,3 +107,55 @@ BLOCKING_CLASS=BLOCKING_BEFORE_PRODUCTION_IDENTITY_CLOSURE
 | RLS policies | PASS (architecture) | NOT_IMPLEMENTED |
 | Strong App AuthZ | PASS (required) | NOT_IMPLEMENTED |
 
+## M11A Planning Controls
+
+| Control | PLAN_DECIDED | IMPLEMENTED |
+|---|---|---|
+| Ordered implementation tranches M11B…V | PASS | NOT_STARTED |
+| First tranche read-only (M11B) | PASS | NOT_STARTED |
+| Staging before prod cutover | PASS | NOT_IMPLEMENTED |
+| Hybrid physical schema sequence | PASS | NOT_IMPLEMENTED |
+| service_role retirement gates | PASS | NOT_IMPLEMENTED |
+| Pooler identity leak proof required | PASS | NOT_IMPLEMENTED |
+
+## M11B Controls
+
+| Control | Status |
+|---|---|
+| Production project identity | PASS (linked + legal cross-check) |
+| Remote migration history read | NOT_EXECUTED |
+| Remote schema metadata read | NOT_EXECUTED |
+| PRODUCTION_MIGRATION_STATE | PARTIAL |
+| M11B gate | OPEN |
+
+## M11B Final Controls
+
+| Control | Status |
+|---|---|
+| Production project identity | PASS |
+| Remote migration history 001–002 | PASS |
+| Remote absence 003–013 | PASS |
+| Schema match 001–002 executable intent | PASS |
+| RLS enabled / policies 0 / FORCE false | PASS (observed) |
+| PRODUCTION_MIGRATION_STATE | PROVEN |
+| M11B-ACL-01 default privileges | OBSERVED → M11E |
+| M11B-ACL-02 object grants | OBSERVED → M11G |
+| M11B gate | PASS |
+
+## M11ABF Architecture vs Implementation
+
+| Control | Status |
+|---|---|
+| PRODUCTION_MIGRATION_BASELINE | PROVEN (DTH-PROD-DB-20260813-de5e6bd1ecf4) |
+| PRODUCTION_SCHEMA_DRIFT | NO_DRIFT_OBSERVED |
+| RLS_CURRENT_STATE | OBSERVED (enabled, FORCE=false, policies=0) |
+| RLS_TARGET_IMPLEMENTATION | NOT_IMPLEMENTED |
+| PRIVATE_SCHEMAS | NOT_IMPLEMENTED |
+| DTH_LOGIN_ROLES | NOT_IMPLEMENTED |
+| DEFAULT_PRIVILEGE_HARDENING | NOT_IMPLEMENTED (ACL-01 → M11E) |
+| OBJECT_GRANT_HARDENING | NOT_IMPLEMENTED (ACL-02 → M11G) |
+| PUBLIC_INTAKE_NARROW_ROLE | NOT_IMPLEMENTED |
+| IMPLEMENTATION_PLAN | FROZEN |
+| STAGING | NOT_IMPLEMENTED |
+| M6 identity evidence | OPEN |
+
