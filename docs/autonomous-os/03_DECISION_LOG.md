@@ -192,3 +192,32 @@ STATUS=ACCEPTED
 M6=OPEN (unchanged)  
 M11C=NOT_STARTED
 
+---
+
+## DTH-M11C — Staging Topology Decision (pre-mutation)
+
+DATE=2026-08-13  
+DECISION=Adopt DTH-STG-A Dedicated Supabase Staging Project (`deintarifheld-staging`). Reject Persistent Branch for foundation due to isolation, credential clarity, promotion risk, and lack of Production GitHub connection benefit.  
+STATUS=ACCEPTED (decision only; Staging project not yet created)  
+M11C_PROVIDER_STATE=OPEN  
+PRODUCTION_MUTATED=NO
+
+---
+
+## DTH-M11C — Staging Foundation PASS
+
+DATE=2026-08-13  
+DECISION=Dedicated Staging project deintarifheld-staging (uunpbmfvbfkideylhtbl) initialized with canonical 001/002 only via baseline-only workdir; structural parity with Production baseline proven read-only in R4. Production untouched. ACL-01/02 remain expected transitional debt for M11E/M11G.  
+STATUS=ACCEPTED  
+NEXT=DTH-M11CF_STAGING_BASELINE_FREEZE before M11D  
+M11D=NOT_STARTED
+
+---
+
+## DTH-M11CF — Staging Baseline Freeze
+
+DATE=2026-08-13  
+DECISION=Freeze clean Staging baseline (DTH-STG-A / deintarifheld-staging / uunpbmfvbfkideylhtbl) with canonical 001/002, structural parity YES vs Production baseline, ACL-01/02 preserved as transitional debt. Production untouched. M11D may begin Staging-only custody work after this freeze; no Production security mutation.  
+STATUS=ACCEPTED  
+M6=OPEN (unchanged)  
+M11D=NOT_STARTED

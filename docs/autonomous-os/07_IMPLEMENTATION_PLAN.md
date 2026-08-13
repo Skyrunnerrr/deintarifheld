@@ -249,8 +249,8 @@ Combine only if rollback/safety allows; do not merge B with mutation tranches.
 ## 25. First executable tranche
 
 ```text
-RECOMMENDED_NEXT_TRANCHE=DTH-M11B_PRODUCTION_MIGRATION_STATE_RECONCILIATION
-WHY_THIS_IS_FIRST=PRODUCTION_MIGRATION_STATE=PROVEN (M11B); must not invent SQL against unknown/ambiguous prod history.
+RECOMMENDED_NEXT_TRANCHE=DTH-M11C_STAGING_ENVIRONMENT_FOUNDATION
+WHY_THIS_IS_FIRST=M11ABF frozen; Staging foundation required before M11D security DDL.
 ```
 
 ## 26. Stop conditions (all future SQL tranches)
@@ -314,4 +314,30 @@ PRODUCTION_ROLE_MUTATION_ALLOWED=NO
 PRODUCTION_CONFIG_MUTATION_ALLOWED=NO
 PRODUCTION_PII_ALLOWED=NO
 STAGING_DATA=synthetic only
+```
+
+## M11C STATUS UPDATE
+
+```text
+M11C=PASS
+STAGING_TOPOLOGY=DTH-STG-A
+STAGING_PROJECT=deintarifheld-staging / uunpbmfvbfkideylhtbl
+M001_STAGING=PASS
+M002_STAGING=PASS
+M003_013_STAGING=NO
+STRUCTURE_PARITY=YES
+NEXT=DTH-M11CF then M11D
+M11D=NOT_STARTED
+```
+
+## M11CF FREEZE
+
+```text
+M11C=PASS
+M11CF=PASS (freeze)
+STAGING_BASELINE_FROZEN=YES
+NEXT_TRANCHE=M11D DDL Owner + Migration Runner Custody
+M11D_TARGET=STAGING_ONLY
+M11D_FIRST_DUTY=inventory Supabase-managed owner/migration roles; prove what may change before inventing DDL_OWNER
+SEQUENCE_UNCHANGED=M11D→E→F→G→H→I→J→K→L→M→N→O→P→Q→R→T→S→U→V
 ```

@@ -1,0 +1,156 @@
+# DTH-M11CF — Staging Baseline Freeze
+
+```text
+TRANCHE=DTH-M11CF
+DATE=2026-08-13
+BASELINE_BEFORE=8fa767c445eb698c729c7e4f5f848dbc50a7f711
+M11C=PASS
+M11C_R2=PASS
+M11C_R3=PASS
+M11C_R4=PASS
+STATUS=PASS (post-commit gates)
+M11D_AUTHORIZED=AFTER_THIS_FREEZE_ONLY
+DB_MUTATION_IN_M11CF=NO
+```
+
+## Staging identity
+
+```text
+STAGING_TOPOLOGY_ID=DTH-STG-A
+STAGING_PROJECT_NAME=deintarifheld-staging
+STAGING_PROJECT_REF=uunpbmfvbfkideylhtbl
+STAGING_REGION=eu-central-1
+PRODUCTION_PROJECT_REF=ylvczlldcgaxyadlawtb
+PROJECT_ISOLATION=PASS
+```
+
+## Migration baseline
+
+```text
+STAGING_REMOTE_MIGRATIONS=001,002
+M003_013=ABSENT
+DRAFTS_APPLIED=NO
+SEED_APPLIED=NO
+M001_SHA256=b693de3cfa8ccfc9f9586c7d7086a91721904956940b0c8e5fe9ed6531209e00
+M002_SHA256=1caca2aa66e01ffa38cadd36b9de93f07c0be2b37a0480878f22163949ee89cd
+CANONICAL_MIGRATION_AUTHORITY=supabase/migrations/
+TEMP_WORKDIR=/tmp/dth-m11c-baseline-B1wpiB (ephemeral execution filter; NOT authority)
+```
+
+## Structural baseline
+
+```text
+TABLES=public.leads, public.career_applications, public.audit_events
+COLUMNS=38
+CONSTRAINTS=11
+INDEXES=16
+TRIGGERS=0
+TARGET_PRIVATE_SCHEMAS=ABSENT
+LOCAL_ONLY_OPS_OBJECTS=ABSENT
+```
+
+## Production parity
+
+```text
+PROD_DB_BASELINE_ID=DTH-PROD-DB-20260813-de5e6bd1ecf4
+STAGING_SCHEMA_FINGERPRINT_HASH=f59f5e619c4a5909bec409c797cc094726b2dd7f9d6a2493bab9dc092863e8de
+HASH_DIRECT_COMPARISON=NOT_VALID
+STAGING_APP_STRUCTURE_MATCHES_PRODUCTION_BASELINE=YES
+NO_UNEXPLAINED_STRUCTURAL_DRIFT=YES
+```
+
+## RLS / ownership / roles
+
+```text
+RLS_ENABLED=true FORCE_RLS=false POLICY_COUNT=0
+OWNERS=postgres
+anon BYPASSRLS=false
+authenticated BYPASSRLS=false
+service_role BYPASSRLS=true
+dth_*=NONE
+OWNERSHIP_HARDENING_IMPLEMENTED=NO
+TARGET_RLS_POLICIES=NOT_IMPLEMENTED
+```
+
+## ACL debt (expected)
+
+```text
+M11B-ACL-01=REPRODUCED_IN_STAGING → M11E
+M11B-ACL-02=REPRODUCED_IN_STAGING → M11G
+```
+
+## Data / external / Production non-mutation
+
+```text
+PRODUCTION_DATA_COPIED=NO
+PRODUCTION_PII_PRESENT=NO
+PRODUCTION_SECRET_REUSE=NO
+SYNTHETIC_DATA_INSERTED=NO
+STAGING_BUSINESS_DATA_STATE=EMPTY
+REAL_EXTERNAL_RUNTIME=NOT_CONFIGURED_AND_NO_STAGING_RUNTIME
+PRODUCTION_DB_MUTATION=NO
+PRODUCTION_SCHEMA_MUTATION=NO
+PRODUCTION_ROLE_MUTATION=NO
+PRODUCTION_CONFIG_MUTATION=NO
+PRODUCTION_DEPLOYMENT=NO
+```
+
+## Data API baseline classification
+
+```text
+STAGING_DATA_API_FIELDS=NOT_READ_VIA_CLI / OWNER_CONFIGURATION_EVIDENCE
+UNPROVEN_BY_R4_CLI=YES for dashboard toggles
+```
+
+## Mutation log (Staging only)
+
+```text
+1. link isolated temporary workdir → STAGING → link/local metadata → PASS
+2. canonical apply M001+M002 → STAGING → PASS
+3. R4 structural readback → STAGING → MUTATION=NONE → READ_ONLY_PASS
+```
+
+## Evidence maturity
+
+```text
+STAGING_PROJECT_EXISTENCE=PROVIDER_OBSERVED
+STAGING_MIGRATION_HISTORY=PROVIDER_OBSERVED
+STAGING_SCHEMA_STRUCTURE=PROVIDER_OBSERVED
+PRODUCTION_PARITY=STRUCTURAL_RECONCILIATION
+STAGING_APP_E2E=NOT_TESTED
+STAGING_AUTHZ=NOT_IMPLEMENTED
+STAGING_RLS_TARGET=NOT_IMPLEMENTED
+```
+
+## M11D entry contract
+
+```text
+TARGET=STAGING_ONLY
+MAY=DDL owner model design/custody foundation; migration runner custody foundation
+MUST_NOT=Production mutation; premature private schemas/runtime roles/grants/RLS; app deploy; Production data copy; auto-start M11E
+MUST_USE=this frozen Staging baseline
+FIRST_DUTY=prove Supabase-managed owner/migration roles and what is safe to change before inventing new DDL_OWNER
+```
+
+## M6
+
+```text
+M6=OPEN
+OWNER_READBACK_PENDING=YES
+BLOCKING_CLASS=BLOCKING_BEFORE_PRODUCTION_IDENTITY_CLOSURE
+```
+
+## Commit / safety
+
+```text
+COMMIT_INTENT=DTH M11CF: freeze clean staging baseline
+REMOTE_SAFETY_BRANCH=safety/dth-m11c-staging-<shortsha>
+```
+
+## Next
+
+```text
+RECOMMENDED_NEXT_TRANCHE=DTH-M11D_DDL_OWNER_AND_MIGRATION_RUNNER_CUSTODY
+```
+
+Do NOT start M11D in this tranche.

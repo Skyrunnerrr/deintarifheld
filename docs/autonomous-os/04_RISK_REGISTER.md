@@ -146,3 +146,37 @@ OPEN implementation / evidence risks:
 - M6 OPEN
 - Retention durations LEGAL_REVIEW_REQUIRED
 
+## M11C OPEN BLOCKERS
+
+- Staging project not yet created (blocks all Staging apply/readback)
+- Supabase CLI unavailable in execution context (blocks canonical remote apply without Owner tooling approval)
+- Repo link metadata points at Production — mutation through that context forbidden
+- R-STG remains OPEN until Staging baseline proven
+
+## M11C STAGING FOUNDATION
+
+CLOSED / mitigated by M11C PASS:
+- No staging environment (R-STG foundation established)
+- Unknown Staging apply mechanism (baseline-only workdir proven)
+
+REMAINS OPEN (expected):
+- M11B-ACL-01 / M11B-ACL-02 (also reproduced on Staging; harden in M11E/M11G)
+- No private schemas / dth_* roles / Strong AuthZ / RLS policies
+- service_role bypass path
+- M6 OPEN
+
+## M11CF RISK NORMALIZATION
+
+CLOSED / downgraded:
+- R-STG / no staging environment — dedicated Staging proven and frozen
+
+OPEN (expected pre-M11D+):
+- M11B-ACL-01 (reproduced in Staging) → M11E
+- M11B-ACL-02 (reproduced in Staging) → M11G
+- service_role BYPASSRLS transition debt → M11S
+- private schemas / dth_* LOGIN roles / least-privilege grants NOT_IMPLEMENTED
+- Strong AuthZ / request context / target RLS policies NOT_IMPLEMENTED
+- in-memory session/kill
+- Staging external provider safety not yet configured for future runtime
+- M6 OPEN
+- retention legal review

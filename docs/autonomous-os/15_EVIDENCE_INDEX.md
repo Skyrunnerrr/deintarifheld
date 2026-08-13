@@ -103,3 +103,31 @@
 | Baseline ID | DTH-PROD-DB-20260813-de5e6bd1ecf4 |
 | Raw evidence limitation | DEGRADED_WORKSPACE_GITIGNORED |
 
+## DTH-M11C
+
+| Artifact | Path |
+|---|---|
+| Evidence report | docs/autonomous-os/evidence-reports/DTH-M11C.md |
+| Raw evidence (preferred) | ~/Library/Application Support/DeinTarifHeld/AutonomousOS/evidence/DTH-M11C/ |
+| Workspace gitignored mirror | docs/autonomous-os/evidence/DTH-M11C/ |
+| Status | OPEN — Owner actions required |
+
+### M11C-R4 artifacts
+
+| Artifact | Path |
+|---|---|
+| Migration list | evidence/DTH-M11C/r4-migration-list.txt |
+| Schema dump | evidence/DTH-M11C/r4-schema-dump.sql |
+| Parity JSON | evidence/DTH-M11C/r4-parity.json |
+| Fingerprint | evidence/DTH-M11C/r4-fingerprint.txt |
+| App Support root | ~/Library/Application Support/DeinTarifHeld/AutonomousOS/evidence/DTH-M11C/ |
+
+## DTH-M11CF
+
+| Artifact | Path |
+|---|---|
+| Freeze report | docs/autonomous-os/evidence-reports/DTH-M11CF.md |
+| M11C report | docs/autonomous-os/evidence-reports/DTH-M11C.md |
+| Staging ref | uunpbmfvbfkideylhtbl |
+| Staging fingerprint | f59f5e619c4a5909bec409c797cc094726b2dd7f9d6a2493bab9dc092863e8de |
+| Next | M11D after freeze |
