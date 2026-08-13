@@ -409,3 +409,14 @@ PERSISTENT_MUTATION=NO
 NEXT=M11E-R3B Routine default security migration pre-apply freeze
 THEN=R3C Staging apply → re-proof → M11E-F
 ```
+
+## M11E-R3B PASS (pre-apply freeze)
+
+```text
+M11E=IN_PROGRESS
+M11E-R3B=PASS
+MIGRATION=20260813171649_m11e_global_routine_default_hardening.sql
+SHA256=871c20524ee8c4c98a36e795051fa545f205676c988082854ec8034969b6dca5
+STAGING_APPLY=NO
+NEXT=M11E-R3C Staging apply of exact authorized hash + behavioral re-proof
+```

@@ -299,3 +299,13 @@ DECISION=Adopt OPTION_A: global `ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVO
 STATUS=ACCEPTED  
 MUTATION=NO_PERSISTENT  
 NEXT=M11E-R3B
+
+---
+
+## DTH-M11E-R3B — Routine Default Migration Pre-Apply Freeze
+
+DATE=2026-08-13  
+DECISION=Author and freeze timestamp migration 20260813171649_m11e_global_routine_default_hardening.sql (SHA256 871c20524ee8c4c98a36e795051fa545f205676c988082854ec8034969b6dca5) containing only the approved global ALTER DEFAULT PRIVILEGES statement. Staging dry-run pending=1 exact R3B. No apply. R3C may apply exactly this hash to Staging only.  
+STATUS=ACCEPTED  
+MUTATION=NO  
+NEXT=M11E-R3C
