@@ -51,3 +51,53 @@ Canonical open implementation / evidence risks (minimum set):
 - Future workflow durability not implemented
 - Future stale-execution controls not implemented
 
+## M10 RISK UPDATE
+
+Architecture decisions closed for topology/SoT/role model (pending M10R). Remaining implementation risks:
+
+- Current broad service_role + BYPASSRLS on public path (until retirement cutover)
+- CREATE_POLICY_COUNT=0
+- Missing durable person mapping / session / kill / workflow tables
+- Missing strong App AuthZ
+- Ops migrations 003–013 not production-proven
+- Dual draft vs promoted migration roots (authority decided; cleanup not executed)
+- Retention durations LEGAL_REVIEW_REQUIRED
+- Backup restore vs provider resend reconciliation not implemented
+- M6 identity evidence still OPEN (Track A)
+
+DATA_TOPOLOGY_UNRESOLVED=NO (selected DTH-DT-A; M10R may challenge)
+
+## M10R RISK UPDATE
+
+Closed as architecture gaps (now decided): role assumption, schema exposure, intake atomicity mechanism, operator vs party, restore privacy process, kill linearization honesty.
+
+Remain as implementation risks until M11+/cutover:
+- Live service_role still in production path
+- Physical schemas not yet created
+- LOGIN roles/grants not created
+- privacy_operations ledger not implemented
+- FORCE RLS not applied
+- M6 OPEN
+
+## M10F RISK NORMALIZATION
+
+Architecture topology/principals/schemas/atomicity/identity/restore are DECIDED (not open architecture risks).
+
+Open implementation / evidence risks:
+- Current broad service_role on public path
+- CREATE_POLICY_COUNT=0
+- Missing persistent OPERATOR_PERSON mapping
+- Missing EXTERNAL_PARTY persistence
+- Missing Strong AuthZ
+- In-memory session/kill
+- No staging
+- Physical schemas not created
+- LOGIN roles/grants/ownership not implemented
+- Request-scoped DB identity context not implemented
+- Atomic Intake target not implemented
+- Outbox/workflow/control persistence incomplete
+- Restore privacy replay not implemented
+- Monitoring/recovery incomplete
+- M6 OPEN
+- Retention durations LEGAL_REVIEW_REQUIRED
+

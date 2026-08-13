@@ -127,3 +127,31 @@ DECISION=Freeze DTH-ERA-A Evolutionary Dual-Plane as governed contract. ADRs ACC
 STATUS=ACCEPTED  
 M6=OPEN (unchanged)
 
+---
+
+## DTH-M10 — Canonical Data & Source-of-Truth Architecture
+
+DATE=2026-08-13  
+DECISION=Select DTH-DT-A Single Postgres Project Dual Logical Domains. SoT registry, PUBLIC_INTAKE role replacing broad service_role target, grants+RLS+App AuthZ layers, CONTROL_VERSION, durable session/kill/workflow, supabase/migrations as sole apply root.  
+STATUS=PROPOSED_PENDING_M10R_AND_OWNER  
+IMPLEMENTATION=NO  
+M6=OPEN (unchanged)
+
+---
+
+## DTH-M10R — Principal Data Security Review
+
+DATE=2026-08-13  
+DECISION=M10R=PASS. Retain DTH-DT-A. Harden: direct PG LOGIN roles; physical private schemas; atomic server txn; human set_config context; OPERATOR_PERSON≠EXTERNAL_PARTY; same-txn security audit; dispatch-authorization kill linearization; privacy_ops restore reconcile.  
+STATUS=ACCEPTED_PENDING_M10F  
+IMPLEMENTATION=NO
+
+---
+
+## DTH-M10F — Canonical Data Architecture Freeze
+
+DATE=2026-08-13  
+DECISION=Freeze DTH-DT-A Physically Segmented Runtime Domains as governed data contract (M10+M10R). No SQL. Implementation requires M11A planning first.  
+STATUS=ACCEPTED  
+M6=OPEN (unchanged)
+

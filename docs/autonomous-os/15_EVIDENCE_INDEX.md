@@ -45,3 +45,27 @@
 | Architecture | docs/autonomous-os/02_ARCHITECTURE.md |
 | Control matrix | docs/autonomous-os/05_CONTROL_MATRIX.md |
 
+## DTH-M10
+
+| Artifact | Path |
+|---|---|
+| Data architecture | docs/autonomous-os/06_DATA_ARCHITECTURE.md |
+| Evidence report | docs/autonomous-os/evidence-reports/DTH-M10.md |
+| ADRs | docs/architecture/adr/ADR-017.md … ADR-032.md |
+
+## DTH-M10R
+
+| Artifact | Path |
+|---|---|
+| M10R evidence | docs/autonomous-os/evidence-reports/DTH-M10R.md |
+| ADR-033 | docs/architecture/adr/ADR-033.md |
+| ADR-034 | docs/architecture/adr/ADR-034.md |
+
+## DTH-M10F
+
+| Artifact | Path |
+|---|---|
+| M10F freeze | docs/autonomous-os/evidence-reports/DTH-M10F.md |
+| Data architecture | docs/autonomous-os/06_DATA_ARCHITECTURE.md |
+| ADRs | ADR-017 … ADR-034 |
+

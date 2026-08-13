@@ -222,3 +222,31 @@ PRODUCTION_DATA_MUST_NOT_BE_REQUIRED_FOR_STAGING
 AUDIT_MUST_NOT_BE_DESCRIBED_AS_IMMUTABLE_UNLESS_PROVEN
 M10_DATA_TOPOLOGY_MUST_PRESERVE_DURABLE_PUBLIC_TO_OPS_HANDOFF
 ```
+
+## M10 Data Topology (frozen pending M10R/M10F)
+
+```text
+DATA_TOPOLOGY_ID=DTH-DT-A
+DATA_TOPOLOGY_NAME=Single Postgres Project — Physically Segmented Runtime Domains
+DETAIL=docs/autonomous-os/06_DATA_ARCHITECTURE.md
+```
+
+M9 runtime freeze unchanged. M10 adds data SoT, DB principals, grants/RLS layers, handoff persistence, retention/deletion architecture.
+Hard facts: service_role BYPASSRLS; GRANTs and RLS are separate controls.
+
+## M10R hardenings (binding)
+
+- DB role assumption: DIRECT_POSTGRES_LOGIN_ROLE (not service_role Data API target)
+- Physical schemas REQUIRED; ops/security/workflow/audit NOT Data-API-exposed
+- Public intake atomicity: SERVER_DIRECT_POSTGRES_TRANSACTION
+- Human DB context: Ops API request-scoped set_config; never client person_id
+- OPERATOR_PERSON ≠ EXTERNAL_PARTY
+
+## M10F Data Architecture Freeze
+
+```text
+DATA_TOPOLOGY_ID=DTH-DT-A
+DATA_TOPOLOGY_NAME=Single Postgres Project — Physically Segmented Runtime Domains
+DATA_ARCHITECTURE_FROZEN=YES
+DETAIL=docs/autonomous-os/06_DATA_ARCHITECTURE.md
+```
