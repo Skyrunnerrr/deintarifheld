@@ -311,3 +311,24 @@ RESIDUAL_LOW_RISK:
 STILL_OPEN:
 - ACL-02 → M11G
 - service_role debt / M6
+
+## M11E-F FREEZE RISK POSITION
+
+RESOLVED_WITH_FROZEN_SCOPE:
+- ACL-01 future postgres-created table/sequence/routine API defaults (incl. PUBLIC EXECUTE for future postgres routines)
+- PRIVATE_SCHEMA_DATA_API_EXPOSURE=PROVEN_NOT_EXPOSED
+- DTH-RISK-FUNCTION-PUBLIC-EXECUTE=CLOSED_FOR_FUTURE_POSTGRES_CREATED_ROUTINES
+
+RESIDUAL_LOW_RISK:
+- PROVIDER_FUTURE_POSTGRES_ROUTINE_CREATION_RISK
+
+OPEN (not M11E failures):
+- ACL-02 existing broad object grants → M11G
+- runtime LOGIN roles absent → M11F
+- strong application AuthZ → M11J
+- request-scoped context → M11K
+- production RLS policies → M11L/M11M
+- durable sessions → M11N
+- durable kill/control → M11O
+- service_role runtime debt → M11S
+- M6 identity closure OPEN

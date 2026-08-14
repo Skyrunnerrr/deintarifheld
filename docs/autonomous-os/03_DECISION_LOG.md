@@ -329,3 +329,13 @@ DECISION=Read-only Staging proof: authenticator has no pgrst.db_schemas / pgrst.
 STATUS=ACCEPTED  
 MUTATION=NO  
 NEXT=M11E-F
+
+---
+
+## DTH-M11E-F — Security Baseline Freeze
+
+DATE=2026-08-14  
+DECISION=Freeze completed Staging M11E security foundation as canonical entry baseline for M11F. Final decisions: (1) private schemas ops/security/workflow/audit owned by postgres; (2) hosted Data API does not expose those schemas; (3) future postgres-created public tables/sequences/routines fail-closed for API roles; (4) global postgres PUBLIC EXECUTE on future routines revoked; (5) existing public object grants deferred to M11G (ACL-02); (6) M11E proves Staging only — Production untouched and not claimed hardened. M11E=PASS. M11F may begin with read-only role inventory before creating dth_public_intake / dth_ops_api / dth_worker. Do not start M11F automatically in this tranche.  
+STATUS=ACCEPTED  
+MUTATION=NO  
+NEXT=M11F
