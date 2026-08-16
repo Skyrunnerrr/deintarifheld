@@ -1,7 +1,7 @@
 /**
  * Synthetic A1 handlers only — no mail, calendar, AI, CRM, providers.
  */
-import { SyntheticCapability, WorkflowErrorClass } from '@deintarifheld/shared';
+import { SyntheticCapability, WorkflowErrorClass, B2B_QUALIFICATION_START_CAPABILITY } from '@deintarifheld/shared';
 import { installDefaultSyntheticCapabilities } from './capability-registry.js';
 
 /** In-memory attempt counters for transient-then-success (per job id). LOCAL_TEST_ONLY */
@@ -111,6 +111,27 @@ export async function handlePoison() {
   };
 }
 
+/**
+ * A2→A3 placeholder: proves dispatch; no AI, no mail, no qualification logic.
+ * Leaves workflow open for A3 (does not complete workflow).
+ */
+export async function handleB2bQualificationStart(job, ctx) {
+  if (!job.payload_redacted?.case_id || !job.payload_redacted?.lead_id) {
+    return {
+      ok: false,
+      errorClass: WorkflowErrorClass.VALIDATION_PERMANENT,
+      errorCode: 'QUAL_START_PAYLOAD_INCOMPLETE',
+      permanent: true,
+    };
+  }
+  ctx.idempotentEffects?.record?.(job.id, 'B2B_QUALIFICATION_START_READY');
+  return {
+    ok: true,
+    completeWorkflow: false,
+    workflowState: 'QUALIFICATION_PENDING',
+  };
+}
+
 export function registerAllSyntheticHandlers() {
   installDefaultSyntheticCapabilities({
     [SyntheticCapability.SYNTHETIC_NOOP]: handleSyntheticNoop,
@@ -120,5 +141,6 @@ export function registerAllSyntheticHandlers() {
     [SyntheticCapability.SYNTHETIC_EFFECT_INTENT_DENIED]: handleEffectIntentDenied,
     [SyntheticCapability.SYNTHETIC_CHAIN_STEP]: handleChainStep,
     [SyntheticCapability.SYNTHETIC_POISON]: handlePoison,
+    [B2B_QUALIFICATION_START_CAPABILITY]: handleB2bQualificationStart,
   });
 }

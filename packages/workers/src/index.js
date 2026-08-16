@@ -33,3 +33,4 @@ export {
   resetSyntheticHandlerState,
 } from './runtime/handlers.js';
 export { executeLeasedJob, createIdempotentEffectTracker } from './runtime/execute-job.js';
+export { drainLeadHandoffs } from './runtime/lead-handoff-drain.js';
