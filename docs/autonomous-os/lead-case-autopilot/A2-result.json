@@ -2,7 +2,7 @@
   "tranche": "DTH-A2",
   "title": "Lead \u2192 Case Autopilot",
   "base_sha": "95a05f109cbb30574f685a724e87bc96a0dc2e0e",
-  "final_sha": "e09ac0e0199098aa8c2e4b3e1661a1ab444278be",
+  "final_sha": "abf80e11b99647a06a1a0a4bc05228af9a475e62",
   "public_b2b_intake_reused": true,
   "source_event_durable": true,
   "local_atomic_intake_proven": true,
