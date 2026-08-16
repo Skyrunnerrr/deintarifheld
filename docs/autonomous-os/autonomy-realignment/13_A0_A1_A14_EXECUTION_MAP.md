@@ -20,3 +20,12 @@
 ## Staging security track (parallel, not a second product)
 
 M11F→G→H→I→J→K→L→M→N→O→P must gate **staging** autonomy proofs. Local A1–A5 may proceed with explicit LOCAL_ONLY evidence labels.
+
+
+## A1 status update (do not rewrite A0 history)
+
+- A1: IMPLEMENTED_E2_LOCAL — see `docs/autonomous-os/autonomy-runtime/`
+- M11O: PARTIALLY_CONSUMED_E2_LOCAL (durable kill + CONTROL_VERSION local)
+- M11V: IMPLEMENTED_E2_LOCAL (workflow/job persistence local)
+- Staging/production autonomy: NO (M11F–P pending)
+- Next: DTH-A2 LEAD_TO_CASE_AUTOPILOT

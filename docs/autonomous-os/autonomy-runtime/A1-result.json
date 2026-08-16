@@ -1,0 +1,40 @@
+{
+  "tranche": "DTH-A1",
+  "title": "Durable Workflow Runtime",
+  "A1_RESULT": "CLOSED_E2_LOCAL_STAGING_SECURITY_GATES_PENDING",
+  "base_sha": "75c4c6067cebb178faf6c9e0c50c7e644d249f5e",
+  "branch": "feat/dth-a1-durable-workflow-runtime-001",
+  "migration": {
+    "file": "supabase/migrations/20260816090000_a1_durable_workflow_runtime.sql",
+    "sha256": "6514871c811a64a99eabb7ddf74d936f80339ff43a898efbdf37776e38f02c4d",
+    "apply_environment": "LOCAL_DISPOSABLE_DOCKER_dth-a1-pg",
+    "production_mutation": false
+  },
+  "WORKFLOW_PERSISTENCE": "PROVEN_E2_LOCAL",
+  "CONTINUOUS_WORKER": "PROVEN_E2_LOCAL",
+  "LEASED_JOB_CLAIMING": "PROVEN_E2_LOCAL",
+  "RETRY_BACKOFF": "PROVEN_E2_LOCAL",
+  "DLQ_REPROCESS": "PROVEN_E2_LOCAL",
+  "DURABLE_GLOBAL_KILL": "PROVEN_E2_LOCAL",
+  "CONTROL_VERSION": "PROVEN_E2_LOCAL",
+  "TAKEOVER_INVALIDATION_HOOK": "PROVEN_E2_LOCAL",
+  "M11O_STATUS": "PARTIALLY_CONSUMED_E2_LOCAL",
+  "M11V_STATUS": "IMPLEMENTED_E2_LOCAL",
+  "PRODUCTION_AUTONOMY_READY": "NO",
+  "STAGING_AUTONOMY_READY": "NO",
+  "tests": {
+    "a1_suite": "39/39 PASS",
+    "command": "npm run test:dth:a1"
+  },
+  "next_tranche": "DTH-A2 LEAD_TO_CASE_AUTOPILOT",
+  "invariants": {
+    "DUPLICATE_CONCURRENT_LEASE_OWNERS": 0,
+    "STALE_WORKER_COMPLETIONS": 0,
+    "STALE_CONTROL_EXTERNAL_EFFECTS": 0,
+    "GLOBAL_KILL_EXTERNAL_EFFECT_BYPASSES": 0,
+    "POSTGRES_FAILURE_MEMORY_QUEUE_FALLBACKS": 0,
+    "POSTGRES_FAILURE_JSON_QUEUE_FALLBACKS": 0,
+    "PRODUCTION_AUTONOMY_ACTIVATIONS": 0,
+    "LIVE_PROVIDER_CALLS": 0
+  }
+}
