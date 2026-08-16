@@ -15,3 +15,21 @@ export {
   getNoopHandlerStats,
 } from './noop-handler.js';
 export { runOneShotLocalWorker } from './one-shot-runner.js';
+
+/* DTH-A1 durable workflow runtime */
+export {
+  runDurableWorkflowWorker,
+  drainDueJobs,
+  createWorkerInstanceId,
+} from './runtime/continuous-runner.js';
+export {
+  registerCapability,
+  getCapabilityHandler,
+  listRegisteredCapabilities,
+  resolveCapabilityOrFail,
+} from './runtime/capability-registry.js';
+export {
+  registerAllSyntheticHandlers,
+  resetSyntheticHandlerState,
+} from './runtime/handlers.js';
+export { executeLeasedJob, createIdempotentEffectTracker } from './runtime/execute-job.js';

@@ -11,15 +11,17 @@
   "scripts": {
     "build": "node -e \"console.log('[@deintarifheld/workers] stub build OK')\"",
     "typecheck": "node -e \"process.exit(0)\"",
-    "test": "node --test src/worker-stub.test.js"
+    "test": "node --test src/worker-stub.test.js",
+    "test:a1": "node --test --test-concurrency=1 tests/a1-durable-runtime.test.js tests/a1-failure-injection.test.js"
   },
   "dth": {
-    "tranche": "P3-F5",
+    "tranche": "DTH-A1",
     "skeletonOnly": true,
     "productiveLogic": false,
     "activationAuthorized": false,
     "automationActivationDefault": "NO",
-    "workerMode": "ONE_SHOT_LOCAL_TEST_STUB"
+    "workerMode": "DURABLE_LOCAL_SYNTHETIC",
+    "productionAutonomyAllowed": false
   },
   "dependencies": {
     "@deintarifheld/db": "*",
