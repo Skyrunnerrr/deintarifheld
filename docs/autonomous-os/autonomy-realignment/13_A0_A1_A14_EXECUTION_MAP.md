@@ -29,3 +29,11 @@ M11F→G→H→I→J→K→L→M→N→O→P must gate **staging** autonomy proo
 - M11V: IMPLEMENTED_E2_LOCAL (workflow/job persistence local)
 - Staging/production autonomy: NO (M11F–P pending)
 - Next: DTH-A2 LEAD_TO_CASE_AUTOPILOT
+
+
+## A2 status update
+
+- A2: IMPLEMENTED_E2_LOCAL — see `docs/autonomous-os/lead-case-autopilot/`
+- M11T: IMPLEMENTED_E2_LOCAL
+- M11Q/R/S: PENDING
+- Next: DTH-A3 QUALIFICATION_AND_MISSING_INFO
