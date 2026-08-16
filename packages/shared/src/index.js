@@ -76,6 +76,22 @@ export {
   requiresReconciliation,
 } from './workflow-runtime-contracts.js';
 
+/* DTH-A2 Lead → Case contracts */
+export {
+  BUSINESS_LEAD_ACCEPTED_EVENT,
+  BUSINESS_LEAD_ACCEPTED_SCHEMA_VERSION,
+  B2B_INBOUND_WORKFLOW_TYPE,
+  B2B_INBOUND_WORKFLOW_VERSION,
+  B2B_QUALIFICATION_START_CAPABILITY,
+  LeadType,
+  SOURCE_LEAD_STATUS_AFTER_ACCEPT,
+  CASE_INITIAL_STATUS,
+  WORKFLOW_INITIAL_STATE,
+  FIRST_JOB_TYPE,
+  buildBusinessLeadAcceptedPayload,
+  isBusinessEnergyLeadType,
+} from './a2-lead-case-contracts.js';
+
 /* P4-H0a — local production-identity foundation (synthetic provider evidence) */
 export {
   IdentityProvider,

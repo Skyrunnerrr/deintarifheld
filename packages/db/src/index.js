@@ -64,3 +64,23 @@ export {
   ingestSyntheticOutboxEvent,
   A1_SYNTHETIC_OUTBOX_EVENT,
 } from './workflow/outbox-ingest.js';
+
+/* DTH-A2 Lead → Case handoff */
+export { acceptBusinessLeadAtomic } from './a2/atomic-intake.js';
+export {
+  claimOneSourceEvent,
+  markSourceEventProcessed,
+  markSourceEventFailed,
+  markSourceEventPermanentFailed,
+} from './a2/source-outbox.js';
+export {
+  loadLeadProjection,
+  findCaseBySourceLead,
+  createCaseFromLead,
+  findWorkflowForLead,
+  findInitialQualificationJob,
+  isHandoffComplete,
+  reconcileLeadToCaseHandoff,
+  processOneBusinessLeadHandoff,
+  detectHandoffOrphans,
+} from './a2/handoff.js';

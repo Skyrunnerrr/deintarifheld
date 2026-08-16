@@ -139,8 +139,8 @@ export async function startWorkflowIdempotent(pool, {
 }
 
 /**
- * A2 handoff surface: enqueue LEAD_ACCEPTED → workflow start contract.
- * A1 does not implement business case creation — only the durable start API.
+ * A2 handoff surface: enqueue LEAD_ACCEPTED → B2B inbound workflow + qualification start job.
+ * Idempotent by lead + correlation. Prefer reconcileLeadToCaseHandoff for full Case+Workflow lineage.
  */
 export async function enqueueLeadAcceptedWorkflowStart(pool, {
   leadId,
@@ -149,18 +149,25 @@ export async function enqueueLeadAcceptedWorkflowStart(pool, {
   scheduledAt = null,
 } = {}) {
   return startWorkflowIdempotent(pool, {
-    workflowType: 'LEAD_TO_CASE',
+    workflowType: 'B2B_INBOUND_CUSTOMER',
     workflowVersion: 1,
     aggregateType: 'lead',
     aggregateId: String(leadId),
     caseId,
     correlationId,
-    currentState: 'LEAD_ACCEPTED_RECEIVED',
-    jobType: 'SYNTHETIC_NOOP',
-    jobIdempotencyKey: `lead-accepted:${leadId}:${correlationId}`,
+    currentState: 'LEAD_ACCEPTED_HANDOFF',
+    jobType: 'B2B_QUALIFICATION_START',
+    jobIdempotencyKey: caseId
+      ? `b2b-qual-start:${leadId}:${caseId}`
+      : `lead-accepted:${leadId}:${correlationId}`,
     scheduledAt,
-    payloadRedacted: { event: 'LEAD_ACCEPTED', lead_id: String(leadId) },
-    metadataRedacted: { handoff: 'A2', implemented_business: false },
+    payloadRedacted: {
+      event: 'LEAD_ACCEPTED',
+      lead_id: String(leadId),
+      case_id: caseId ? String(caseId) : null,
+      schema_version: 1,
+    },
+    metadataRedacted: { handoff: 'A2', implemented_business: true },
   });
 }
 
