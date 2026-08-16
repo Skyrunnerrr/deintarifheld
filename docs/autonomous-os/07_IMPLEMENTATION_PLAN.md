@@ -449,3 +449,14 @@ ACL_02_RESOLVED=NO
 NEXT=M11E-F Security baseline freeze
 DO_NOT_START_M11F=YES
 ```
+
+---
+
+## DTH-A0 SEQUENCING LAYER
+
+`CURRENT IMPLEMENTATION PLAN` (M11F–M11V) remains the security/data prerequisite catalog.
+
+`NEW AUTONOMY EXECUTION MAP` (A1–A14) sequences business autonomy and **consumes** remaining M11 items as embedded gates — see `docs/autonomous-os/autonomy-realignment/08_A0_M11_TO_AUTONOMY_MAPPING.md`.
+
+Do not treat M11 and A-series as two competing products.
+

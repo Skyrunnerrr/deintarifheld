@@ -303,3 +303,10 @@ DTH-RISK-FUNCTION-PUBLIC-EXECUTE=CLOSED_FOR_FUTURE_POSTGRES_CREATED_ROUTINES
 NEXT=DTH-M11E-F_SECURITY_BASELINE_FREEZE
 PRODUCTION_SECURITY_MUTATION_ALLOWED=NO
 ```
+
+---
+
+## DTH-A0 NOTE
+
+As of A0 baseline `2195872` (M11E R4): continuous worker loop / scheduler / retry / DLQ remain **NOT_IMPLEMENTED** (explicit worker stub flags). Autonomy roadmap freeze: `docs/autonomous-os/autonomy-realignment/`.
+

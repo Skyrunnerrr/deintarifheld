@@ -71,3 +71,15 @@ No autonomous runtime agents, no customer-mail activation, no production AuthZ/R
 - Broad marketing automation
 - Premature microservice/Kubernetes sprawl
 - Treating `/tmp` as audit evidence
+
+---
+
+## DTH-A0 AUTONOMY REALIGNMENT (2026-08-16)
+
+Business-autonomy sequencing is frozen in `docs/autonomous-os/autonomy-realignment/`.
+
+- Historical M0–M11 security/data plan remains valid as foundation.
+- New execution layer: **A1–A14 Revenue-first Autonomy Map** (does not erase M11).
+- Next implementation tranche: **DTH-A1 Durable Workflow Runtime**.
+- See `autonomy-realignment/13_A0_A1_A14_EXECUTION_MAP.md` and `08_A0_M11_TO_AUTONOMY_MAPPING.md`.
+
