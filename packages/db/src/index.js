@@ -23,3 +23,44 @@ export {
   markOutboxProcessed,
   markOutboxFailed,
 } from './outbox-claim.js';
+
+/* DTH-A1 durable workflow / control storage */
+export { assertWorkflowSchemaCompatible } from './workflow/schema-gate.js';
+export {
+  readControlVersion,
+  setGlobalKill,
+  setDomainKill,
+  pauseWorkflowControl,
+  resumeWorkflowControl,
+  activateTakeover,
+  readFreshControlSnapshot,
+  evaluatePreEffectControl,
+  withControlTx,
+} from './workflow/control.js';
+export {
+  startWorkflowIdempotent,
+  enqueueLeadAcceptedWorkflowStart,
+  createFollowOnJob,
+  completeWorkflowIfTerminal,
+  markWorkflowBlocked,
+} from './workflow/instances.js';
+export {
+  reclaimExpiredLeases,
+  claimDueJobs,
+  markJobRunning,
+  renewLease,
+} from './workflow/claim.js';
+export {
+  computeBackoffMs,
+  completeJobSuccess,
+  scheduleRetryOrDeadLetter,
+  failPermanent,
+  cancelJob,
+  reprocessDeadLetter,
+  blockJobForControl,
+} from './workflow/transitions.js';
+export { getWorkflowRuntimeStats } from './workflow/stats.js';
+export {
+  ingestSyntheticOutboxEvent,
+  A1_SYNTHETIC_OUTBOX_EVENT,
+} from './workflow/outbox-ingest.js';

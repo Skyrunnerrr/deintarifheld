@@ -54,6 +54,28 @@ export {
   MAX_JOBS_PER_TEST_RUN,
 } from './outbox-consumer-contracts.js';
 
+/* DTH-A1 durable workflow runtime contracts */
+export {
+  JOB_DELIVERY_SEMANTICS,
+  PRODUCTION_EXACTLY_ONCE_GUARANTEE,
+  EXTERNAL_EFFECT_ADAPTER_DEFAULT,
+  PRODUCTION_AUTONOMY_ALLOWED,
+  WorkflowStatus,
+  JobStatus,
+  ControlScope,
+  ControlStateValue,
+  WorkflowErrorClass,
+  RETRYABLE_ERROR_CLASSES,
+  RECONCILIATION_ERROR_CLASSES,
+  SyntheticCapability,
+  A1_WORKFLOW_TYPE,
+  A1_WORKFLOW_VERSION,
+  A2_HANDOFF_EVENT_TYPE,
+  RuntimeLimits,
+  isRetryableErrorClass,
+  requiresReconciliation,
+} from './workflow-runtime-contracts.js';
+
 /* P4-H0a — local production-identity foundation (synthetic provider evidence) */
 export {
   IdentityProvider,
