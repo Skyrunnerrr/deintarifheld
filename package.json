@@ -50,7 +50,8 @@
     "cc:ui:tg05": "node packages/db/tests/run-p3-f4-tg05-integration.mjs",
     "workers:test": "npm run test -w @deintarifheld/shared -w @deintarifheld/workers",
     "workers:tg06": "node packages/db/tests/run-p3-f5-tg06-integration.mjs",
-    "test:dth:a1": "npm run test:a1 -w @deintarifheld/workers"
+    "test:dth:a1": "npm run test:a1 -w @deintarifheld/workers",
+    "test:dth:a2": "npm run test:a2 -w @deintarifheld/workers"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
