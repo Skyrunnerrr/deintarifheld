@@ -18,6 +18,8 @@ import {
   APPOINTMENT_CANCEL_CAPABILITY,
   APPOINTMENT_RESCHEDULE_CAPABILITY,
   APPOINTMENT_SESSION_EXPIRE_CAPABILITY,
+  DOCUMENT_INTELLIGENCE_PREPARE_CAPABILITY,
+  DOCUMENT_PROCESS_CAPABILITY,
   QualificationOutcome,
 } from '@deintarifheld/shared';
 import { installDefaultSyntheticCapabilities } from './capability-registry.js';
@@ -533,6 +535,67 @@ export async function handleAppointmentSessionExpire(job, ctx) {
   return { ok: true, completeWorkflow: false, workflowState: 'BOOKING_SESSION_EXPIRED' };
 }
 
+export async function handleDocumentIntelligencePrepare(job, ctx) {
+  const caseId = String(job.payload_redacted?.case_id || '');
+  if (!caseId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'CASE_ID_REQUIRED', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const { prepareDocumentIntelligence } = await import('@deintarifheld/db');
+  const result = await prepareDocumentIntelligence(ctx.pool, {
+    caseId,
+    documentId: job.payload_redacted?.document_id || null,
+  });
+  if (!result.ok) {
+    return {
+      ok: false,
+      errorClass: result.code === 'CONTROL_UNAVAILABLE' || result.code === 'GLOBAL_KILL' || result.code === 'DOCUMENT_DOMAIN_KILL' || result.code === 'TAKEOVER'
+        ? WorkflowErrorClass.CONTROL_BLOCKED
+        : WorkflowErrorClass.VALIDATION_PERMANENT,
+      errorCode: result.code,
+      permanent: result.code === 'CASE_ID_REQUIRED',
+    };
+  }
+  return { ok: true, completeWorkflow: false, workflowState: 'DOCUMENT_INTELLIGENCE_PREPARED' };
+}
+
+export async function handleDocumentProcess(job, ctx) {
+  const documentId = String(job.payload_redacted?.document_id || '');
+  if (!documentId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'DOCUMENT_ID_REQUIRED', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const { processDocument, createLocalTestDocumentStorage } = await import('@deintarifheld/db');
+  const result = await processDocument(ctx.pool, {
+    documentId,
+    storage: ctx.documentStorage || createLocalTestDocumentStorage(),
+  });
+  if (!result.ok) {
+    const controlish = ['GLOBAL_KILL', 'DOCUMENT_DOMAIN_KILL', 'TAKEOVER', 'CONTROL_UNAVAILABLE'].includes(result.code);
+    return {
+      ok: false,
+      errorClass: controlish ? WorkflowErrorClass.CONTROL_BLOCKED : WorkflowErrorClass.EXTERNAL_EFFECT,
+      errorCode: result.code,
+      permanent: result.code === 'DOCUMENT_MISSING' || result.code === 'DOCUMENT_DELETED',
+    };
+  }
+  return {
+    ok: true,
+    completeWorkflow: false,
+    workflowState: result.ocrStatus === 'REQUIRED' ? 'DOCUMENT_OCR_REQUIRED' : 'DOCUMENT_PROCESSED',
+  };
+}
+
 export function registerAllSyntheticHandlers() {
   installDefaultSyntheticCapabilities({
     [SyntheticCapability.SYNTHETIC_NOOP]: handleSyntheticNoop,
@@ -555,5 +618,7 @@ export function registerAllSyntheticHandlers() {
     [APPOINTMENT_CANCEL_CAPABILITY]: handleAppointmentCancel,
     [APPOINTMENT_RESCHEDULE_CAPABILITY]: handleAppointmentReschedule,
     [APPOINTMENT_SESSION_EXPIRE_CAPABILITY]: handleAppointmentSessionExpire,
+    [DOCUMENT_INTELLIGENCE_PREPARE_CAPABILITY]: handleDocumentIntelligencePrepare,
+    [DOCUMENT_PROCESS_CAPABILITY]: handleDocumentProcess,
   });
 }

@@ -140,3 +140,46 @@ export {
   expireBookingSession,
   a6HandoffFromAppointment,
 } from './a5/booking.js';
+
+/* DTH-A6 Document Intelligence */
+export {
+  createLocalTestDocumentStorage,
+  resetLocalTestDocumentStorage,
+  getDocumentStorageLiveCallCount,
+} from './a6/storage.js';
+export {
+  detectPdfMagic,
+  sanitizeFilename,
+  assertNoPathTraversal,
+  validateDocumentBytes,
+} from './a6/validate.js';
+export { extractTextFromPdfBytes } from './a6/pdf-text.js';
+export { classifyDocumentText } from './a6/classify.js';
+export { parseDocumentConsumptionKwh } from './a6/numbers.js';
+export { extractFactsFromText } from './a6/extract-facts.js';
+export {
+  createDocumentMalwareScanner,
+  resetDocumentMalwareScanner,
+  setDocumentMalwareScannerMode,
+} from './a6/malware.js';
+export {
+  buildMinimalPdf,
+  buildEmptyTextPdf,
+  buildElectricityInvoicePdf,
+  buildGasInvoicePdf,
+  buildMultiLocationPdf,
+  buildPromptInjectionPdf,
+  buildVagueTermPdf,
+} from './a6/fixtures.js';
+export {
+  ingestTestDocument,
+  acceptA4AttachmentHandoff,
+  prepareDocumentIntelligence,
+  processDocument,
+  reprocessDocument,
+  detectFactConflicts,
+  getCaseEnergyEvidence,
+} from './a6/process.js';
+export { parseExactGermanDate } from './a6/numbers.js';
+export { extractEnergyFactsFromText } from './a6/extract-facts.js';
+export { createTestMalwareScanner, setMalwareScannerTestMode } from './a6/malware.js';

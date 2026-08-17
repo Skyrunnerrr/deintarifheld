@@ -63,6 +63,7 @@ export async function runDurableWorkflowWorker({
   registerHandlers = true,
   emailProvider = null,
   calendarProvider = null,
+  documentStorage = null,
 } = {}) {
   if (registerHandlers) registerAllSyntheticHandlers();
 
@@ -198,6 +199,7 @@ export async function runDurableWorkflowWorker({
         const result = await executeLeasedJob(pool, job, {
           emailProvider,
           calendarProvider,
+          documentStorage,
           workerInstanceId,
           effectAdapter,
           idempotentEffects,

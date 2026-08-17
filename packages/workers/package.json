@@ -16,7 +16,8 @@
     "test:a2": "node --test --test-concurrency=1 tests/a2-lead-case-autopilot.test.js",
     "test:a3": "node --test --test-concurrency=1 tests/a3-qualification.test.js",
     "test:a4": "node --test --test-concurrency=1 tests/a4-communication-engine.test.js",
-    "test:a5": "node --test --test-concurrency=1 tests/a5-calendar-appointment.test.js"
+    "test:a5": "node --test --test-concurrency=1 tests/a5-calendar-appointment.test.js",
+    "test:a6": "node --test --test-concurrency=1 tests/a6-document-intelligence.test.js"
   },
   "dth": {
     "tranche": "DTH-A1",
