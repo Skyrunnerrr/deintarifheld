@@ -17,6 +17,12 @@
   "LIVE_AI_CALLS": 0,
   "LIVE_EMAIL_SENDS": 0,
   "LIVE_CALENDAR_WRITES": 0,
-  "tests": { "a3": "18/18", "evidence": "E2_LOCAL" },
-  "NEXT_TRANCHE": "DTH-A4 COMMUNICATION_ENGINE"
+  "tests": {
+    "a3": "18/18",
+    "a2": "16/16",
+    "a1": "39/39",
+    "evidence": "E2_LOCAL"
+  },
+  "NEXT_TRANCHE": "DTH-A4 COMMUNICATION_ENGINE",
+  "final": "41d533ffe634662ad9d7e2314a67bed7d175a20a"
 }
