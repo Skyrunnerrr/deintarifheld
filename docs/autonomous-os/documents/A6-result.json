@@ -2,7 +2,7 @@
   "tranche": "DTH-A6",
   "branch": "feat/dth-a6-document-intelligence-001",
   "base": "9458f7968e761b5a58f25500e3e755adc9ed7124",
-  "A6_RESULT": "CLOSED_E2_LOCAL_TEST_STORAGE_STAGING_PENDING",
+  "A6_RESULT": "CLOSED_E2_LOCAL_DOCUMENT_PROVIDERS_STAGING_PENDING",
   "DOCUMENT_DOMAIN": "PROVEN_E2_LOCAL_TEST_STORAGE",
   "INGESTION_VALIDATION": "PROVEN_E2_LOCAL",
   "EXTRACTION": "PROVEN_E2_LOCAL_DETERMINISTIC",
@@ -31,6 +31,9 @@
     "a5_regression": "15/15",
     "a4_regression": "23/23",
     "a3_regression": "18/18",
+    "a2_regression": "16/16",
+    "a1_regression": "39/39",
+    "mail_cutover": "FAIL_PREEXISTING_INTERNAL_NOTIFICATION_ASSERT",
     "evidence": "E2_LOCAL"
   },
   "OWNER_FLAGS_UNRESOLVED": [
@@ -41,15 +44,15 @@
     "OWNER_DOCUMENT_REQUEST_COMMUNICATION_REQUIRED",
     "OWNER_MALWARE_SCANNER_PROVIDER_REQUIRED"
   ],
-  "NEXT_TRANCHE": "DTH-A7 ENERGY_TARIFF_DOMAIN (handoff ready; tariff not implied)",
+  "NEXT_TRANCHE": "DTH-A7 ENERGY_TARIFF_DOMAIN_ENGINE",
   "git": {
-    "final": "e7be8e855ac502034ea7908feb77a88dcbd6334e",
+    "final": "39d69b9c2c1c5f1450070e21ad032e0203741413",
     "branch": "feat/dth-a6-document-intelligence-001",
     "base": "9458f7968e761b5a58f25500e3e755adc9ed7124",
     "push": false,
     "pr": false,
     "merge": false
   },
-  "final": "e7be8e855ac502034ea7908feb77a88dcbd6334e",
+  "final": "39d69b9c2c1c5f1450070e21ad032e0203741413",
   "implementation_state": "COMMITTED_ON_BRANCH"
 }
