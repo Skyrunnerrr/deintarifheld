@@ -2,6 +2,11 @@
   "tranche": "DTH-A7",
   "branch": "feat/dth-a7-energy-tariff-domain-engine-001",
   "base": "acf94f38f01f863401a94f3855d06c3abbbed7f2",
+  "previous_a6_tip": "79a3c20faf392cf7bee41515bc2b57c1e5fb53f4",
+  "canonical_a6_tip": "acf94f38f01f863401a94f3855d06c3abbbed7f2",
+  "ancestry": "PASS",
+  "additional_commits_reviewed": 3,
+  "unexpected_delta": "NO",
   "A7_RESULT": "CLOSED_E2_LOCAL_LIVE_TARIFF_SOURCE_STAGING_PENDING",
   "ENERGY_PROFILE": "PROVEN_E2_LOCAL",
   "TARIFF_CATALOGUE": "PROVEN_E2_LOCAL_WITH_SYNTHETIC_DATA",
@@ -43,6 +48,13 @@
   ],
   "tests": {
     "a7": "25/25",
+    "a6_regression": "25/25",
+    "a5_regression": "15/15",
+    "a4_regression": "23/23",
+    "a3_regression": "18/18",
+    "a2_regression": "16/16",
+    "a1_regression": "39/39",
+    "mail_cutover": "FAIL_PREEXISTING_INTERNAL_NOTIFICATION_ASSERT",
     "evidence": "E2_LOCAL"
   },
   "OWNER_FLAGS_UNRESOLVED": [
@@ -58,16 +70,14 @@
   "push": false,
   "pr": false,
   "merge": false,
-  "final": "cc309ea621a551eba225a1d60619f4415e4f3277",
+  "final": "3cc8895f19624e03240729a2b24add0255b7650f",
   "git": {
-    "final": "cc309ea621a551eba225a1d60619f4415e4f3277",
+    "final": "3cc8895f19624e03240729a2b24add0255b7650f",
     "branch": "feat/dth-a7-energy-tariff-domain-engine-001",
     "base": "acf94f38f01f863401a94f3855d06c3abbbed7f2",
     "push": false,
     "pr": false,
     "merge": false
   },
-  "implementation_state": "COMMITTED_ON_BRANCH",
-  "engine_tip": "71b2cd09cde35f94c5a558a44bcbe73dec4316c6",
-  "tip_pin_commit": "cc309ea621a551eba225a1d60619f4415e4f3277"
+  "implementation_state": "COMMITTED_ON_BRANCH"
 }
