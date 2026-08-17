@@ -1,0 +1,50 @@
+{
+  "tranche": "DTH-A6",
+  "branch": "feat/dth-a6-document-intelligence-001",
+  "base": "9458f7968e761b5a58f25500e3e755adc9ed7124",
+  "A6_RESULT": "CLOSED_E2_LOCAL_TEST_STORAGE_STAGING_PENDING",
+  "DOCUMENT_DOMAIN": "PROVEN_E2_LOCAL_TEST_STORAGE",
+  "INGESTION_VALIDATION": "PROVEN_E2_LOCAL",
+  "EXTRACTION": "PROVEN_E2_LOCAL_DETERMINISTIC",
+  "PROVENANCE": "PROVEN_E2_LOCAL",
+  "CONFLICTS": "PROVEN_E2_LOCAL",
+  "A4_ATTACHMENT_HANDOFF": "PROVEN_E2_LOCAL_MOCK_BYTES",
+  "A7_HANDOFF": "READY_E2_LOCAL_EXPLICIT_NON_EQUIVALENCE",
+  "LIVE_DOCUMENT_STORAGE_PROVIDER_CALLS": 0,
+  "LIVE_OCR_PROVIDER_CALLS": 0,
+  "LIVE_AI_CALLS": 0,
+  "LIVE_EMAIL_SENDS": 0,
+  "KILL_DOCUMENT_PROCESSING": "DATA_IMPORT",
+  "NINTH_KILL_DOMAIN": false,
+  "CUSTOMER_UPLOAD_UI": "DEFERRED",
+  "STAGING_AUTONOMY_READY": "NO",
+  "PRODUCTION_AUTONOMY_READY": "NO",
+  "schema": [
+    "ops.documents",
+    "ops.document_processing_runs",
+    "ops.document_facts",
+    "ops.document_fact_conflicts"
+  ],
+  "migration": "supabase/migrations/20260817140000_a6_document_intelligence.sql",
+  "tests": {
+    "a6": "25/25",
+    "a5_regression": "15/15",
+    "a4_regression": "23/23",
+    "a3_regression": "18/18",
+    "evidence": "E2_LOCAL"
+  },
+  "OWNER_FLAGS_UNRESOLVED": [
+    "OWNER_DOCUMENT_STORAGE_PROVIDER_REQUIRED",
+    "OWNER_OCR_PROVIDER_DECISION_REQUIRED",
+    "OWNER_DOCUMENT_RETENTION_POLICY_REQUIRED",
+    "OWNER_CUSTOMER_UPLOAD_UI_DECISION_REQUIRED",
+    "OWNER_DOCUMENT_REQUEST_COMMUNICATION_REQUIRED",
+    "OWNER_MALWARE_SCANNER_PROVIDER_REQUIRED"
+  ],
+  "NEXT_TRANCHE": "DTH-A7 ENERGY_TARIFF_DOMAIN (handoff ready; tariff not implied)",
+  "git": {
+    "push": false,
+    "pr": false,
+    "merge": false
+  }
+}
