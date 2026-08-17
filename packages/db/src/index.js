@@ -113,3 +113,30 @@ export {
   cancelFollowupsForConversation,
   cancelStaleOutboundIntents,
 } from './a4/communicate.js';
+
+/* DTH-A5 Calendar + Appointment */
+export {
+  createTestCalendarProvider,
+  resetCalendarProviderTestStore,
+  setCalendarProviderTestMode,
+  getCalendarLiveCallCount,
+  seedBusyPeriod,
+  seedProviderEvent,
+} from './a5/provider.js';
+export { generateCandidateSlots } from './a5/slots.js';
+export { zonedLocalToUtc, zonedParts, formatInTimeZone, getTimeZoneOffsetMs } from './a5/timezone.js';
+export { renderAppointmentMessage } from './a5/templates.js';
+export {
+  prepareAppointmentOffer,
+  getBookingSessionByToken,
+  listSessionSlots,
+  getPublicBookingView,
+  submitSlotSelection,
+  executeBookSelectedSlot,
+  reconcileAppointment,
+  executeAppointmentReminder,
+  cancelAppointment,
+  rescheduleAppointment,
+  expireBookingSession,
+  a6HandoffFromAppointment,
+} from './a5/booking.js';
