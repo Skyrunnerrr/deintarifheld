@@ -77,6 +77,15 @@ function completePayload(over = {}) {
 }
 
 async function reset() {
+  const { rows: a5 } = await pool.query(`SELECT to_regclass('ops.booking_sessions') AS c`);
+  if (a5[0].c) {
+    await pool.query(`DELETE FROM ops.appointment_reminders`);
+    await pool.query(`DELETE FROM ops.appointment_provider_events`);
+    await pool.query(`UPDATE ops.booking_sessions SET appointment_id=NULL, selected_slot_id=NULL`);
+    await pool.query(`DELETE FROM ops.appointments`);
+    await pool.query(`DELETE FROM ops.booking_slots`);
+    await pool.query(`DELETE FROM ops.booking_sessions`);
+  }
   const { rows: a4 } = await pool.query(`SELECT to_regclass('ops.conversations') AS c`);
   if (a4[0].c) {
     await pool.query(`DELETE FROM ops.followup_schedules`);
