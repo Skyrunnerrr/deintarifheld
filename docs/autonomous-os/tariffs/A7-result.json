@@ -58,14 +58,16 @@
   "push": false,
   "pr": false,
   "merge": false,
-  "final": "71b2cd09cde35f94c5a558a44bcbe73dec4316c6",
+  "final": "cc309ea621a551eba225a1d60619f4415e4f3277",
   "git": {
-    "final": "71b2cd09cde35f94c5a558a44bcbe73dec4316c6",
+    "final": "cc309ea621a551eba225a1d60619f4415e4f3277",
     "branch": "feat/dth-a7-energy-tariff-domain-engine-001",
     "base": "acf94f38f01f863401a94f3855d06c3abbbed7f2",
     "push": false,
     "pr": false,
     "merge": false
   },
-  "implementation_state": "COMMITTED_ON_BRANCH"
+  "implementation_state": "COMMITTED_ON_BRANCH",
+  "engine_tip": "71b2cd09cde35f94c5a558a44bcbe73dec4316c6",
+  "tip_pin_commit": "cc309ea621a551eba225a1d60619f4415e4f3277"
 }
