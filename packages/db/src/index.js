@@ -183,3 +183,21 @@ export {
 export { parseExactGermanDate } from './a6/numbers.js';
 export { extractEnergyFactsFromText } from './a6/extract-facts.js';
 export { createTestMalwareScanner, setMalwareScannerTestMode } from './a6/malware.js';
+
+/* DTH-A7 Energy + Tariff Domain */
+export { toMicroEur, fromMicroEurDisplay, mulConsumptionRate, annualizeFixed, roundFinal } from './a7/money.js';
+export { TariffCalculationPolicyV1, TariffRankingPolicyV1, rankEligibleResults } from './a7/policy.js';
+export { buildSyntheticCatalogueDefinitions, SYNTHETIC_SUPPLIERS } from './a7/fixtures.js';
+export {
+  importSyntheticCatalogue,
+  getActiveCatalogueSnapshot,
+  loadSnapshotTariffs,
+  clearTariffCatalogue,
+} from './a7/catalogue.js';
+export { buildEnergyProfile, getCurrentEnergyProfile } from './a7/profile.js';
+export { evaluateTariffEligibility } from './a7/eligibility.js';
+export { calculateTariffCost } from './a7/pricing.js';
+export { compareToBaseline } from './a7/compare.js';
+export { prepareTariffEvaluation, runTariffEvaluation } from './a7/evaluate.js';
+export { getCurrentTariffEvaluation, isTariffEvaluationCurrent } from './a7/handoff.js';
+
