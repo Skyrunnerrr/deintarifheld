@@ -43,6 +43,9 @@ if (/supabase\.co|aws\.|azure\.|gcp\./i.test(DB_URL) || !/127\.0\.0\.1|localhost
 const pool = createLocalOutboxPool(DB_URL);
 
 async function reset() {
+  await pool.query(`DELETE FROM ops.qualification_observations`);
+  await pool.query(`DELETE FROM ops.qualification_requirements`);
+  await pool.query(`DELETE FROM ops.case_qualifications`);
   await pool.query(`DELETE FROM workflow.job_attempts`);
   await pool.query(`DELETE FROM workflow.jobs`);
   await pool.query(`DELETE FROM workflow.workflow_instances`);
