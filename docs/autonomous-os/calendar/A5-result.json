@@ -39,6 +39,14 @@
     "evidence": "E2_LOCAL"
   },
   "NEXT_TRANCHE": "DTH-A6 DOCUMENT_INTELLIGENCE (handoff ready; call/offer not implied)",
-  "final": null,
-  "implementation_state": "WORKING_TREE_ON_BRANCH"
+  "final": "d1ea7ef69d66936bb4211b165e838249bbab3f73",
+  "implementation_state": "WORKING_TREE_ON_BRANCH",
+  "git": {
+    "final": "d1ea7ef69d66936bb4211b165e838249bbab3f73",
+    "branch": "feat/dth-a5-calendar-appointment-agent-001",
+    "base": "b7b8c74eb7ecbe74c9eea0568d68bfd84110e243",
+    "push": false,
+    "pr": false,
+    "merge": false
+  }
 }
