@@ -76,6 +76,13 @@ function completePayload(over = {}) {
 async function reset() {
   resetProviderTestStore();
   setProviderTestMode('ACCEPT');
+  const { rows: a6 } = await pool.query(`SELECT to_regclass('ops.documents') AS c`);
+  if (a6[0].c) {
+    await pool.query(`DELETE FROM ops.document_fact_conflicts`);
+    await pool.query(`DELETE FROM ops.document_facts`);
+    await pool.query(`DELETE FROM ops.document_processing_runs`);
+    await pool.query(`DELETE FROM ops.documents`);
+  }
   const { rows: a5 } = await pool.query(`SELECT to_regclass('ops.booking_sessions') AS c`);
   if (a5[0].c) {
     await pool.query(`DELETE FROM ops.appointment_reminders`);

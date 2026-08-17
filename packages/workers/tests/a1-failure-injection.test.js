@@ -34,6 +34,13 @@ const DB_URL =
 const pool = createLocalOutboxPool(DB_URL);
 
 async function reset() {
+  const { rows: a6 } = await pool.query(`SELECT to_regclass('ops.documents') AS c`);
+  if (a6[0].c) {
+    await pool.query(`DELETE FROM ops.document_fact_conflicts`);
+    await pool.query(`DELETE FROM ops.document_facts`);
+    await pool.query(`DELETE FROM ops.document_processing_runs`);
+    await pool.query(`DELETE FROM ops.documents`);
+  }
   const { rows: a4 } = await pool.query(`SELECT to_regclass('ops.conversations') AS c`);
   if (a4[0].c) {
     await pool.query(`DELETE FROM ops.followup_schedules`);
