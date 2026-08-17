@@ -21,6 +21,7 @@ import {
   ObservationSourceKind,
   PROVIDER_EVENT_PRECEDENCE,
   isAllowedMessagePurpose,
+  isAppointmentMessagePurpose,
 } from '@deintarifheld/shared';
 import {
   getCurrentQualification,
@@ -330,18 +331,57 @@ async function preSendChecks(pool, intent, contact) {
 
   const qual = await getCurrentQualification(pool, intent.case_id);
   if (!qual) reasons.push('NO_QUALIFICATION');
-  else if (qual.outcome === QualificationOutcome.QUALIFIED_FOR_CALL) reasons.push('NOW_QUALIFIED');
+  else if (isAppointmentMessagePurpose(intent.purpose)) {
+    // Appointment communications require call-ready qualification
+    if (qual.outcome !== QualificationOutcome.QUALIFIED_FOR_CALL) {
+      reasons.push('NOT_QUALIFIED_FOR_CALL');
+    } else if (qual.revision !== intent.qualification_revision) {
+      // eligibility may still hold; revision drift alone does not stale appointment mail
+      // unless outcome left QUALIFIED_FOR_CALL (handled above)
+    }
+    if (intent.purpose === MessagePurpose.APPOINTMENT_OFFER) {
+      const { rows: sess } = await pool.query(
+        `SELECT status FROM ops.booking_sessions
+         WHERE case_id=$1 AND offer_intent_id=$2 LIMIT 1`,
+        [intent.case_id, intent.id],
+      );
+      if (sess[0] && !['OPEN', 'PREPARING', 'BOOKING_IN_PROGRESS', 'BOOKED'].includes(sess[0].status)) {
+        reasons.push('BOOKING_SESSION_STALE');
+      }
+      if (sess[0] && sess[0].status === 'BOOKED') {
+        reasons.push('ALREADY_BOOKED');
+      }
+    }
+    if (intent.purpose === MessagePurpose.APPOINTMENT_CONFIRMATION || intent.purpose === MessagePurpose.APPOINTMENT_REMINDER) {
+      const { rows: appts } = await pool.query(
+        `SELECT status FROM ops.appointments
+         WHERE case_id=$1 AND status IN ('CONFIRMED','CONFIRMED_MEETING_LINK_PENDING')
+         ORDER BY confirmed_at DESC NULLS LAST LIMIT 1`,
+        [intent.case_id],
+      );
+      if (!appts[0] && intent.purpose === MessagePurpose.APPOINTMENT_CONFIRMATION) {
+        // confirmation may race slightly after confirm write; allow if intent freshly created
+      }
+      if (intent.purpose === MessagePurpose.APPOINTMENT_REMINDER) {
+        if (!appts[0]) reasons.push('NO_CONFIRMED_APPOINTMENT');
+        if (appts[0]?.status === 'CANCELLED') reasons.push('APPOINTMENT_CANCELLED');
+      }
+    }
+  } else if (qual.outcome === QualificationOutcome.QUALIFIED_FOR_CALL) reasons.push('NOW_QUALIFIED');
   else if (qual.revision !== intent.qualification_revision) reasons.push('STALE_REVISION');
   else if (qual.outcome !== QualificationOutcome.MISSING_INFORMATION) reasons.push('NOT_MISSING');
 
-  const open = await getOpenMissingRequirements(pool, intent.case_id);
-  const openIds = new Set(open.map((r) => r.id));
-  const bound = intent.requirement_ids || [];
-  if (!bound.every((id) => openIds.has(id))) reasons.push('REQUIREMENTS_CHANGED');
-  if (requirementFingerprint(open) !== intent.requirement_fingerprint && bound.length) {
-    // fingerprint mismatch with still-open subset
-    if (open.length !== bound.length || !bound.every((id) => openIds.has(id))) {
-      reasons.push('REQUIREMENT_SET_STALE');
+  const open = isAppointmentMessagePurpose(intent.purpose)
+    ? []
+    : await getOpenMissingRequirements(pool, intent.case_id);
+  if (!isAppointmentMessagePurpose(intent.purpose)) {
+    const openIds = new Set(open.map((r) => r.id));
+    const bound = intent.requirement_ids || [];
+    if (!bound.every((id) => openIds.has(id))) reasons.push('REQUIREMENTS_CHANGED');
+    if (requirementFingerprint(open) !== intent.requirement_fingerprint && bound.length) {
+      if (open.length !== bound.length || !bound.every((id) => openIds.has(id))) {
+        reasons.push('REQUIREMENT_SET_STALE');
+      }
     }
   }
 
@@ -463,61 +503,64 @@ export async function executeCommunicationSend(pool, {
     );
     await client.query(
       `UPDATE ops.conversations
-       SET status = 'WAITING_CUSTOMER', last_message_at = now(), updated_at = now()
+       SET last_message_at = now(), updated_at = now(),
+           status = CASE WHEN $2 THEN status ELSE 'WAITING_CUSTOMER' END
        WHERE id = $1`,
-      [intent.conversation_id],
+      [intent.conversation_id, isAppointmentMessagePurpose(intent.purpose)],
     );
-    await client.query(
-      `UPDATE workflow.workflow_instances
-       SET current_state = 'WAITING_CUSTOMER_RESPONSE', updated_at = now()
-       WHERE case_id = $1 AND workflow_type = $2 AND status = 'RUNNING'`,
-      [intent.case_id, B2B_INBOUND_WORKFLOW_TYPE],
-    );
-
-    // Schedule follow-up only after provider accepted
-    const due = new Date(Date.now() + A4_TEST_FOLLOWUP_DELAY_MS).toISOString();
-    const gen = (checks.conv.followup_count || 0) + 1;
-    if (gen <= (checks.conv.max_followups || A4_DEFAULT_MAX_FOLLOWUPS)) {
-      const fKey = `b2b-followup:${intent.conversation_id}:${gen}`;
+    if (!isAppointmentMessagePurpose(intent.purpose)) {
       await client.query(
-        `INSERT INTO ops.followup_schedules
-          (conversation_id, case_id, outbound_intent_id, generation, due_at, job_idempotency_key)
-         VALUES ($1,$2,$3,$4,$5,$6)
-         ON CONFLICT (conversation_id, generation) DO NOTHING`,
-        [intent.conversation_id, intent.case_id, intent.id, gen, due, fKey],
-      );
-      const { rows: wfs } = await client.query(
-        `SELECT id, correlation_id, control_version_at_start FROM workflow.workflow_instances
-         WHERE case_id = $1 AND workflow_type = $2 ORDER BY created_at DESC LIMIT 1`,
+        `UPDATE workflow.workflow_instances
+         SET current_state = 'WAITING_CUSTOMER_RESPONSE', updated_at = now()
+         WHERE case_id = $1 AND workflow_type = $2 AND status = 'RUNNING'`,
         [intent.case_id, B2B_INBOUND_WORKFLOW_TYPE],
       );
-      if (wfs[0]) {
+
+      // Missing-info follow-up only — never for appointment purposes
+      const due = new Date(Date.now() + A4_TEST_FOLLOWUP_DELAY_MS).toISOString();
+      const gen = (checks.conv.followup_count || 0) + 1;
+      if (gen <= (checks.conv.max_followups || A4_DEFAULT_MAX_FOLLOWUPS)) {
+        const fKey = `b2b-followup:${intent.conversation_id}:${gen}`;
         await client.query(
-          `INSERT INTO workflow.jobs
-            (workflow_instance_id, job_type, status, priority, scheduled_at, max_attempts,
-             idempotency_key, correlation_id, control_version, payload_redacted)
-           VALUES ($1,$2,'READY',80,$3,5,$4,$5,$6,$7::jsonb)
-           ON CONFLICT (idempotency_key) DO NOTHING`,
-          [
-            wfs[0].id,
-            B2B_MISSING_INFO_FOLLOWUP_CAPABILITY,
-            due,
-            fKey,
-            wfs[0].correlation_id,
-            wfs[0].control_version_at_start || 1,
-            JSON.stringify({
-              case_id: intent.case_id,
-              conversation_id: intent.conversation_id,
-              generation: gen,
-              schema_version: 1,
-            }),
-          ],
+          `INSERT INTO ops.followup_schedules
+            (conversation_id, case_id, outbound_intent_id, generation, due_at, job_idempotency_key)
+           VALUES ($1,$2,$3,$4,$5,$6)
+           ON CONFLICT (conversation_id, generation) DO NOTHING`,
+          [intent.conversation_id, intent.case_id, intent.id, gen, due, fKey],
+        );
+        const { rows: wfs } = await client.query(
+          `SELECT id, correlation_id, control_version_at_start FROM workflow.workflow_instances
+           WHERE case_id = $1 AND workflow_type = $2 ORDER BY created_at DESC LIMIT 1`,
+          [intent.case_id, B2B_INBOUND_WORKFLOW_TYPE],
+        );
+        if (wfs[0]) {
+          await client.query(
+            `INSERT INTO workflow.jobs
+              (workflow_instance_id, job_type, status, priority, scheduled_at, max_attempts,
+               idempotency_key, correlation_id, control_version, payload_redacted)
+             VALUES ($1,$2,'READY',80,$3,5,$4,$5,$6,$7::jsonb)
+             ON CONFLICT (idempotency_key) DO NOTHING`,
+            [
+              wfs[0].id,
+              B2B_MISSING_INFO_FOLLOWUP_CAPABILITY,
+              due,
+              fKey,
+              wfs[0].correlation_id,
+              wfs[0].control_version_at_start || 1,
+              JSON.stringify({
+                case_id: intent.case_id,
+                conversation_id: intent.conversation_id,
+                generation: gen,
+                schema_version: 1,
+              }),
+            ],
+          );
+        }
+        await client.query(
+          `UPDATE ops.conversations SET followup_count = $2, updated_at = now() WHERE id = $1`,
+          [intent.conversation_id, gen],
         );
       }
-      await client.query(
-        `UPDATE ops.conversations SET followup_count = $2, updated_at = now() WHERE id = $1`,
-        [intent.conversation_id, gen],
-      );
     }
 
     await client.query(

@@ -62,6 +62,7 @@ export async function runDurableWorkflowWorker({
   onTick = null,
   registerHandlers = true,
   emailProvider = null,
+  calendarProvider = null,
 } = {}) {
   if (registerHandlers) registerAllSyntheticHandlers();
 
@@ -196,6 +197,7 @@ export async function runDurableWorkflowWorker({
         stats.claimed += 1;
         const result = await executeLeasedJob(pool, job, {
           emailProvider,
+          calendarProvider,
           workerInstanceId,
           effectAdapter,
           idempotentEffects,

@@ -1,5 +1,6 @@
 /**
- * Synthetic A1 handlers only — no mail, calendar, AI, CRM, providers.
+ * A1 handlers — synthetic + A2/A3/A4/A5 durable capabilities.
+ * No live calendar / live email / AI in E2.
  */
 import {
   SyntheticCapability,
@@ -11,6 +12,12 @@ import {
   B2B_MISSING_INFO_FOLLOWUP_CAPABILITY,
   B2B_INBOUND_EMAIL_PROCESS_CAPABILITY,
   B2B_APPOINTMENT_OFFER_PREPARE_CAPABILITY,
+  APPOINTMENT_BOOK_SELECTED_SLOT_CAPABILITY,
+  APPOINTMENT_RECONCILE_CAPABILITY,
+  APPOINTMENT_REMINDER_DUE_CAPABILITY,
+  APPOINTMENT_CANCEL_CAPABILITY,
+  APPOINTMENT_RESCHEDULE_CAPABILITY,
+  APPOINTMENT_SESSION_EXPIRE_CAPABILITY,
   QualificationOutcome,
 } from '@deintarifheld/shared';
 import { installDefaultSyntheticCapabilities } from './capability-registry.js';
@@ -379,8 +386,151 @@ export async function handleB2bInboundEmailProcess(job, ctx) {
 }
 
 export async function handleAppointmentOfferPrepare(job, ctx) {
-  ctx.idempotentEffects?.record?.(job.id, 'APPOINTMENT_OFFER_PREPARE_READY');
-  return { ok: true, completeWorkflow: false, workflowState: 'QUALIFIED_FOR_CALL' };
+  const caseId = String(job.payload_redacted?.case_id || '');
+  if (!caseId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'CASE_ID_REQUIRED', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const { prepareAppointmentOffer, createTestCalendarProvider } = await import('@deintarifheld/db');
+  const result = await prepareAppointmentOffer(ctx.pool, {
+    caseId,
+    calendarProvider: ctx.calendarProvider || createTestCalendarProvider(),
+  });
+  if (!result.ok) {
+    if (result.code === 'NO_AVAILABLE_SLOTS') {
+      return { ok: true, completeWorkflow: false, workflowState: 'NO_AVAILABLE_SLOTS', code: result.code };
+    }
+    if (['GLOBAL_KILL', 'CALENDAR_DOMAIN_KILL', 'CONTROL_UNAVAILABLE', 'TAKEOVER'].includes(result.code)) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: result.code, permanent: true };
+    }
+    if (result.code === 'NOT_QUALIFIED_FOR_CALL' || result.code === 'OPEN_REQUIREMENTS') {
+      return { ok: true, completeWorkflow: false, workflowState: 'APPOINTMENT_OFFER_SKIPPED', code: result.code };
+    }
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: result.code, permanent: true };
+  }
+  ctx.idempotentEffects?.record?.(job.id, 'APPOINTMENT_OFFER_PREPARED');
+  return { ok: true, completeWorkflow: false, workflowState: 'APPOINTMENT_OFFER_PREPARED' };
+}
+
+export async function handleAppointmentBookSelectedSlot(job, ctx) {
+  const sessionId = String(job.payload_redacted?.session_id || '');
+  const slotId = String(job.payload_redacted?.slot_id || '');
+  if (!sessionId || !slotId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'SESSION_SLOT_REQUIRED', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const { executeBookSelectedSlot, createTestCalendarProvider } = await import('@deintarifheld/db');
+  const result = await executeBookSelectedSlot(ctx.pool, {
+    sessionId,
+    slotId,
+    calendarProvider: ctx.calendarProvider || createTestCalendarProvider(),
+  });
+  if (result.outcomeUnknown) {
+    return { ok: true, completeWorkflow: false, workflowState: 'BOOKING_OUTCOME_UNKNOWN' };
+  }
+  if (!result.ok) {
+    if (['GLOBAL_KILL', 'CALENDAR_DOMAIN_KILL', 'CONTROL_UNAVAILABLE', 'TAKEOVER'].includes(result.code)) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: result.code, permanent: true };
+    }
+    if (result.code === 'SLOT_NO_LONGER_AVAILABLE' || result.code === 'STALE_SLOT') {
+      return { ok: true, completeWorkflow: false, workflowState: 'SLOT_NO_LONGER_AVAILABLE', code: result.code };
+    }
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: result.code, permanent: true };
+  }
+  return { ok: true, completeWorkflow: false, workflowState: result.status || 'APPOINTMENT_CONFIRMED' };
+}
+
+export async function handleAppointmentReconcile(job, ctx) {
+  const appointmentId = String(job.payload_redacted?.appointment_id || '');
+  if (!appointmentId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'APPOINTMENT_ID_REQUIRED', permanent: true };
+  }
+  const { reconcileAppointment, createTestCalendarProvider } = await import('@deintarifheld/db');
+  const result = await reconcileAppointment(ctx.pool, {
+    appointmentId,
+    calendarProvider: ctx.calendarProvider || createTestCalendarProvider(),
+  });
+  return { ok: true, completeWorkflow: false, workflowState: result.code || 'RECONCILED' };
+}
+
+export async function handleAppointmentReminderDue(job, ctx) {
+  const appointmentId = String(job.payload_redacted?.appointment_id || '');
+  const generation = Number(job.payload_redacted?.generation || 1);
+  if (!appointmentId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'APPOINTMENT_ID_REQUIRED', permanent: true };
+  }
+  const { executeAppointmentReminder } = await import('@deintarifheld/db');
+  const result = await executeAppointmentReminder(ctx.pool, { appointmentId, generation });
+  if (result.deferred) {
+    return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: result.code, permanent: false };
+  }
+  return { ok: true, completeWorkflow: false, workflowState: result.cancelled ? 'REMINDER_CANCELLED' : 'REMINDER_SENT' };
+}
+
+export async function handleAppointmentCancel(job, ctx) {
+  const appointmentId = String(job.payload_redacted?.appointment_id || '');
+  if (!appointmentId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'APPOINTMENT_ID_REQUIRED', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const { cancelAppointment, createTestCalendarProvider } = await import('@deintarifheld/db');
+  const result = await cancelAppointment(ctx.pool, {
+    appointmentId,
+    calendarProvider: ctx.calendarProvider || createTestCalendarProvider(),
+  });
+  if (!result.ok) {
+    return { ok: false, errorClass: WorkflowErrorClass.EXTERNAL_EFFECT, errorCode: result.code, permanent: false };
+  }
+  return { ok: true, completeWorkflow: false, workflowState: 'APPOINTMENT_CANCELLED' };
+}
+
+export async function handleAppointmentReschedule(job, ctx) {
+  const appointmentId = String(job.payload_redacted?.appointment_id || '');
+  const token = String(job.payload_redacted?.token || '');
+  const newSlotId = String(job.payload_redacted?.slot_id || '');
+  if (!appointmentId || !token || !newSlotId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'RESCHEDULE_INPUT_REQUIRED', permanent: true };
+  }
+  const { rescheduleAppointment, createTestCalendarProvider } = await import('@deintarifheld/db');
+  const result = await rescheduleAppointment(ctx.pool, {
+    appointmentId,
+    token,
+    newSlotId,
+    calendarProvider: ctx.calendarProvider || createTestCalendarProvider(),
+  });
+  if (!result.ok) {
+    return {
+      ok: true,
+      completeWorkflow: false,
+      workflowState: result.code || 'RESCHEDULE_RECONCILIATION_REQUIRED',
+    };
+  }
+  return { ok: true, completeWorkflow: false, workflowState: 'APPOINTMENT_RESCHEDULED' };
+}
+
+export async function handleAppointmentSessionExpire(job, ctx) {
+  const sessionId = String(job.payload_redacted?.session_id || '');
+  if (!sessionId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'SESSION_ID_REQUIRED', permanent: true };
+  }
+  const { expireBookingSession } = await import('@deintarifheld/db');
+  await expireBookingSession(ctx.pool, { sessionId });
+  return { ok: true, completeWorkflow: false, workflowState: 'BOOKING_SESSION_EXPIRED' };
 }
 
 export function registerAllSyntheticHandlers() {
@@ -399,5 +549,11 @@ export function registerAllSyntheticHandlers() {
     [B2B_MISSING_INFO_FOLLOWUP_CAPABILITY]: handleB2bMissingInfoFollowup,
     [B2B_INBOUND_EMAIL_PROCESS_CAPABILITY]: handleB2bInboundEmailProcess,
     [B2B_APPOINTMENT_OFFER_PREPARE_CAPABILITY]: handleAppointmentOfferPrepare,
+    [APPOINTMENT_BOOK_SELECTED_SLOT_CAPABILITY]: handleAppointmentBookSelectedSlot,
+    [APPOINTMENT_RECONCILE_CAPABILITY]: handleAppointmentReconcile,
+    [APPOINTMENT_REMINDER_DUE_CAPABILITY]: handleAppointmentReminderDue,
+    [APPOINTMENT_CANCEL_CAPABILITY]: handleAppointmentCancel,
+    [APPOINTMENT_RESCHEDULE_CAPABILITY]: handleAppointmentReschedule,
+    [APPOINTMENT_SESSION_EXPIRE_CAPABILITY]: handleAppointmentSessionExpire,
   });
 }

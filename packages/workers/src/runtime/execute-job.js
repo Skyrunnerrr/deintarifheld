@@ -40,6 +40,7 @@ export function createIdempotentEffectTracker() {
 
 export async function executeLeasedJob(pool, job, {
   emailProvider = null,
+  calendarProvider = null,
   workerInstanceId,
   effectAdapter = createDenyAllEffectAdapter(),
   idempotentEffects,
@@ -100,6 +101,7 @@ export async function executeLeasedJob(pool, job, {
       effectAdapter,
       idempotentEffects,
       emailProvider,
+      calendarProvider,
       renewLease: () => renewLease(pool, job, workerInstanceId),
       preEffectControlCheck: () =>
         evaluatePreEffectControl(pool, {

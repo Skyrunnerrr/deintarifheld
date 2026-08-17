@@ -53,7 +53,8 @@
     "test:dth:a1": "npm run test:a1 -w @deintarifheld/workers",
     "test:dth:a2": "npm run test:a2 -w @deintarifheld/workers",
     "test:dth:a3": "npm run test:a3 -w @deintarifheld/workers",
-    "test:dth:a4": "npm run test:a4 -w @deintarifheld/workers"
+    "test:dth:a4": "npm run test:a4 -w @deintarifheld/workers",
+    "test:dth:a5": "npm run test:a5 -w @deintarifheld/workers"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
