@@ -118,6 +118,20 @@ async function reset() {
   resetLocalTestDocumentStorage();
   resetDocumentMalwareScanner();
   setDocumentMalwareScannerMode('CLEAN');
+
+  const { rows: a7 } = await pool.query(`SELECT to_regclass('ops.tariff_evaluations') AS c`);
+  if (a7[0].c) {
+    await pool.query(`DELETE FROM ops.tariff_evaluation_results`);
+    await pool.query(`DELETE FROM ops.tariff_evaluations`);
+    await pool.query(`DELETE FROM ops.energy_profiles`);
+    await pool.query(`DELETE FROM ops.tariff_catalogue_snapshot_members`);
+    await pool.query(`DELETE FROM ops.tariff_catalogue_snapshots`);
+    await pool.query(`DELETE FROM ops.tariff_eligibility_rules`);
+    await pool.query(`DELETE FROM ops.tariff_price_components`);
+    await pool.query(`DELETE FROM ops.tariff_versions`);
+    await pool.query(`DELETE FROM ops.tariff_products`);
+    await pool.query(`DELETE FROM ops.tariff_suppliers`);
+  }
   await clearA6();
   const { rows: a5 } = await pool.query(`SELECT to_regclass('ops.booking_sessions') AS c`);
   if (a5[0].c) {

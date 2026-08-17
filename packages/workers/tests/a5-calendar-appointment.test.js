@@ -108,6 +108,20 @@ async function reset() {
   await pool.query(`DELETE FROM ops.appointments`).catch(() => {});
   await pool.query(`DELETE FROM ops.booking_slots`).catch(() => {});
   await pool.query(`DELETE FROM ops.booking_sessions`).catch(() => {});
+
+  const { rows: a7 } = await pool.query(`SELECT to_regclass('ops.tariff_evaluations') AS c`);
+  if (a7[0].c) {
+    await pool.query(`DELETE FROM ops.tariff_evaluation_results`);
+    await pool.query(`DELETE FROM ops.tariff_evaluations`);
+    await pool.query(`DELETE FROM ops.energy_profiles`);
+    await pool.query(`DELETE FROM ops.tariff_catalogue_snapshot_members`);
+    await pool.query(`DELETE FROM ops.tariff_catalogue_snapshots`);
+    await pool.query(`DELETE FROM ops.tariff_eligibility_rules`);
+    await pool.query(`DELETE FROM ops.tariff_price_components`);
+    await pool.query(`DELETE FROM ops.tariff_versions`);
+    await pool.query(`DELETE FROM ops.tariff_products`);
+    await pool.query(`DELETE FROM ops.tariff_suppliers`);
+  }
   const { rows: a6 } = await pool.query(`SELECT to_regclass('ops.documents') AS c`);
   if (a6[0].c) {
     await pool.query(`DELETE FROM ops.document_fact_conflicts`);
