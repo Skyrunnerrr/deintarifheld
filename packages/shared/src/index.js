@@ -76,6 +76,31 @@ export {
   requiresReconciliation,
 } from './workflow-runtime-contracts.js';
 
+/* DTH-A4 Communication Engine contracts */
+export {
+  A4_COMMUNICATION_POLICY_ID,
+  A4_COMMUNICATION_POLICY_VERSION,
+  A4_TEMPLATE_MISSING_INFO_ID,
+  A4_TEMPLATE_MISSING_INFO_VERSION,
+  A4_TEST_FOLLOWUP_DELAY_MS,
+  A4_DEFAULT_MAX_FOLLOWUPS,
+  OWNER_FOLLOWUP_CADENCE_REQUIRED,
+  B2B_MISSING_INFO_COMMUNICATE_CAPABILITY,
+  B2B_COMMUNICATION_SEND_CAPABILITY,
+  B2B_MISSING_INFO_FOLLOWUP_CAPABILITY,
+  B2B_INBOUND_EMAIL_PROCESS_CAPABILITY,
+  B2B_APPOINTMENT_OFFER_PREPARE_CAPABILITY,
+  MessagePurpose,
+  ALLOWED_MESSAGE_PURPOSES,
+  OutboundIntentState,
+  ConversationStatus,
+  InboundEventStatus,
+  FollowupStatus,
+  FIELD_LABEL_DE,
+  isAllowedMessagePurpose,
+  PROVIDER_EVENT_PRECEDENCE,
+} from './a4-communication-contracts.js';
+
 /* DTH-A3 B2B qualification contracts */
 export {
   A3_POLICY_ID,

@@ -89,3 +89,27 @@ export {
 export { evaluateQualification, applyQualificationObservation, getCurrentQualification, getOpenMissingRequirements, getQualificationRevision, isQualificationRevisionCurrent } from './a3/evaluate.js';
 export { normalizeLeadFields, parseConsumptionKwh, normalizeEnergyType, normalizeStandorte } from './a3/normalize.js';
 export { B2B_QUALIFICATION_POLICY_V1, evaluateCallReadiness, computeInputFingerprint } from './a3/policy.js';
+
+/* DTH-A4 Communication Engine */
+export {
+  createMockEmailProvider,
+  createResendEmailProvider,
+  resetProviderTestStore,
+  setProviderTestMode,
+  getProviderLiveCallCount,
+  seedReceivedEmail,
+  hashEmail,
+  redactEmail,
+} from './a4/provider.js';
+export { renderMissingInfoMessage } from './a4/template.js';
+export { interpretMissingInfoReply, interpretMissingInfoReplyAi } from './a4/interpret.js';
+export {
+  prepareMissingInfoCommunication,
+  executeCommunicationSend,
+  executeFollowupDue,
+  acceptInboundWebhook,
+  processInboundEvent,
+  applyProviderDeliveryEvent,
+  cancelFollowupsForConversation,
+  cancelStaleOutboundIntents,
+} from './a4/communicate.js';
