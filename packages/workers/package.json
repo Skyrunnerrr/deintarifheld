@@ -14,7 +14,8 @@
     "test": "node --test src/worker-stub.test.js",
     "test:a1": "node --test --test-concurrency=1 tests/a1-durable-runtime.test.js tests/a1-failure-injection.test.js",
     "test:a2": "node --test --test-concurrency=1 tests/a2-lead-case-autopilot.test.js",
-    "test:a3": "node --test --test-concurrency=1 tests/a3-qualification.test.js"
+    "test:a3": "node --test --test-concurrency=1 tests/a3-qualification.test.js",
+    "test:a4": "node --test --test-concurrency=1 tests/a4-communication-engine.test.js"
   },
   "dth": {
     "tranche": "DTH-A1",
