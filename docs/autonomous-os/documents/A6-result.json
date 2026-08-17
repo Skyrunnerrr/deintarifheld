@@ -46,13 +46,13 @@
   ],
   "NEXT_TRANCHE": "DTH-A7 ENERGY_TARIFF_DOMAIN_ENGINE",
   "git": {
-    "final": "39d69b9c2c1c5f1450070e21ad032e0203741413",
+    "final": "505c4cedcc8d13be4b40f2ae25949cc5dfe97c1b",
     "branch": "feat/dth-a6-document-intelligence-001",
     "base": "9458f7968e761b5a58f25500e3e755adc9ed7124",
     "push": false,
     "pr": false,
     "merge": false
   },
-  "final": "39d69b9c2c1c5f1450070e21ad032e0203741413",
+  "final": "505c4cedcc8d13be4b40f2ae25949cc5dfe97c1b",
   "implementation_state": "COMMITTED_ON_BRANCH"
 }
