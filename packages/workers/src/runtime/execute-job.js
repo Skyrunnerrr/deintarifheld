@@ -95,6 +95,7 @@ export async function executeLeasedJob(pool, job, {
   let handlerResult;
   try {
     handlerResult = await resolved.handler(job, {
+      pool,
       effectAdapter,
       idempotentEffects,
       renewLease: () => renewLease(pool, job, workerInstanceId),
@@ -103,6 +104,7 @@ export async function executeLeasedJob(pool, job, {
           ...job,
           control_domain: KillDomain.AUTOMATION_ENGINE,
         }),
+      failureInjector,
     });
   } catch (err) {
     // Poison / unexpected: isolate job, do not crash loop

@@ -51,7 +51,8 @@
     "workers:test": "npm run test -w @deintarifheld/shared -w @deintarifheld/workers",
     "workers:tg06": "node packages/db/tests/run-p3-f5-tg06-integration.mjs",
     "test:dth:a1": "npm run test:a1 -w @deintarifheld/workers",
-    "test:dth:a2": "npm run test:a2 -w @deintarifheld/workers"
+    "test:dth:a2": "npm run test:a2 -w @deintarifheld/workers",
+    "test:dth:a3": "npm run test:a3 -w @deintarifheld/workers"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

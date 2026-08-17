@@ -1,7 +1,7 @@
 /**
  * Synthetic A1 handlers only — no mail, calendar, AI, CRM, providers.
  */
-import { SyntheticCapability, WorkflowErrorClass, B2B_QUALIFICATION_START_CAPABILITY } from '@deintarifheld/shared';
+import { SyntheticCapability, WorkflowErrorClass, B2B_QUALIFICATION_START_CAPABILITY, B2B_QUALIFICATION_REEVALUATE_CAPABILITY } from '@deintarifheld/shared';
 import { installDefaultSyntheticCapabilities } from './capability-registry.js';
 
 /** In-memory attempt counters for transient-then-success (per job id). LOCAL_TEST_ONLY */
@@ -112,11 +112,13 @@ export async function handlePoison() {
 }
 
 /**
- * A2→A3 placeholder: proves dispatch; no AI, no mail, no qualification logic.
- * Leaves workflow open for A3 (does not complete workflow).
+ * A3: deterministic B2B CALL_READY qualification.
+ * A1 synthetic harness cases are not in public.cases — success no-op preserves A1.
  */
 export async function handleB2bQualificationStart(job, ctx) {
-  if (!job.payload_redacted?.case_id || !job.payload_redacted?.lead_id) {
+  const caseId = String(job.payload_redacted?.case_id || '');
+  const leadId = String(job.payload_redacted?.lead_id || '');
+  if (!caseId || !leadId) {
     return {
       ok: false,
       errorClass: WorkflowErrorClass.VALIDATION_PERMANENT,
@@ -124,11 +126,92 @@ export async function handleB2bQualificationStart(job, ctx) {
       permanent: true,
     };
   }
-  ctx.idempotentEffects?.record?.(job.id, 'B2B_QUALIFICATION_START_READY');
+  if (!ctx?.pool) {
+    return {
+      ok: false,
+      errorClass: WorkflowErrorClass.HANDLER_BUG,
+      errorCode: 'POOL_REQUIRED',
+      permanent: true,
+    };
+  }
+
+  const exists = await ctx.pool.query(
+    `SELECT 1 AS ok FROM public.cases WHERE id = $1 AND deleted_at IS NULL LIMIT 1`,
+    [caseId],
+  );
+  if (exists.rowCount === 0) {
+    ctx.idempotentEffects?.record?.(job.id, 'B2B_QUALIFICATION_START_SYNTHETIC');
+    return {
+      ok: true,
+      completeWorkflow: false,
+      workflowState: 'QUALIFICATION_PENDING',
+    };
+  }
+
+  try {
+    ctx.failureInjector?.('a3_pre_eval');
+    const { evaluateQualification } = await import('@deintarifheld/db');
+    const result = await evaluateQualification(ctx.pool, {
+      caseId,
+      trigger: 'START',
+      failureInjector: ctx.failureInjector,
+    });
+    ctx.failureInjector?.('a3_post_commit');
+    ctx.idempotentEffects?.record?.(job.id, `B2B_QUALIFICATION_START:${result.outcome}`);
+    return {
+      ok: true,
+      completeWorkflow: false,
+      workflowState: result.workflowState,
+    };
+  } catch (err) {
+    if (err?.code === 'PURPOSE_BOUNDARY' || err?.permanent) {
+      return {
+        ok: false,
+        errorClass: WorkflowErrorClass.VALIDATION_PERMANENT,
+        errorCode: err.code || 'QUALIFICATION_PERMANENT',
+        permanent: true,
+      };
+    }
+    throw err;
+  }
+}
+
+export async function handleB2bQualificationReevaluate(job, ctx) {
+  const caseId = String(job.payload_redacted?.case_id || '');
+  if (!caseId) {
+    return {
+      ok: false,
+      errorClass: WorkflowErrorClass.VALIDATION_PERMANENT,
+      errorCode: 'CASE_ID_REQUIRED',
+      permanent: true,
+    };
+  }
+  if (!ctx?.pool) {
+    return {
+      ok: false,
+      errorClass: WorkflowErrorClass.HANDLER_BUG,
+      errorCode: 'POOL_REQUIRED',
+      permanent: true,
+    };
+  }
+  const exists = await ctx.pool.query(
+    `SELECT 1 AS ok FROM public.cases WHERE id = $1 AND deleted_at IS NULL LIMIT 1`,
+    [caseId],
+  );
+  if (exists.rowCount === 0) {
+    return { ok: true, completeWorkflow: false, workflowState: 'QUALIFICATION_PENDING' };
+  }
+  const { evaluateQualification } = await import('@deintarifheld/db');
+  const result = await evaluateQualification(ctx.pool, {
+    caseId,
+    trigger: 'REEVALUATE',
+    failureInjector: ctx.failureInjector,
+  });
+  ctx.idempotentEffects?.record?.(job.id, `B2B_QUALIFICATION_REEVALUATE:${result.outcome}`);
   return {
     ok: true,
     completeWorkflow: false,
-    workflowState: 'QUALIFICATION_PENDING',
+    workflowState: result.workflowState,
   };
 }
 
@@ -142,5 +225,6 @@ export function registerAllSyntheticHandlers() {
     [SyntheticCapability.SYNTHETIC_CHAIN_STEP]: handleChainStep,
     [SyntheticCapability.SYNTHETIC_POISON]: handlePoison,
     [B2B_QUALIFICATION_START_CAPABILITY]: handleB2bQualificationStart,
+    [B2B_QUALIFICATION_REEVALUATE_CAPABILITY]: handleB2bQualificationReevaluate,
   });
 }
