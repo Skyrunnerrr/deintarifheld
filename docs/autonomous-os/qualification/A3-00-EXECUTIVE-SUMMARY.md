@@ -25,4 +25,4 @@ Missing information becomes durable OPEN requirements. Synthetic observations + 
 
 ## Next
 
-DTH-A4 COMMUNICATION_ENGINE
+DTH-A4 COMMUNICATION_ENGINE — implemented on `feat/dth-a4-communication-engine-001` (local E2, synthetic provider). Live communication remains NO.
