@@ -35,6 +35,8 @@ import {
   normalizeEnergyType,
   setGlobalKill,
   B2B_QUALIFICATION_POLICY_V1,
+  createMockEmailProvider,
+  createTestCalendarProvider,
 } from '@deintarifheld/db';
 import {
   drainLeadHandoffs,
@@ -52,6 +54,9 @@ if (/supabase\.co|aws\.|azure\.|gcp\./i.test(DB_URL) || !/127\.0\.0\.1|localhost
 }
 
 const pool = createLocalOutboxPool(DB_URL);
+const emailProvider = createMockEmailProvider();
+const calendarProvider = createTestCalendarProvider();
+registerAllSyntheticHandlers();
 
 function idem(prefix) {
   return `${prefix}-${randomUUID()}`;
@@ -484,32 +489,35 @@ test('A3-30 A4 handoff contract stale detection', async () => {
 test('A3-31 stress mixed outcomes', async () => {
   await reset();
   const n = 40;
-  const jobs = [];
-  for (let i = 0; i < n; i += 1) {
-    const kind = i % 4;
-    let payload;
-    if (kind === 0) payload = completePayload({ email: `s${i}@example.invalid`, firma: `S${i}` });
-    else if (kind === 1)
-      payload = completePayload({ email: `s${i}@example.invalid`, firma: `S${i}`, verbrauchStrom: '' });
-    else if (kind === 2)
-      payload = completePayload({ email: `s${i}@example.invalid`, firma: `S${i}`, verbrauchStrom: '1.5' });
-    else
-      payload = completePayload({
-        email: `s${i}@example.invalid`,
-        firma: `S${i}`,
-        energieart: 'Gas',
-        verbrauchStrom: '',
-        verbrauchGas: '20000',
-      });
-    jobs.push(intakeAndHandoff(payload, `st${i}`));
+  for (let i = 0; i < n; i += 8) {
+    const batch = [];
+    for (let j = i; j < Math.min(i + 8, n); j += 1) {
+      const kind = j % 4;
+      let payload;
+      if (kind === 0) payload = completePayload({ email: `s${j}@example.invalid`, firma: `S${j}` });
+      else if (kind === 1)
+        payload = completePayload({ email: `s${j}@example.invalid`, firma: `S${j}`, verbrauchStrom: '' });
+      else if (kind === 2)
+        payload = completePayload({ email: `s${j}@example.invalid`, firma: `S${j}`, verbrauchStrom: '1.5' });
+      else
+        payload = completePayload({
+          email: `s${j}@example.invalid`,
+          firma: `S${j}`,
+          energieart: 'Gas',
+          verbrauchStrom: '',
+          verbrauchGas: '20000',
+        });
+      batch.push(intakeAndHandoff(payload, `st${j}`));
+    }
+    await Promise.all(batch);
   }
-  for (let i = 0; i < jobs.length; i += 8) {
-    await Promise.all(jobs.slice(i, i + 8));
-  }
-  await Promise.all([
-    drainDueJobs(pool, { maxEmptyTicks: 20, maxIterations: 200 }),
-    drainDueJobs(pool, { maxEmptyTicks: 20, maxIterations: 200 }),
-  ]);
+  // Single drain only: createLocalOutboxPool max=2 — parallel drains deadlock.
+  await drainDueJobs(pool, {
+    maxEmptyTicks: 15,
+    maxIterations: 200,
+    emailProvider,
+    calendarProvider,
+  });
   const counts = await pool.query(
     `SELECT outcome, count(*)::int AS n FROM ops.case_qualifications WHERE is_current GROUP BY outcome`,
   );

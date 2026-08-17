@@ -50,6 +50,15 @@ async function reset() {
     await pool.query(`DELETE FROM ops.document_processing_runs`);
     await pool.query(`DELETE FROM ops.documents`);
   }
+  const { rows: a5 } = await pool.query(`SELECT to_regclass('ops.booking_sessions') AS c`);
+  if (a5[0].c) {
+    await pool.query(`DELETE FROM ops.appointment_reminders`).catch(() => {});
+    await pool.query(`DELETE FROM ops.appointment_provider_events`).catch(() => {});
+    await pool.query(`UPDATE ops.booking_sessions SET appointment_id=NULL, selected_slot_id=NULL`).catch(() => {});
+    await pool.query(`DELETE FROM ops.appointments`).catch(() => {});
+    await pool.query(`DELETE FROM ops.booking_slots`).catch(() => {});
+    await pool.query(`DELETE FROM ops.booking_sessions`).catch(() => {});
+  }
   const { rows: a4 } = await pool.query(`SELECT to_regclass('ops.conversations') AS c`);
   if (a4[0].c) {
     await pool.query(`DELETE FROM ops.followup_schedules`);
