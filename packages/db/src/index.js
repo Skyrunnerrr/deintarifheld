@@ -84,3 +84,8 @@ export {
   processOneBusinessLeadHandoff,
   detectHandoffOrphans,
 } from './a2/handoff.js';
+
+/* DTH-A3 B2B qualification */
+export { evaluateQualification, applyQualificationObservation, getCurrentQualification, getOpenMissingRequirements, getQualificationRevision, isQualificationRevisionCurrent } from './a3/evaluate.js';
+export { normalizeLeadFields, parseConsumptionKwh, normalizeEnergyType, normalizeStandorte } from './a3/normalize.js';
+export { B2B_QUALIFICATION_POLICY_V1, evaluateCallReadiness, computeInputFingerprint } from './a3/policy.js';

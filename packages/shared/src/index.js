@@ -76,6 +76,25 @@ export {
   requiresReconciliation,
 } from './workflow-runtime-contracts.js';
 
+/* DTH-A3 B2B qualification contracts */
+export {
+  A3_POLICY_ID,
+  A3_POLICY_VERSION,
+  QUALIFICATION_SCOPE,
+  B2B_QUALIFICATION_REEVALUATE_CAPABILITY,
+  QualificationOutcome,
+  RequirementStatus,
+  ObservationSourceKind,
+  FieldCode,
+  OBSERVATION_FIELD_ALLOWLIST,
+  ReasonCode,
+  FieldRequirementClass,
+  CanonicalEnergyType,
+  WorkflowQualState,
+  isObservationFieldAllowed,
+  workflowStateForOutcome,
+} from './a3-qualification-contracts.js';
+
 /* DTH-A2 Lead → Case contracts */
 export {
   BUSINESS_LEAD_ACCEPTED_EVENT,
