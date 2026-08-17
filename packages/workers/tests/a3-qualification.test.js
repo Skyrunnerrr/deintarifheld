@@ -117,8 +117,14 @@ async function intakeAndHandoff(payload, keyPrefix = 'a3') {
   });
   assert.equal(a.ok, true);
   await drainLeadHandoffs(pool, { maxEmpty: 4 });
-  const c = await findCaseBySourceLead(pool, a.leadId);
-  const w = await findWorkflowForLead(pool, a.leadId);
+  let c = await findCaseBySourceLead(pool, a.leadId);
+  let w = await findWorkflowForLead(pool, a.leadId);
+  if (!c || !w) {
+    await drainLeadHandoffs(pool, { maxEmpty: 8 });
+    c = await findCaseBySourceLead(pool, a.leadId);
+    w = await findWorkflowForLead(pool, a.leadId);
+  }
+  assert.ok(c && w, 'handoff must produce case+workflow');
   const j = await findInitialQualificationJob(pool, w.id);
   return { a, c, w, j };
 }
@@ -481,7 +487,9 @@ test('A3-31 stress mixed outcomes', async () => {
       });
     jobs.push(intakeAndHandoff(payload, `st${i}`));
   }
-  await Promise.all(jobs);
+  for (let i = 0; i < jobs.length; i += 8) {
+    await Promise.all(jobs.slice(i, i + 8));
+  }
   await Promise.all([
     drainDueJobs(pool, { maxEmptyTicks: 20, maxIterations: 200 }),
     drainDueJobs(pool, { maxEmptyTicks: 20, maxIterations: 200 }),

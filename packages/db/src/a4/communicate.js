@@ -188,8 +188,16 @@ export async function prepareMissingInfoCommunication(pool, {
       [dthKey],
     );
     if (existingIntent.rows[0]) {
+      const ex = existingIntent.rows[0];
       await client.query('COMMIT');
-      return { ok: true, duplicate: true, intentId: existingIntent.rows[0].id, conversationId: conv.id };
+      return {
+        ok: true,
+        duplicate: true,
+        alreadySent: ['PROVIDER_ACCEPTED', 'DELIVERED'].includes(ex.state),
+        intentId: ex.id,
+        conversationId: conv.id,
+        state: ex.state,
+      };
     }
 
     const rendered = renderMissingInfoMessage({

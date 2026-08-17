@@ -334,6 +334,7 @@ test('A2-16 two workers handoff', async () => {
     drainLeadHandoffs(pool, { maxEmpty: 6, maxIterations: 100 }),
     drainLeadHandoffs(pool, { maxEmpty: 6, maxIterations: 100 }),
   ]);
+  await drainLeadHandoffs(pool, { maxEmpty: 8, maxIterations: 100 });
   assert.equal((await pool.query(`SELECT count(*)::int AS n FROM public.cases`)).rows[0].n, 10);
   assert.equal(
     (await pool.query(`SELECT count(*)::int AS n FROM workflow.workflow_instances`)).rows[0].n,
@@ -402,6 +403,7 @@ test('A2 stress 100 leads / 2 handoff workers', async () => {
     drainLeadHandoffs(pool, { maxEmpty: 8, maxIterations: 400 }),
     drainLeadHandoffs(pool, { maxEmpty: 8, maxIterations: 400 }),
   ]);
+  await drainLeadHandoffs(pool, { maxEmpty: 12, maxIterations: 400 });
   assert.equal((await pool.query(`SELECT count(*)::int AS n FROM public.leads`)).rows[0].n, n);
   assert.equal((await pool.query(`SELECT count(*)::int AS n FROM public.cases`)).rows[0].n, n);
   assert.equal(

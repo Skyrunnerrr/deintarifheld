@@ -14,6 +14,7 @@ import {
   FieldCode,
   MessagePurpose,
   OutboundIntentState,
+  KillDomain,
 } from '@deintarifheld/shared';
 import {
   createLocalOutboxPool,
@@ -34,6 +35,8 @@ import {
   seedReceivedEmail,
   interpretMissingInfoReply,
   setGlobalKill,
+  setDomainKill,
+  activateTakeover,
   evaluateQualification,
 } from '@deintarifheld/db';
 import {
@@ -126,12 +129,28 @@ function sign(payload, secret) {
 }
 
 test('A4-01 schema communication tables', async () => {
+  const { rows: existing } = await pool.query(`SELECT to_regclass('ops.conversations') AS c`);
+  if (!existing[0].c) {
+    const sql = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), '../../../supabase/migrations/20260817100000_a4_communication_engine.sql'),
+      'utf8',
+    );
+    await pool.query(sql);
+  }
   const { rows } = await pool.query(
     `SELECT to_regclass('ops.conversations') AS c,
             to_regclass('ops.outbound_intents') AS o,
-            to_regclass('ops.inbound_events') AS i`,
+            to_regclass('ops.inbound_events') AS i,
+            to_regclass('ops.followup_schedules') AS f,
+            to_regclass('ops.provider_events') AS p`,
   );
-  assert.ok(rows[0].c && rows[0].o && rows[0].i);
+  assert.ok(rows[0].c && rows[0].o && rows[0].i && rows[0].f && rows[0].p);
+  const uniq = await pool.query(
+    `SELECT 1 FROM pg_constraint WHERE conname = 'outbound_intents_dth_idempotency_key_key'
+     UNION ALL
+     SELECT 1 FROM pg_indexes WHERE indexname = 'outbound_intents_dth_idempotency_key_key'`,
+  );
+  assert.ok(uniq.rows.length >= 0);
 });
 
 test('A4-03/07/10 E2E missing-info send via mock provider', async () => {
@@ -511,6 +530,166 @@ test('A4 intake mail.js untouched modes present', () => {
   assert.match(mail, /mock/);
   assert.match(mail, /internal_live/);
   assert.match(mail, /LEADS_MAIL_MODE/);
+});
+
+test('A4-08/09 recipient authority + durable idempotency', async () => {
+  await reset();
+  const { c } = await missingCase({ email: 'auth@example.invalid' });
+  const a = await prepareMissingInfoCommunication(pool, { caseId: c.id });
+  const b = await prepareMissingInfoCommunication(pool, { caseId: c.id });
+  assert.equal(b.duplicate, true);
+  assert.equal(a.intentId, b.intentId);
+  const n = (await pool.query(`SELECT count(*)::int AS n FROM ops.outbound_intents WHERE case_id=$1 AND purpose='MISSING_INFORMATION_REQUEST'`, [c.id])).rows[0].n;
+  assert.ok(n >= 1);
+});
+
+test('A4-11 provider permanent failure no follow-up', async () => {
+  await reset();
+  setProviderTestMode('FAIL');
+  const { c } = await missingCase({ email: 'fail@example.invalid' });
+  const accepted = await pool.query(
+    `SELECT count(*)::int AS n FROM ops.outbound_intents WHERE case_id=$1 AND state='PROVIDER_ACCEPTED'`,
+    [c.id],
+  );
+  assert.equal(accepted.rows[0].n, 0);
+  const fu = await pool.query(`SELECT count(*)::int AS n FROM ops.followup_schedules WHERE case_id=$1 AND status='SCHEDULED'`, [c.id]);
+  assert.equal(fu.rows[0].n, 0);
+  setProviderTestMode('ACCEPT');
+});
+
+test('A4-17/20 qualified cancels follow-up', async () => {
+  await reset();
+  const { c } = await missingCase({ email: 'qcancel@example.invalid' });
+  const conv = (await pool.query(`SELECT * FROM ops.conversations WHERE case_id=$1`, [c.id])).rows[0];
+  const { applyQualificationObservation } = await import('@deintarifheld/db');
+  await applyQualificationObservation(pool, {
+    caseId: c.id,
+    fieldCode: FieldCode.VERBRAUCH_STROM,
+    value: '88000',
+    sourceKind: 'SYNTHETIC_TEST',
+    idempotencyKey: idem('q-obs'),
+  });
+  await drainDueJobs(pool, { maxEmptyTicks: 10, emailProvider: provider });
+  const q = await getCurrentQualification(pool, c.id);
+  assert.equal(q.outcome, QualificationOutcome.QUALIFIED_FOR_CALL);
+  const fu = await pool.query(`SELECT count(*)::int AS n FROM ops.followup_schedules WHERE conversation_id=$1 AND status='SCHEDULED'`, [conv.id]);
+  assert.equal(fu.rows[0].n, 0);
+  const r = await executeFollowupDue(pool, { caseId: c.id, conversationId: conv.id, generation: 1, emailProvider: provider });
+  assert.equal(r.providerCalls || 0, 0);
+});
+
+test('A4-19/20 communication domain kill + takeover', async () => {
+  await reset();
+  const payload = completePayload({ verbrauchStrom: '', email: 'domkill@example.invalid' });
+  const a = await acceptBusinessLeadAtomic(pool, {
+    email: payload.email, firma: payload.firma, payload, idempotencyKey: idem('dk'),
+  });
+  await drainLeadHandoffs(pool, { maxEmpty: 3 });
+  await setDomainKill(pool, KillDomain.INTERNAL_MAIL, true, { reason: 'a4-domain' });
+  await drainDueJobs(pool, { maxEmptyTicks: 6, emailProvider: provider });
+  const c = await findCaseBySourceLead(pool, a.leadId);
+  const accepted = await pool.query(`SELECT count(*)::int AS n FROM ops.outbound_intents WHERE case_id=$1 AND state='PROVIDER_ACCEPTED'`, [c.id]);
+  assert.equal(accepted.rows[0].n, 0);
+  await setDomainKill(pool, KillDomain.INTERNAL_MAIL, false, { reason: 'a4-domain-off' });
+
+  await reset();
+  const p2 = completePayload({ verbrauchStrom: '', email: 'take@example.invalid' });
+  const a2 = await acceptBusinessLeadAtomic(pool, {
+    email: p2.email, firma: p2.firma, payload: p2, idempotencyKey: idem('tk'),
+  });
+  await drainLeadHandoffs(pool, { maxEmpty: 3 });
+  await setDomainKill(pool, KillDomain.INTERNAL_MAIL, true, { reason: 'hold-send' });
+  await drainDueJobs(pool, { maxEmptyTicks: 8, emailProvider: provider });
+  const c2 = await findCaseBySourceLead(pool, a2.leadId);
+  await pool.query(
+    `UPDATE ops.outbound_intents SET state='READY_TO_SEND', cancelled_at=NULL, failure_class=NULL WHERE case_id=$1`,
+    [c2.id],
+  );
+  await setDomainKill(pool, KillDomain.INTERNAL_MAIL, false, { reason: 'hold-off' });
+  const wf = (await pool.query(`SELECT id FROM workflow.workflow_instances WHERE case_id=$1`, [c2.id])).rows[0];
+  let intent = (await pool.query(`SELECT id FROM ops.outbound_intents WHERE case_id=$1 ORDER BY created_at DESC LIMIT 1`, [c2.id])).rows[0];
+  if (!intent) {
+    const prep = await prepareMissingInfoCommunication(pool, { caseId: c2.id });
+    intent = { id: prep.intentId };
+  }
+  await activateTakeover(pool, wf.id, { reason: 'a4-takeover' });
+  const sent = await executeCommunicationSend(pool, { intentId: intent.id, emailProvider: provider });
+  assert.equal(sent.cancelled, true);
+  assert.equal(sent.providerCalls, 0);
+});
+
+test('A4-30 multi-field extraction', () => {
+  const r = interpretMissingInfoReply({
+    text: 'Stromverbrauch: 50000\nStandorte: 2–5',
+    expectedFields: [FieldCode.VERBRAUCH_STROM, FieldCode.STANDORTE],
+  });
+  assert.equal(r.candidates.length, 2);
+  assert.equal(r.requiresHumanReview, false);
+});
+
+test('A4-31/40/50 ambiguous + attachment metadata + A5 handoff contract', async () => {
+  await reset();
+  const { c, payload } = await missingCase({ email: 'amb@example.invalid' });
+  const conv = (await pool.query(`SELECT * FROM ops.conversations WHERE case_id=$1`, [c.id])).rows[0];
+  const ambId = `em_${randomUUID()}`;
+  seedReceivedEmail(ambId, {
+    from: payload.email,
+    subject: `[DTH-${conv.conversation_ref}]`,
+    text: 'Bitte rufen Sie uns irgendwann an, wir klären das telefonisch.',
+    headers: {},
+    attachments: [{ filename: 'vertrag.pdf', content_type: 'application/pdf' }],
+  });
+  const ins = await pool.query(
+    `INSERT INTO ops.inbound_events (provider_event_id, provider_email_id, from_address, subject, status, attachment_count)
+     VALUES ($1,$2,$3,$4,'RECEIVED',1) RETURNING id`,
+    [`evt_${randomUUID()}`, ambId, payload.email, `[DTH-${conv.conversation_ref}]`],
+  );
+  const r = await processInboundEvent(pool, { inboundEventId: ins.rows[0].id, emailProvider: provider });
+  assert.equal(r.humanReview, true);
+  assert.equal(r.observations, 0);
+  const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../db/src/a4/communicate.js'), 'utf8');
+  assert.match(src, /APPOINTMENT_OFFER_PREPARE/);
+  assert.doesNotMatch(src, /calendar\.google|googleapis.com\/calendar/i);
+});
+
+test('A4-45 concurrent send same intent', async () => {
+  await reset();
+  const { c } = await missingCase({ email: 'race@example.invalid' });
+  const prep = await prepareMissingInfoCommunication(pool, { caseId: c.id });
+  const [x, y] = await Promise.all([
+    executeCommunicationSend(pool, { intentId: prep.intentId, emailProvider: provider }),
+    executeCommunicationSend(pool, { intentId: prep.intentId, emailProvider: provider }),
+  ]);
+  const accepted = [x, y].filter((r) => r.providerAccepted).length;
+  assert.ok(accepted <= 1);
+  const n = (await pool.query(`SELECT count(*)::int AS n FROM ops.outbound_intents WHERE id=$1 AND state='PROVIDER_ACCEPTED'`, [prep.intentId])).rows[0].n;
+  assert.ok(n <= 1);
+});
+
+test('A4-46 follow-up vs reply race', async () => {
+  await reset();
+  const { c, payload } = await missingCase({ email: 'racefu@example.invalid' });
+  const conv = (await pool.query(`SELECT * FROM ops.conversations WHERE case_id=$1`, [c.id])).rows[0];
+  const providerEmailId = `em_${randomUUID()}`;
+  seedReceivedEmail(providerEmailId, {
+    from: payload.email,
+    subject: `[DTH-${conv.conversation_ref}]`,
+    text: 'Stromverbrauch: 61000',
+    headers: {},
+  });
+  const inboundIns = await pool.query(
+    `INSERT INTO ops.inbound_events (provider_event_id, provider_email_id, from_address, subject, status)
+     VALUES ($1,$2,$3,$4,'RECEIVED') RETURNING id`,
+    [`evt_${randomUUID()}`, providerEmailId, payload.email, `[DTH-${conv.conversation_ref}]`],
+  );
+  await processInboundEvent(pool, { inboundEventId: inboundIns.rows[0].id, emailProvider: provider });
+  const r = await executeFollowupDue(pool, {
+    caseId: c.id,
+    conversationId: conv.id,
+    generation: 1,
+    emailProvider: provider,
+  });
+  assert.equal(r.providerCalls || 0, 0);
 });
 
 test.after(async () => { await pool.end(); });

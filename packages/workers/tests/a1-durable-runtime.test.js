@@ -64,6 +64,15 @@ requireLocalUrl(DB_URL);
 const pool = createLocalOutboxPool(DB_URL);
 
 async function resetRuntimeTables() {
+  const { rows: a4 } = await pool.query(`SELECT to_regclass('ops.conversations') AS c`);
+  if (a4[0].c) {
+    await pool.query(`DELETE FROM ops.followup_schedules`);
+    await pool.query(`DELETE FROM ops.provider_events`);
+    await pool.query(`DELETE FROM ops.inbound_events`);
+    await pool.query(`DELETE FROM ops.communication_messages`);
+    await pool.query(`DELETE FROM ops.outbound_intents`);
+    await pool.query(`DELETE FROM ops.conversations`);
+  }
   await pool.query(`DELETE FROM workflow.job_attempts`);
   await pool.query(`DELETE FROM workflow.jobs`);
   await pool.query(`DELETE FROM workflow.workflow_instances`);

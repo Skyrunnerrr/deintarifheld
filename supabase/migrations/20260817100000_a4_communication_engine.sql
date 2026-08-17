@@ -10,7 +10,7 @@ REVOKE ALL ON SCHEMA ops FROM PUBLIC;
 CREATE TABLE IF NOT EXISTS ops.conversations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   case_id uuid NOT NULL REFERENCES public.cases(id),
-  workflow_instance_id uuid REFERENCES workflow.workflow_instances(id),
+  workflow_instance_id uuid REFERENCES workflow.workflow_instances(id) ON DELETE SET NULL,
   channel text NOT NULL DEFAULT 'EMAIL' CHECK (channel = 'EMAIL'),
   status text NOT NULL DEFAULT 'OPEN' CHECK (status = ANY (ARRAY[
     'OPEN','WAITING_CUSTOMER','ACTION_REQUIRED','QUALIFIED','HUMAN_REVIEW','CLOSED'
@@ -163,5 +163,12 @@ END $$;
 
 COMMENT ON TABLE ops.conversations IS 'A4 case email conversation — communication state only';
 COMMENT ON TABLE ops.outbound_intents IS 'A4 durable outbound intents; provider call only after pre-send checks';
+
+ALTER TABLE ops.conversations
+  DROP CONSTRAINT IF EXISTS conversations_workflow_instance_id_fkey;
+ALTER TABLE ops.conversations
+  ADD CONSTRAINT conversations_workflow_instance_id_fkey
+    FOREIGN KEY (workflow_instance_id) REFERENCES workflow.workflow_instances(id)
+    ON DELETE SET NULL;
 
 COMMIT;
