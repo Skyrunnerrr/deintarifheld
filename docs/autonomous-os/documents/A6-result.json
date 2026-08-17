@@ -43,13 +43,13 @@
   ],
   "NEXT_TRANCHE": "DTH-A7 ENERGY_TARIFF_DOMAIN (handoff ready; tariff not implied)",
   "git": {
-    "final": "49a5c31266e7eaa3c7e5025f4316ce31a5c46d9c",
+    "final": "e7be8e855ac502034ea7908feb77a88dcbd6334e",
     "branch": "feat/dth-a6-document-intelligence-001",
     "base": "9458f7968e761b5a58f25500e3e755adc9ed7124",
     "push": false,
     "pr": false,
     "merge": false
   },
-  "final": "49a5c31266e7eaa3c7e5025f4316ce31a5c46d9c",
+  "final": "e7be8e855ac502034ea7908feb77a88dcbd6334e",
   "implementation_state": "COMMITTED_ON_BRANCH"
 }
