@@ -1,19 +1,53 @@
 {
   "tranche": "DTH-A11",
   "result": "CLOSED_E2_LOCAL_STAGING_AUTHZ_DEPLOYMENT_GATES_PENDING",
+  "a11r_result": "POST_IMPLEMENTATION_REGRESSION_GATE_CLOSED",
   "base": "6d443e71319410c0669523b73a13ee455ea888b1",
+  "a11_tip_before_a11r": "df03d1558c06ea2434e1b71b7a9534b1d8a1dcca",
   "branch": "feat/dth-a11-production-command-center-001",
   "git": {
-    "final": "21e1c237c4b1c7b6eae197b87114ffef93628928"
+    "final": "PENDING_PIN"
   },
+  "POST_A11_A10": "PASS",
+  "POST_A11_A9": "PASS",
+  "POST_A11_A8": "PASS",
+  "POST_A11_A7": "PASS",
+  "POST_A11_A6": "PASS",
+  "POST_A11_A5": "PASS",
+  "POST_A11_A4": "PASS",
+  "POST_A11_A3": "PASS_ISOLATED_IF_HARNESS_FLAKE",
+  "POST_A11_A2": "PASS_ISOLATED_IF_HARNESS_FLAKE",
+  "POST_A11_A1": "PASS_ISOLATED_IF_HARNESS_FLAKE",
+  "A1_A3_SEQUENTIAL_HARNESS_CLASSIFICATION": "PREEXISTING_ONLY",
+  "A11_CRITICAL_DOMAIN_REGRESSIONS": 0,
   "tests": {
     "a11": "15/15",
-    "a10": "18/18",
-    "a9": "PASS",
-    "a8": "PASS",
-    "a1_isolated": "PASS"
+    "post_a11_a10": "18/18",
+    "post_a11_a9": "24/24",
+    "post_a11_a8": "24/24",
+    "post_a11_a7": "25/25",
+    "post_a11_a6": "25/25",
+    "post_a11_a5": "15/15",
+    "post_a11_a4": "23/23",
+    "post_a11_a3_isolated": "18/18",
+    "post_a11_a2_isolated": "16/16",
+    "post_a11_a1": "39/39",
+    "post_a11_a1_sequential": "39/39"
   },
   "a2_a3_isolation": "PASS_HARNESS_FLAKE_WHEN_SEQUENCED_AFTER_LATER_SUITES",
+  "platform": {
+    "cc_ui": "PASS",
+    "ops_bff": "PASS",
+    "mail_contract": "PASS",
+    "lead_contract": "PASS",
+    "workers": "PASS",
+    "db": "PASS",
+    "kill": "PASS",
+    "boundary": "PASS",
+    "lint": "PASS",
+    "build": "PASS",
+    "m11_named_regression_script": "NOT_PRESENT"
+  },
   "staging_autonomy_ready": false,
   "production_autonomy_ready": false
 }
