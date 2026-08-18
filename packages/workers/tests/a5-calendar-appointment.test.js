@@ -43,6 +43,7 @@ import {
   zonedLocalToUtc,
   generateCandidateSlots,
   getProviderLiveCallCount,
+  wipeOfferAndSwitchingDomain,
 } from '@deintarifheld/db';
 import {
   drainLeadHandoffs,
@@ -100,6 +101,7 @@ async function ensureSchema() {
 
 async function reset() {
   await ensureSchema();
+  await wipeOfferAndSwitchingDomain(pool);
   resetCalendarProviderTestStore();
   setCalendarProviderTestMode('ACCEPT');
   await pool.query(`DELETE FROM ops.appointment_reminders`).catch(() => {});

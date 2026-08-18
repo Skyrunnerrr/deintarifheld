@@ -53,6 +53,7 @@ import {
   resetProviderTestStore,
   setProviderTestMode,
   getProviderLiveCallCount,
+  wipeOfferAndSwitchingDomain,
 } from '@deintarifheld/db';
 import {
   drainLeadHandoffs,
@@ -114,16 +115,7 @@ async function ensureSchemas() {
 }
 
 async function clearA8() {
-  const { rows } = await pool.query(`SELECT to_regclass('ops.offers') AS c`);
-  if (!rows[0].c) return;
-  await pool.query(`DELETE FROM ops.switch_preparations`);
-  await pool.query(`DELETE FROM ops.offer_customer_decisions`);
-  await pool.query(`DELETE FROM ops.offer_tokens`);
-  await pool.query(`DELETE FROM ops.offer_approvals`);
-  await pool.query(`DELETE FROM ops.offer_options`);
-  await pool.query(`UPDATE ops.offers SET current_revision_id = NULL`);
-  await pool.query(`DELETE FROM ops.offer_revisions`);
-  await pool.query(`DELETE FROM ops.offers`);
+  await wipeOfferAndSwitchingDomain(pool);
 }
 
 async function clearA7() {

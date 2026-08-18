@@ -49,6 +49,7 @@ import {
   validateDocumentBytes,
   parseDocumentConsumptionKwh,
   extractTextFromPdfBytes,
+  wipeOfferAndSwitchingDomain,
 } from '@deintarifheld/db';
 import {
   drainLeadHandoffs,
@@ -115,6 +116,7 @@ async function clearA6() {
 
 async function reset() {
   await ensureSchema();
+  await wipeOfferAndSwitchingDomain(pool);
   resetLocalTestDocumentStorage();
   resetDocumentMalwareScanner();
   setDocumentMalwareScannerMode('CLEAN');

@@ -38,6 +38,7 @@ import {
   setDomainKill,
   activateTakeover,
   evaluateQualification,
+  wipeOfferAndSwitchingDomain,
 } from '@deintarifheld/db';
 import {
   drainLeadHandoffs,
@@ -74,6 +75,7 @@ function completePayload(over = {}) {
 }
 
 async function reset() {
+  await wipeOfferAndSwitchingDomain(pool);
   resetProviderTestStore();
   setProviderTestMode('ACCEPT');
 

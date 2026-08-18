@@ -37,6 +37,7 @@ import {
   B2B_QUALIFICATION_POLICY_V1,
   createMockEmailProvider,
   createTestCalendarProvider,
+  wipeOfferAndSwitchingDomain,
 } from '@deintarifheld/db';
 import {
   drainLeadHandoffs,
@@ -82,6 +83,7 @@ function completePayload(over = {}) {
 }
 
 async function reset() {
+  await wipeOfferAndSwitchingDomain(pool);
 
   const { rows: a7 } = await pool.query(`SELECT to_regclass('ops.tariff_evaluations') AS c`);
   if (a7[0].c) {

@@ -20,6 +20,7 @@ import {
   reconcileLeadToCaseHandoff,
   detectHandoffOrphans,
   setGlobalKill,
+  wipeOfferAndSwitchingDomain,
   claimOneSourceEvent,
   findCaseBySourceLead,
   findWorkflowForLead,
@@ -43,6 +44,7 @@ if (/supabase\.co|aws\.|azure\.|gcp\./i.test(DB_URL) || !/127\.0\.0\.1|localhost
 const pool = createLocalOutboxPool(DB_URL);
 
 async function reset() {
+  await wipeOfferAndSwitchingDomain(pool);
 
   const { rows: a7 } = await pool.query(`SELECT to_regclass('ops.tariff_evaluations') AS c`);
   if (a7[0].c) {

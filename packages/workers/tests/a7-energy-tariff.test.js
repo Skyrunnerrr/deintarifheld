@@ -54,6 +54,7 @@ import {
   calculateTariffCost,
   evaluateTariffEligibility,
   TariffCalculationPolicyV1,
+  wipeOfferAndSwitchingDomain,
 } from '@deintarifheld/db';
 import {
   drainLeadHandoffs,
@@ -137,6 +138,7 @@ async function clearA6() {
 
 async function reset() {
   await ensureSchemas();
+  await wipeOfferAndSwitchingDomain(pool);
   resetLocalTestDocumentStorage();
   await clearA7();
   await clearA6();
