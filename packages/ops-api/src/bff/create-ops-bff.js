@@ -2,9 +2,10 @@
  * P3-F3 Ops BFF — internal /ops/v1 dispatch (local/dev).
  * Not registered on public intake routes.
  */
-import { KillDomain, KillState, resolveSotAlias } from '@deintarifheld/shared';
+import { KillDomain, KillState, resolveSotAlias, OperatorCapability } from '@deintarifheld/shared';
+import { createA11ReadService, executeOperatorCommand, readFreshControlSnapshot } from '@deintarifheld/db';
 import { createKillSwitchService } from '../kill/service.js';
-import { gateOpsRequest } from './auth-gate.js';
+import { gateOpsRequest, gateA11Request } from './auth-gate.js';
 import { INTERNAL_BFF_PREFIX, LimitedWriteOperation } from './constants.js';
 import { createLocalDbPool } from './db.js';
 import { createReadService } from './reads.js';
@@ -32,9 +33,11 @@ export function createOpsBff({
   pool: injectedPool,
   killService = createKillSwitchService(),
 } = {}) {
+  const ownedPool = !injectedPool;
   const pool = injectedPool || createLocalDbPool(databaseUrl);
   const reads = createReadService({ pool });
   const writes = createWriteService({ pool });
+  const a11reads = createA11ReadService({ pool });
 
   function enforceWriteKill() {
     const state = killService.readOne(KillDomain.COMMAND_CENTER_WRITE_ACTIONS);
@@ -56,6 +59,17 @@ export function createOpsBff({
 
     if (!path.startsWith(INTERNAL_BFF_PREFIX)) {
       return json(404, { ok: false, code: 'NOT_INTERNAL_OPS_NAMESPACE' });
+    }
+
+    if (path.startsWith(`${INTERNAL_BFF_PREFIX}/a11`)) {
+      const a11auth = gateA11Request({
+        principal: req.principal,
+        session: req.session,
+        sharedSecretContext: req.sharedSecretContext,
+        claimedRole: body.role || body.operatorRole || query.role,
+      });
+      if (!a11auth.ok) return json(a11auth.status, { ok: false, code: a11auth.code });
+      return dispatchA11({ method, path, body, query, identity: a11auth, req });
     }
 
     const auth = gateOpsRequest({
@@ -210,13 +224,77 @@ export function createOpsBff({
     return json(404, { ok: false, code: 'ROUTE_NOT_FOUND' });
   }
 
+  async function dispatchA11({ method, path, body, query, identity }) {
+    const prefix = `${INTERNAL_BFF_PREFIX}/a11`;
+    const viewCap = identity.capabilities?.includes(OperatorCapability.CASE_VIEW);
+    if (!viewCap) return json(403, { ok: false, code: 'NOT_AUTHORIZED' });
+
+    if (method === 'GET' && path === `${prefix}/overview`) {
+      return json(200, await a11reads.getOpsOverview());
+    }
+    if (method === 'GET' && path === `${prefix}/inbox`) {
+      return json(200, await a11reads.listOpsInbox({ limit: query.limit, severity: query.severity }));
+    }
+    if (method === 'GET' && path === `${prefix}/cases`) {
+      return json(200, await a11reads.listOpsCases({ limit: query.limit, q: query.q }));
+    }
+    const caseGet = match(path, `${prefix}/cases/:id`);
+    if (method === 'GET' && caseGet) {
+      const r = await a11reads.getOpsCaseDetail(caseGet.id);
+      return json(r.status || 200, r);
+    }
+    if (method === 'GET' && path === `${prefix}/approvals`) {
+      return json(200, await a11reads.listOpsApprovals({ limit: query.limit }));
+    }
+    if (method === 'GET' && path === `${prefix}/jobs`) {
+      return json(200, await a11reads.listOpsJobs({ limit: query.limit, deadLetterOnly: query.dead_letter === '1' }));
+    }
+    if (method === 'GET' && path === `${prefix}/lifecycle`) {
+      return json(200, await a11reads.listOpsLifecycle({ limit: query.limit }));
+    }
+    if (method === 'GET' && path === `${prefix}/controls`) {
+      return json(200, await a11reads.getControlState());
+    }
+    if (method === 'GET' && path === `${prefix}/audit`) {
+      if (!identity.capabilities.includes(OperatorCapability.AUDIT_VIEW)) {
+        return json(403, { ok: false, code: 'NOT_AUTHORIZED' });
+      }
+      return json(200, await a11reads.listOpsAuditEvents({ limit: query.limit }));
+    }
+    if (method === 'GET' && path === `${prefix}/readiness`) {
+      return json(200, a11reads.getProductionReadiness());
+    }
+    if (method === 'POST' && path === `${prefix}/commands`) {
+      const raw = JSON.stringify(body || {});
+      if (Buffer.byteLength(raw, 'utf8') > 32 * 1024) {
+        return json(413, { ok: false, code: 'BODY_TOO_LARGE' });
+      }
+      const cmd = body.commandType;
+      if (!['SET_GLOBAL_KILL', 'SET_DOMAIN_KILL'].includes(cmd)) {
+        try {
+          const snap = await readFreshControlSnapshot(pool, { domain: KillDomain.COMMAND_CENTER_WRITE_ACTIONS });
+          if (snap.domainKillActive || snap.globalKillActive) {
+            if (cmd !== 'SET_GLOBAL_KILL') {
+              return json(423, { ok: false, code: 'CONTROL_UNAVAILABLE', kill: true });
+            }
+          }
+        } catch {
+          return json(503, { ok: false, code: 'CONTROL_UNAVAILABLE' });
+        }
+      }
+      const result = await executeOperatorCommand(pool, body, identity);
+      return json(result.status || (result.ok ? 200 : 400), result);
+    }
+    return json(404, { ok: false, code: 'A11_ROUTE_NOT_FOUND' });
+  }
+
   return {
     prefix: INTERNAL_BFF_PREFIX,
     dispatch,
     killService,
     pool,
     async close() {
-      await pool.end();
+      if (ownedPool) await pool.end();
     },
   };
 }

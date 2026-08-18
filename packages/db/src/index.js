@@ -215,7 +215,7 @@ export {
   buildCommercialSnapshot,
   hashCanonical,
 } from './a8/prepare.js';
-export { recordSyntheticOfferApproval } from './a8/approval.js';
+export { recordSyntheticOfferApproval, recordOfferApprovalRejection } from './a8/approval.js';
 export { renderOfferText, renderOfferHtml, buildPublicOfferViewModel } from './a8/render.js';
 export {
   deliverOffer,
@@ -251,7 +251,7 @@ export {
   listSwitchFacts,
   switchControlGate,
 } from './a9/prepare.js';
-export { submitSwitchAttempt, recordSyntheticSwitchApproval } from './a9/submit.js';
+export { submitSwitchAttempt, recordSyntheticSwitchApproval, recordSwitchApprovalRejection } from './a9/submit.js';
 export {
   reconcileSwitchAttempt,
   applyProviderEvent,
@@ -291,4 +291,11 @@ export {
   recordRenewalCustomerDecision,
   getCurrentRenewalCycle,
 } from './a10/renewal.js';
+
+/* DTH-A11 Production Command Center */
+export { resolveOperatorIdentity, authorizeCommand, authorizeRead } from './a11/authz.js';
+export { StageProjectionPolicyV1, deriveCaseStage, deriveWaitingOn, inboxSeverity } from './a11/stage.js';
+export { getProductionReadinessView } from './a11/readiness.js';
+export { createA11ReadService } from './a11/reads.js';
+export { executeOperatorCommand } from './a11/commands.js';
 

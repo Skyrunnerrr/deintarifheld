@@ -59,6 +59,16 @@ function isReadPath(pathname) {
   if (/^\/ops\/v1\/cases\/[^/]+$/.test(pathname)) return true;
   if (/^\/ops\/v1\/cases\/[^/]+\/detail$/.test(pathname)) return true;
   if (/^\/ops\/v1\/tasks\/[^/]+\/detail$/.test(pathname)) return true;
+  if (pathname === `${INTERNAL_BFF_PREFIX}/a11/overview`) return true;
+  if (pathname === `${INTERNAL_BFF_PREFIX}/a11/inbox`) return true;
+  if (pathname === `${INTERNAL_BFF_PREFIX}/a11/cases`) return true;
+  if (/^\/ops\/v1\/a11\/cases\/[^/]+$/.test(pathname)) return true;
+  if (pathname === `${INTERNAL_BFF_PREFIX}/a11/approvals`) return true;
+  if (pathname === `${INTERNAL_BFF_PREFIX}/a11/jobs`) return true;
+  if (pathname === `${INTERNAL_BFF_PREFIX}/a11/lifecycle`) return true;
+  if (pathname === `${INTERNAL_BFF_PREFIX}/a11/controls`) return true;
+  if (pathname === `${INTERNAL_BFF_PREFIX}/a11/audit`) return true;
+  if (pathname === `${INTERNAL_BFF_PREFIX}/a11/readiness`) return true;
   return false;
 }
 
@@ -82,6 +92,7 @@ export function createLocalOpsHttpReadAdapter({
   port = 3099,
   env = process.env,
   corsOrigin = 'http://localhost:3100',
+  enableCommands = false,
 } = {}) {
   if (isProduction(env)) {
     return {
@@ -116,7 +127,9 @@ export function createLocalOpsHttpReadAdapter({
       if (!corsOrigin || origin === corsOrigin || origin.startsWith('http://127.0.0.1:')) {
         corsHeaders['access-control-allow-origin'] = origin;
         corsHeaders['access-control-allow-headers'] = 'authorization, content-type';
-        corsHeaders['access-control-allow-methods'] = 'GET, OPTIONS';
+        corsHeaders['access-control-allow-methods'] = enableCommands
+          ? 'GET, POST, OPTIONS'
+          : 'GET, OPTIONS';
         corsHeaders.vary = 'Origin';
       }
     }
@@ -127,22 +140,71 @@ export function createLocalOpsHttpReadAdapter({
       return;
     }
 
+    const url = new URL(req.url || '/', `http://${host}:${port}`);
+    const pathname = url.pathname;
+
     if (req.method !== 'GET') {
+      if (
+        enableCommands &&
+        req.method === 'POST' &&
+        pathname === `${INTERNAL_BFF_PREFIX}/a11/commands`
+      ) {
+        const origin = req.headers.origin || '';
+        const loopbackOrigin =
+          origin.startsWith('http://127.0.0.1:') || origin.startsWith('http://localhost:');
+        if (origin && !loopbackOrigin) {
+          sendJson(res, 403, { ok: false, code: 'ORIGIN_REJECTED' }, corsHeaders);
+          return;
+        }
+        const chunks = [];
+        let size = 0;
+        for await (const c of req) {
+          size += c.length;
+          if (size > 32 * 1024) {
+            sendJson(res, 413, { ok: false, code: 'BODY_TOO_LARGE' }, corsHeaders);
+            return;
+          }
+          chunks.push(c);
+        }
+        let body = {};
+        try {
+          body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+        } catch {
+          sendJson(res, 400, { ok: false, code: 'MALFORMED_JSON' }, corsHeaders);
+          return;
+        }
+        if (req.headers['x-dth-shared-secret-context'] === 'true') {
+          sendJson(res, 401, { ok: false, code: 'SHARED_SECRET_CC_PATH_REJECTED' }, corsHeaders);
+          return;
+        }
+        const decoded = decodeLocalAuth(req.headers.authorization);
+        if (!decoded) {
+          sendJson(res, 401, { ok: false, code: 'CC_PERSON_SESSION_REQUIRED' }, corsHeaders);
+          return;
+        }
+        const result = await bff.dispatch({
+          method: 'POST',
+          path: `${INTERNAL_BFF_PREFIX}/a11/commands`,
+          body,
+          principal: decoded.principal,
+          session: decoded.session,
+          correlationId: body.correlationId || body.correlation_id,
+        });
+        sendJson(res, result.status, result.body, corsHeaders);
+        return;
+      }
       sendJson(
         res,
         405,
         {
           ok: false,
           code: 'HTTP_WRITE_OR_NON_GET_REJECTED',
-          HTTP_WRITE_ROUTES_EXPOSED: 0,
+          HTTP_WRITE_ROUTES_EXPOSED: enableCommands ? 1 : 0,
         },
         corsHeaders,
       );
       return;
     }
-
-    const url = new URL(req.url || '/', `http://${host}:${port}`);
-    const pathname = url.pathname;
 
     if (!pathname.startsWith(INTERNAL_BFF_PREFIX)) {
       sendJson(res, 404, { ok: false, code: 'NOT_INTERNAL_OPS_NAMESPACE' }, corsHeaders);
@@ -232,7 +294,7 @@ export function createLocalOpsHttpReadAdapter({
     ok: true,
     LOCAL_HTTP_READ_ADAPTER: 'PASS',
     PRODUCTION_HTTP_ADAPTER: 'REJECTED',
-    HTTP_WRITE_ROUTES_EXPOSED: 0,
+    HTTP_WRITE_ROUTES_EXPOSED: enableCommands ? 1 : 0,
     host,
     port,
     server,

@@ -111,3 +111,47 @@ export async function recordSyntheticOfferApproval(pool, {
 
   return { ok: true, revisionId, state: OfferState.READY };
 }
+
+export async function recordOfferApprovalRejection(pool, {
+  revisionId,
+  actorType = 'HUMAN',
+  reasonCode = 'OPERATOR_REJECTED',
+  now = new Date(),
+} = {}) {
+  if (!revisionId) return { ok: false, code: 'REVISION_ID_REQUIRED' };
+  const { rows } = await pool.query(
+    `SELECT r.*, o.case_id, o.id AS offer_id
+     FROM ops.offer_revisions r
+     JOIN ops.offers o ON o.id = r.offer_id
+     WHERE r.id = $1`,
+    [revisionId],
+  );
+  const rev = rows[0];
+  if (!rev) return { ok: false, code: 'REVISION_NOT_FOUND' };
+  if (!rev.is_current) return { ok: false, code: 'REVISION_NOT_CURRENT' };
+  const { rows: appr } = await pool.query(
+    `SELECT * FROM ops.offer_approvals WHERE offer_revision_id = $1`,
+    [revisionId],
+  );
+  if (!appr[0]) return { ok: false, code: 'APPROVAL_ROW_MISSING' };
+  if (appr[0].decision === 'REJECTED') {
+    return { ok: true, duplicate: true, revisionId, decision: 'REJECTED' };
+  }
+  if (appr[0].decision !== 'PENDING') {
+    return { ok: false, code: 'APPROVAL_ALREADY_DECIDED', decision: appr[0].decision };
+  }
+  const upd = await pool.query(
+    `UPDATE ops.offer_approvals
+     SET decision='REJECTED', actor_type=$2, reason_code=$3, decided_at=$4
+     WHERE offer_revision_id=$1 AND decision='PENDING'
+     RETURNING id`,
+    [revisionId, actorType, reasonCode, new Date(now).toISOString()],
+  );
+  if (!upd.rows[0]) return { ok: false, code: 'APPROVAL_NOT_PENDING' };
+  await pool.query(
+    `INSERT INTO public.audit_events (event_type, detail)
+     VALUES ('offer.approval_rejected',$1::jsonb)`,
+    [JSON.stringify({ offer_revision_id: revisionId, actor_type: actorType, reason_code: reasonCode })],
+  );
+  return { ok: true, revisionId, decision: 'REJECTED' };
+}

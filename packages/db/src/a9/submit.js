@@ -41,6 +41,41 @@ export async function recordSyntheticSwitchApproval(pool, { attemptId, actorType
   return { ok: true, attemptId };
 }
 
+export async function recordSwitchApprovalRejection(pool, {
+  attemptId,
+  actorType = 'HUMAN',
+  reasonCode = 'OPERATOR_REJECTED',
+} = {}) {
+  if (!attemptId) return { ok: false, code: 'ATTEMPT_ID_REQUIRED' };
+  const { rows } = await pool.query(`SELECT * FROM ops.switch_attempts WHERE id=$1`, [attemptId]);
+  const att = rows[0];
+  if (!att) return { ok: false, code: 'ATTEMPT_NOT_FOUND' };
+  if (!att.is_current) return { ok: false, code: 'ATTEMPT_NOT_CURRENT' };
+  const { rows: appr } = await pool.query(
+    `SELECT * FROM ops.switch_approvals WHERE switch_attempt_id=$1`,
+    [attemptId],
+  );
+  if (!appr[0]) return { ok: false, code: 'APPROVAL_ROW_MISSING' };
+  if (appr[0].decision === 'REJECTED') {
+    return { ok: true, duplicate: true, attemptId, decision: 'REJECTED' };
+  }
+  if (appr[0].decision !== 'PENDING') {
+    return { ok: false, code: 'APPROVAL_ALREADY_DECIDED', decision: appr[0].decision };
+  }
+  await pool.query(
+    `UPDATE ops.switch_approvals
+     SET decision='REJECTED', actor_type=$2, decided_at=now()
+     WHERE switch_attempt_id=$1 AND decision='PENDING'`,
+    [attemptId, actorType],
+  );
+  await pool.query(
+    `INSERT INTO public.audit_events (event_type, detail)
+     VALUES ('switch.approval_rejected',$1::jsonb)`,
+    [JSON.stringify({ switch_attempt_id: attemptId, actor_type: actorType, reason_code: reasonCode })],
+  );
+  return { ok: true, attemptId, decision: 'REJECTED' };
+}
+
 export async function submitSwitchAttempt(pool, {
   switchAttemptId,
   switchProvider = null,

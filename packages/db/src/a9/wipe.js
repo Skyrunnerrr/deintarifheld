@@ -3,6 +3,7 @@
  */
 export async function wipeOfferAndSwitchingDomain(pool) {
   const { rows: a10 } = await pool.query(`SELECT to_regclass('ops.customer_lifecycles') AS c`);
+  await pool.query(`DELETE FROM ops.operator_commands`).catch(() => {});
   if (a10[0]?.c) {
     await pool.query(`UPDATE ops.customer_lifecycles SET current_renewal_cycle_id=NULL`);
     await pool.query(`DELETE FROM ops.lifecycle_provider_events`);

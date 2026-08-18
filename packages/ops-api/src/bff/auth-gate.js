@@ -1,11 +1,12 @@
 /**
  * P3-F3 AuthN gate — PERSON_PRINCIPAL CC session + synthetic Owner-only local AuthZ.
+ * A11 adds capability AuthZ over test identities. Client role is not authority.
  * STRONG_AUTHZ_COMPLETE=NO · CURRENT_LOCAL_AUTHZ_MODE=SYNTHETIC_OWNER_ONLY_DEV_GATE
  */
-import { PrincipalType, isPersonPrincipal } from '@deintarifheld/shared';
+import { PrincipalType, isPersonPrincipal, TEST_OPERATOR_BY_PERSON_ID, capabilitiesForRole } from '@deintarifheld/shared';
 import { SYNTHETIC_OWNER_PERSON_ID } from '../auth/local-owner-auth.js';
 
-export function gateOpsRequest({ principal, session, sharedSecretContext } = {}) {
+function personSessionOrDeny({ principal, session, sharedSecretContext } = {}) {
   if (sharedSecretContext === true) {
     return { ok: false, status: 401, code: 'SHARED_SECRET_CC_PATH_REJECTED' };
   }
@@ -30,6 +31,12 @@ export function gateOpsRequest({ principal, session, sharedSecretContext } = {})
   if (principal && !isPersonPrincipal(principal)) {
     return { ok: false, status: 403, code: 'PERSON_PRINCIPAL_REQUIRED' };
   }
+  return { ok: true };
+}
+
+export function gateOpsRequest({ principal, session, sharedSecretContext } = {}) {
+  const base = personSessionOrDeny({ principal, session, sharedSecretContext });
+  if (!base.ok) return base;
   if (session.personId !== SYNTHETIC_OWNER_PERSON_ID) {
     return { ok: false, status: 403, code: 'SYNTHETIC_OWNER_ONLY_DEV_GATE' };
   }
@@ -44,5 +51,30 @@ export function gateOpsRequest({ principal, session, sharedSecretContext } = {})
     currentLocalAuthzMode: 'SYNTHETIC_OWNER_ONLY_DEV_GATE',
     strongAuthzComplete: false,
     productionAuthzReady: false,
+  };
+}
+
+export function gateA11Request({ principal, session, sharedSecretContext, claimedRole } = {}) {
+  const base = personSessionOrDeny({ principal, session, sharedSecretContext });
+  if (!base.ok) return { ...base, code: base.code === 'MISSING_PRINCIPAL' ? 'SESSION_MISSING' : base.code };
+  const bound = TEST_OPERATOR_BY_PERSON_ID[session.personId];
+  if (!bound) {
+    return { ok: false, status: 403, code: 'NOT_AUTHORIZED' };
+  }
+  const forged = Boolean(claimedRole && claimedRole !== bound.role);
+  return {
+    ok: true,
+    actorType: PrincipalType.PERSON,
+    actorId: bound.personId,
+    sessionId: session.sessionId,
+    personId: bound.personId,
+    role: bound.role,
+    label: bound.label,
+    capabilities: capabilitiesForRole(bound.role),
+    productionIdentity: false,
+    forgedRoleIgnored: forged,
+    strongAuthzComplete: false,
+    productionAuthzReady: false,
+    currentLocalAuthzMode: 'A11_TEST_IDENTITY_CAPABILITY_GATE',
   };
 }

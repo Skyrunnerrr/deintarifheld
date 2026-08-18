@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@deintarifheld/shared": "*",
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "@deintarifheld/db": "*"
   }
 }
