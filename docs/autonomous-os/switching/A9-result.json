@@ -1,0 +1,21 @@
+{
+  "tranche": "DTH-A9",
+  "result": "CLOSED_E2_LOCAL_LIVE_SWITCH_PROVIDER_STAGING_PENDING",
+  "base": "4164126ea539c6723cb89a58e56075ed78714162",
+  "branch": "feat/dth-a9-switching-workflow-001",
+  "git": { "final": "PENDING_TIP_ALIGN" },
+  "tests": { "a9": "24/24", "a8": "24/24", "a7": "25/25" },
+  "invariants": {
+    "SILENT_TARIFF_SUBSTITUTIONS": 0,
+    "LIVE_SWITCH_PROVIDER_CALLS": 0,
+    "LIVE_AI_CALLS": 0,
+    "RENEWAL_ACTIONS": 0,
+    "DUPLICATE_A10_HANDOFFS": 0
+  },
+  "owner_open": {
+    "OWNER_LIVE_SWITCH_PROVIDER_REQUIRED": true,
+    "OWNER_SWITCH_SUBMISSION_POLICY_REQUIRED": true,
+    "OWNER_MULTI_SUPPLY_SWITCH_POLICY_REQUIRED": true,
+    "SWITCH_RETENTION_POLICY_REQUIRED": true
+  }
+}
