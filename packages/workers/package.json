@@ -21,7 +21,8 @@
     "test:a7": "node --test --test-concurrency=1 tests/a7-energy-tariff.test.js",
     "test:a8": "node --test --test-concurrency=1 tests/a8-offer-engine.test.js",
     "test:a9": "node --test --test-concurrency=1 tests/a9-switching-workflow.test.js",
-    "test:a10": "node --test --test-concurrency=1 tests/a10-customer-lifecycle.test.js"
+    "test:a10": "node --test --test-concurrency=1 tests/a10-customer-lifecycle.test.js",
+    "test:a11": "node --test --test-concurrency=1 tests/a11-command-center.test.js"
   },
   "dth": {
     "tranche": "DTH-A1",
@@ -34,6 +35,8 @@
   },
   "dependencies": {
     "@deintarifheld/db": "*",
-    "@deintarifheld/shared": "*"
+    "@deintarifheld/shared": "*",
+    "@deintarifheld/ops-api": "*",
+    "@deintarifheld/cc": "*"
   }
 }
