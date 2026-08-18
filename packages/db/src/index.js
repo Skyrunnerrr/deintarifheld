@@ -230,3 +230,33 @@ export { getPublicOfferView, acceptOffer, rejectOffer, attemptMarkCustomerLive }
 export { executeOfferFollowup } from './a8/followup.js';
 export { createSwitchPreparation, ackSwitchPreparation } from './a8/a9.js';
 
+/* DTH-A9 Switching Workflow */
+export { SwitchingPolicyV1, mergeSwitchingPolicy } from './a9/policy.js';
+export {
+  createTestSwitchProvider,
+  resetSwitchProviderTestStore,
+  setSwitchProviderTestMode,
+  getSwitchProviderLiveCallCount,
+  getSwitchProviderSubmitCount,
+} from './a9/provider.js';
+export { buildSwitchPayload, hashSwitchPayload, validateSwitchPayload } from './a9/payload.js';
+export { wipeOfferAndSwitchingDomain } from './a9/wipe.js';
+export {
+  prepareSwitch,
+  evaluateSwitchReadiness,
+  loadAcceptedOfferAuthority,
+  recordSwitchFact,
+  getSwitchCase,
+  getCurrentSwitchAttempt,
+  listSwitchFacts,
+  switchControlGate,
+} from './a9/prepare.js';
+export { submitSwitchAttempt, recordSyntheticSwitchApproval } from './a9/submit.js';
+export {
+  reconcileSwitchAttempt,
+  applyProviderEvent,
+  createLifecycleHandoff,
+  ackCustomerLifecyclePrepare,
+} from './a9/reconcile.js';
+export { requestSwitchMissingInfo, requestSwitchConfirmation } from './a9/communicate-switch.js';
+

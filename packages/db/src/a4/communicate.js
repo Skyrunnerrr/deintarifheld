@@ -23,6 +23,7 @@ import {
   isAllowedMessagePurpose,
   isAppointmentMessagePurpose,
   isOfferMessagePurpose,
+  isSwitchMessagePurpose,
 } from '@deintarifheld/shared';
 import {
   getCurrentQualification,
@@ -332,6 +333,11 @@ async function preSendChecks(pool, intent, contact) {
 
   const qual = await getCurrentQualification(pool, intent.case_id);
   if (!qual) reasons.push('NO_QUALIFICATION');
+  else if (isSwitchMessagePurpose(intent.purpose)) {
+    if (qual.outcome !== QualificationOutcome.QUALIFIED_FOR_CALL) {
+      reasons.push('NOT_QUALIFIED_FOR_CALL');
+    }
+  }
   else if (isOfferMessagePurpose(intent.purpose)) {
     if (qual.outcome !== QualificationOutcome.QUALIFIED_FOR_CALL) {
       reasons.push('NOT_QUALIFIED_FOR_CALL');
@@ -381,7 +387,8 @@ async function preSendChecks(pool, intent, contact) {
   else if (qual.outcome !== QualificationOutcome.MISSING_INFORMATION) reasons.push('NOT_MISSING');
 
   const skipMissingInfoShape = isAppointmentMessagePurpose(intent.purpose)
-    || isOfferMessagePurpose(intent.purpose);
+    || isOfferMessagePurpose(intent.purpose)
+    || isSwitchMessagePurpose(intent.purpose);
   const open = skipMissingInfoShape
     ? []
     : await getOpenMissingRequirements(pool, intent.case_id);
@@ -517,13 +524,13 @@ export async function executeCommunicationSend(pool, {
        SET last_message_at = now(), updated_at = now(),
            status = CASE WHEN $2 THEN status ELSE 'WAITING_CUSTOMER' END
        WHERE id = $1`,
-      [intent.conversation_id, isAppointmentMessagePurpose(intent.purpose) || isOfferMessagePurpose(intent.purpose)],
+      [intent.conversation_id, isAppointmentMessagePurpose(intent.purpose) || isOfferMessagePurpose(intent.purpose) || isSwitchMessagePurpose(intent.purpose)],
     );
     if (isOfferMessagePurpose(intent.purpose)) {
       const { markOfferSentIfProviderAccepted } = await import('../a8/gate.js');
       await markOfferSentIfProviderAccepted(client, intent);
     }
-    if (!isAppointmentMessagePurpose(intent.purpose) && !isOfferMessagePurpose(intent.purpose)) {
+    if (!isAppointmentMessagePurpose(intent.purpose) && !isOfferMessagePurpose(intent.purpose) && !isSwitchMessagePurpose(intent.purpose)) {
       await client.query(
         `UPDATE workflow.workflow_instances
          SET current_state = 'WAITING_CUSTOMER_RESPONSE', updated_at = now()

@@ -28,6 +28,9 @@ import {
   OFFER_EXPIRE_CAPABILITY,
   OFFER_RECONCILE_CAPABILITY,
   SWITCH_PREPARATION_CAPABILITY,
+  SWITCH_SUBMIT_CAPABILITY,
+  SWITCH_RECONCILE_CAPABILITY,
+  CUSTOMER_LIFECYCLE_PREPARE_CAPABILITY,
   QualificationOutcome,
 } from '@deintarifheld/shared';
 import { installDefaultSyntheticCapabilities } from './capability-registry.js';
@@ -746,12 +749,83 @@ export async function handleSwitchPreparation(job, ctx) {
   if (!revisionId || !ctx?.pool) {
     return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'REVISION_ID_REQUIRED', permanent: true };
   }
-  const { ackSwitchPreparation } = await import('@deintarifheld/db');
-  const result = await ackSwitchPreparation(ctx.pool, { offerRevisionId: revisionId });
-  if (!result.ok) {
-    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: result.code, permanent: false };
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
   }
-  return { ok: true, completeWorkflow: false, workflowState: 'SWITCH_PREPARATION_READY' };
+  const { prepareSwitch, ackSwitchPreparation } = await import('@deintarifheld/db');
+  const { rows } = await ctx.pool.query(`SELECT to_regclass('ops.switch_cases') AS c`);
+  if (!rows[0]?.c) {
+    const ack = await ackSwitchPreparation(ctx.pool, { offerRevisionId: revisionId });
+    if (!ack.ok) {
+      return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: ack.code, permanent: false };
+    }
+    return { ok: true, completeWorkflow: false, workflowState: 'SWITCH_PREPARATION_READY' };
+  }
+  const result = await prepareSwitch(ctx.pool, { offerRevisionId: revisionId });
+  if (!result.ok) {
+    const controlish = ['GLOBAL_KILL', 'SWITCH_DOMAIN_KILL', 'TAKEOVER', 'CONTROL_UNAVAILABLE'].includes(result.code);
+    return {
+      ok: false,
+      errorClass: controlish ? WorkflowErrorClass.CONTROL_BLOCKED : WorkflowErrorClass.VALIDATION_PERMANENT,
+      errorCode: result.code,
+      permanent: result.code === 'OFFER_NOT_ACCEPTED',
+    };
+  }
+  return { ok: true, completeWorkflow: false, workflowState: result.status || 'SWITCH_PREPARED' };
+}
+
+export async function handleSwitchSubmit(job, ctx) {
+  const attemptId = String(job.payload_redacted?.switch_attempt_id || '');
+  if (!attemptId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'ATTEMPT_ID_REQUIRED', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const { submitSwitchAttempt, createTestSwitchProvider } = await import('@deintarifheld/db');
+  const result = await submitSwitchAttempt(ctx.pool, {
+    switchAttemptId: attemptId,
+    switchProvider: ctx.switchProvider || createTestSwitchProvider(),
+  });
+  if (!result.ok && !result.outcomeUnknown) {
+    const controlish = ['GLOBAL_KILL', 'SWITCH_DOMAIN_KILL', 'TAKEOVER', 'CONTROL_UNAVAILABLE'].includes(result.code);
+    return {
+      ok: false,
+      errorClass: controlish ? WorkflowErrorClass.CONTROL_BLOCKED : WorkflowErrorClass.VALIDATION_PERMANENT,
+      errorCode: result.code,
+      permanent: ['ATTEMPT_NOT_FOUND', 'REOFFER_REQUIRED'].includes(result.code),
+    };
+  }
+  return { ok: true, completeWorkflow: false, workflowState: result.pending ? 'SUPPLIER_PENDING' : (result.outcomeUnknown ? 'OUTCOME_UNKNOWN' : 'SWITCH_SUBMIT_DONE') };
+}
+
+export async function handleSwitchReconcile(job, ctx) {
+  const attemptId = String(job.payload_redacted?.switch_attempt_id || '');
+  if (!attemptId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'ATTEMPT_ID_REQUIRED', permanent: true };
+  }
+  const { reconcileSwitchAttempt, createTestSwitchProvider } = await import('@deintarifheld/db');
+  const result = await reconcileSwitchAttempt(ctx.pool, {
+    switchAttemptId: attemptId,
+    switchProvider: ctx.switchProvider || createTestSwitchProvider(),
+  });
+  return { ok: true, completeWorkflow: false, workflowState: result.confirmed ? 'SWITCH_CONFIRMED' : 'SWITCH_RECONCILED' };
+}
+
+export async function handleCustomerLifecyclePrepare(job, ctx) {
+  const attemptId = String(job.payload_redacted?.switch_attempt_id || '');
+  if (!attemptId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'ATTEMPT_ID_REQUIRED', permanent: true };
+  }
+  const { ackCustomerLifecyclePrepare } = await import('@deintarifheld/db');
+  await ackCustomerLifecyclePrepare(ctx.pool, { switchAttemptId: attemptId });
+  return { ok: true, completeWorkflow: false, workflowState: 'A10_LIFECYCLE_PREPARE_READY' };
 }
 
 export function registerAllSyntheticHandlers() {
@@ -786,5 +860,8 @@ export function registerAllSyntheticHandlers() {
     [OFFER_EXPIRE_CAPABILITY]: handleOfferExpire,
     [OFFER_RECONCILE_CAPABILITY]: handleOfferReconcile,
     [SWITCH_PREPARATION_CAPABILITY]: handleSwitchPreparation,
+    [SWITCH_SUBMIT_CAPABILITY]: handleSwitchSubmit,
+    [SWITCH_RECONCILE_CAPABILITY]: handleSwitchReconcile,
+    [CUSTOMER_LIFECYCLE_PREPARE_CAPABILITY]: handleCustomerLifecyclePrepare,
   });
 }
