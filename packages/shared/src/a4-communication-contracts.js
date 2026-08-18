@@ -26,6 +26,9 @@ export const MessagePurpose = Object.freeze({
   APPOINTMENT_REMINDER: 'APPOINTMENT_REMINDER',
   APPOINTMENT_RESCHEDULE_CONFIRMATION: 'APPOINTMENT_RESCHEDULE_CONFIRMATION',
   APPOINTMENT_CANCELLATION_CONFIRMATION: 'APPOINTMENT_CANCELLATION_CONFIRMATION',
+  OFFER_DELIVERY: 'OFFER_DELIVERY',
+  OFFER_FOLLOWUP: 'OFFER_FOLLOWUP',
+  OFFER_ACCEPTANCE_CONFIRMATION: 'OFFER_ACCEPTANCE_CONFIRMATION',
 });
 
 export const APPOINTMENT_MESSAGE_PURPOSES = Object.freeze([
@@ -38,6 +41,16 @@ export const APPOINTMENT_MESSAGE_PURPOSES = Object.freeze([
 
 export function isAppointmentMessagePurpose(purpose) {
   return APPOINTMENT_MESSAGE_PURPOSES.includes(String(purpose || ''));
+}
+
+export const OFFER_MESSAGE_PURPOSES = Object.freeze([
+  MessagePurpose.OFFER_DELIVERY,
+  MessagePurpose.OFFER_FOLLOWUP,
+  MessagePurpose.OFFER_ACCEPTANCE_CONFIRMATION,
+]);
+
+export function isOfferMessagePurpose(purpose) {
+  return OFFER_MESSAGE_PURPOSES.includes(String(purpose || ''));
 }
 
 export const ALLOWED_MESSAGE_PURPOSES = Object.freeze(Object.values(MessagePurpose));
