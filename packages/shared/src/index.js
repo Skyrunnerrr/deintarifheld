@@ -95,6 +95,7 @@ export {
   APPOINTMENT_MESSAGE_PURPOSES,
   OFFER_MESSAGE_PURPOSES,
   SWITCH_MESSAGE_PURPOSES,
+  LIFECYCLE_MESSAGE_PURPOSES,
   OutboundIntentState,
   ConversationStatus,
   InboundEventStatus,
@@ -104,6 +105,7 @@ export {
   isAppointmentMessagePurpose,
   isOfferMessagePurpose,
   isSwitchMessagePurpose,
+  isLifecycleMessagePurpose,
   PROVIDER_EVENT_PRECEDENCE,
 } from './a4-communication-contracts.js';
 
@@ -301,6 +303,36 @@ export {
   SwitchKillDomain,
   SWITCH_FIELD_LABEL_DE,
 } from './a9-switching-contracts.js';
+
+/* DTH-A10 Customer Lifecycle + Renewal */
+export {
+  LIFECYCLE_ACTIVATE_DUE_CAPABILITY,
+  LIFECYCLE_RECONCILE_CAPABILITY,
+  RENEWAL_WINDOW_OPEN_CAPABILITY,
+  RENEWAL_EVALUATION_PREPARE_CAPABILITY,
+  RENEWAL_OFFER_PREPARE_CAPABILITY,
+  A10_DATE_POLICY_ID,
+  A10_DATE_POLICY_VERSION,
+  A10_ACTIVATION_POLICY_ID,
+  A10_ACTIVATION_POLICY_VERSION,
+  A10_RENEWAL_POLICY_ID,
+  A10_RENEWAL_POLICY_VERSION,
+  A10_EVIDENCE_POLICY_ID,
+  A10_TEST_POLICY_MARKER,
+  LIVE_LIFECYCLE_PROVIDER_CALLS,
+  LIVE_AI_CALLS_A10,
+  A10_RECOMPUTED_TARIFF_PRICING,
+  OfferPurpose,
+  LifecycleStatus,
+  LifecycleStatusRank,
+  RenewalCycleStatus,
+  LifecycleException,
+  OWNER_RENEWAL_POLICY_REQUIRED,
+  OWNER_RENEWAL_COMMUNICATION_POLICY_REQUIRED,
+  CUSTOMER_LIFECYCLE_RETENTION_POLICY_REQUIRED,
+  OWNER_LIFECYCLE_PROVIDER_DECISION_REQUIRED,
+  LifecycleKillDomain,
+} from './a10-lifecycle-contracts.js';
 /* DTH-A3 B2B qualification contracts */
 export {
   A3_POLICY_ID,

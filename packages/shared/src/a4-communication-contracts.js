@@ -32,6 +32,9 @@ export const MessagePurpose = Object.freeze({
   SWITCH_MISSING_INFORMATION_REQUEST: 'SWITCH_MISSING_INFORMATION_REQUEST',
   SWITCH_MISSING_INFORMATION_FOLLOWUP: 'SWITCH_MISSING_INFORMATION_FOLLOWUP',
   SWITCH_CONFIRMATION: 'SWITCH_CONFIRMATION',
+  SUPPLY_START_CONFIRMATION: 'SUPPLY_START_CONFIRMATION',
+  RENEWAL_UPCOMING: 'RENEWAL_UPCOMING',
+  RENEWAL_EVIDENCE_REQUIRED: 'RENEWAL_EVIDENCE_REQUIRED',
 });
 
 export const APPOINTMENT_MESSAGE_PURPOSES = Object.freeze([
@@ -64,6 +67,16 @@ export const SWITCH_MESSAGE_PURPOSES = Object.freeze([
 
 export function isSwitchMessagePurpose(purpose) {
   return SWITCH_MESSAGE_PURPOSES.includes(String(purpose || ''));
+}
+
+export const LIFECYCLE_MESSAGE_PURPOSES = Object.freeze([
+  MessagePurpose.SUPPLY_START_CONFIRMATION,
+  MessagePurpose.RENEWAL_UPCOMING,
+  MessagePurpose.RENEWAL_EVIDENCE_REQUIRED,
+]);
+
+export function isLifecycleMessagePurpose(purpose) {
+  return LIFECYCLE_MESSAGE_PURPOSES.includes(String(purpose || ''));
 }
 
 export const ALLOWED_MESSAGE_PURPOSES = Object.freeze(Object.values(MessagePurpose));
