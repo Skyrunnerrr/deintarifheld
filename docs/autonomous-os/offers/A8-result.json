@@ -4,7 +4,7 @@
   "base": "e788cd94285022c750ca5c47d373e69a39d26b27",
   "branch": "feat/dth-a8-offer-engine-001",
   "git": {
-    "final": "PENDING_TIP_ALIGN"
+    "final": "d5aa382888ca2a6847f21f79c0a4c4d392207fd8"
   },
   "tests": {
     "a8": "24/24",
@@ -12,7 +12,7 @@
     "a6": "25/25",
     "a5": "15/15",
     "a4": "23/23",
-    "a1_a3": "pending_recheck"
+    "a1_a3": "a3 18/18, a2 16/16, a1 39/39"
   },
   "invariants": {
     "A8_RECOMPUTED_TARIFF_PRICING": 0,
