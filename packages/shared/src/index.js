@@ -94,6 +94,7 @@ export {
   ALLOWED_MESSAGE_PURPOSES,
   APPOINTMENT_MESSAGE_PURPOSES,
   OFFER_MESSAGE_PURPOSES,
+  SWITCH_MESSAGE_PURPOSES,
   OutboundIntentState,
   ConversationStatus,
   InboundEventStatus,
@@ -102,6 +103,7 @@ export {
   isAllowedMessagePurpose,
   isAppointmentMessagePurpose,
   isOfferMessagePurpose,
+  isSwitchMessagePurpose,
   PROVIDER_EVENT_PRECEDENCE,
 } from './a4-communication-contracts.js';
 
@@ -266,6 +268,39 @@ export {
   OfferKillDomain,
   SYNTHETIC_OFFER_LEGAL_TEXT_DE,
 } from './a8-offer-contracts.js';
+
+/* DTH-A9 Switching Workflow contracts */
+export {
+  SWITCH_SUBMIT_CAPABILITY,
+  SWITCH_RECONCILE_CAPABILITY,
+  CUSTOMER_LIFECYCLE_PREPARE_CAPABILITY,
+  A9_SWITCHING_POLICY_ID,
+  A9_SWITCHING_POLICY_VERSION,
+  A9_SUBMISSION_POLICY_ID,
+  A9_SUBMISSION_POLICY_VERSION,
+  A9_PAYLOAD_VERSION,
+  A9_TEST_PROVIDER_CODE,
+  LIVE_SWITCH_PROVIDER_CALLS,
+  LIVE_SUPPLIER_API_CALLS_A9,
+  LIVE_AI_CALLS_A9,
+  SwitchType,
+  SwitchReadiness,
+  SwitchCaseStatus,
+  SwitchAttemptState,
+  SwitchStatusRank,
+  SwitchFieldCode,
+  SwitchFactSource,
+  SwitchRequirementCode,
+  SwitchRejectionCategory,
+  SwitchApprovalDecision,
+  OWNER_LIVE_SWITCH_PROVIDER_REQUIRED,
+  OWNER_SWITCH_SUBMISSION_POLICY_REQUIRED,
+  OWNER_MULTI_SUPPLY_SWITCH_POLICY_REQUIRED,
+  SWITCH_RETENTION_POLICY_REQUIRED,
+  OWNER_PAYMENT_DATA_HANDLING_REVIEW_REQUIRED,
+  SwitchKillDomain,
+  SWITCH_FIELD_LABEL_DE,
+} from './a9-switching-contracts.js';
 /* DTH-A3 B2B qualification contracts */
 export {
   A3_POLICY_ID,

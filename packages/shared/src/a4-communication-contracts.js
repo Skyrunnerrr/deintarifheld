@@ -29,6 +29,9 @@ export const MessagePurpose = Object.freeze({
   OFFER_DELIVERY: 'OFFER_DELIVERY',
   OFFER_FOLLOWUP: 'OFFER_FOLLOWUP',
   OFFER_ACCEPTANCE_CONFIRMATION: 'OFFER_ACCEPTANCE_CONFIRMATION',
+  SWITCH_MISSING_INFORMATION_REQUEST: 'SWITCH_MISSING_INFORMATION_REQUEST',
+  SWITCH_MISSING_INFORMATION_FOLLOWUP: 'SWITCH_MISSING_INFORMATION_FOLLOWUP',
+  SWITCH_CONFIRMATION: 'SWITCH_CONFIRMATION',
 });
 
 export const APPOINTMENT_MESSAGE_PURPOSES = Object.freeze([
@@ -51,6 +54,16 @@ export const OFFER_MESSAGE_PURPOSES = Object.freeze([
 
 export function isOfferMessagePurpose(purpose) {
   return OFFER_MESSAGE_PURPOSES.includes(String(purpose || ''));
+}
+
+export const SWITCH_MESSAGE_PURPOSES = Object.freeze([
+  MessagePurpose.SWITCH_MISSING_INFORMATION_REQUEST,
+  MessagePurpose.SWITCH_MISSING_INFORMATION_FOLLOWUP,
+  MessagePurpose.SWITCH_CONFIRMATION,
+]);
+
+export function isSwitchMessagePurpose(purpose) {
+  return SWITCH_MESSAGE_PURPOSES.includes(String(purpose || ''));
 }
 
 export const ALLOWED_MESSAGE_PURPOSES = Object.freeze(Object.values(MessagePurpose));
