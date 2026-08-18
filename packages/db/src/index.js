@@ -201,3 +201,32 @@ export { compareToBaseline } from './a7/compare.js';
 export { prepareTariffEvaluation, runTariffEvaluation } from './a7/evaluate.js';
 export { getCurrentTariffEvaluation, isTariffEvaluationCurrent } from './a7/handoff.js';
 
+/* DTH-A8 Offer Engine */
+export { OfferPolicyV1, mergeOfferPolicy, tryMergeOfferPolicy } from './a8/policy.js';
+export { formatMicroEurDe, formatMicroEurDePlain, escapeHtml, priceBasisLabelDe } from './a8/format.js';
+export {
+  prepareOffer,
+  getCurrentOffer,
+  mintOfferToken,
+  hashOfferToken,
+  offerControlGate,
+  hasTakeover,
+  resolveOfferContact,
+  buildCommercialSnapshot,
+  hashCanonical,
+} from './a8/prepare.js';
+export { recordSyntheticOfferApproval } from './a8/approval.js';
+export { renderOfferText, renderOfferHtml, buildPublicOfferViewModel } from './a8/render.js';
+export {
+  deliverOffer,
+  expireOffer,
+  cancelOfferFollowups,
+  reconcileOfferDelivery,
+  loadOfferRevision,
+  loadOfferOptions,
+  assertOfferIntentSendable,
+} from './a8/deliver.js';
+export { getPublicOfferView, acceptOffer, rejectOffer, attemptMarkCustomerLive } from './a8/customer.js';
+export { executeOfferFollowup } from './a8/followup.js';
+export { createSwitchPreparation, ackSwitchPreparation } from './a8/a9.js';
+

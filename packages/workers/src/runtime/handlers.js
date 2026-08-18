@@ -21,6 +21,13 @@ import {
   DOCUMENT_INTELLIGENCE_PREPARE_CAPABILITY,
   DOCUMENT_PROCESS_CAPABILITY,
   ENERGY_TARIFF_EVALUATION_PREPARE_CAPABILITY,
+  OFFER_PREPARE_CAPABILITY,
+  OFFER_APPROVAL_REQUEST_CAPABILITY,
+  OFFER_DELIVER_CAPABILITY,
+  OFFER_FOLLOWUP_DUE_CAPABILITY,
+  OFFER_EXPIRE_CAPABILITY,
+  OFFER_RECONCILE_CAPABILITY,
+  SWITCH_PREPARATION_CAPABILITY,
   QualificationOutcome,
 } from '@deintarifheld/shared';
 import { installDefaultSyntheticCapabilities } from './capability-registry.js';
@@ -630,6 +637,123 @@ export async function handleEnergyTariffEvaluationPrepare(job, ctx) {
   };
 }
 
+function offerControlish(code) {
+  return ['GLOBAL_KILL', 'OFFER_DOMAIN_KILL', 'TAKEOVER', 'CONTROL_UNAVAILABLE', 'COMMUNICATION_KILL'].includes(code);
+}
+
+export async function handleOfferPrepare(job, ctx) {
+  const caseId = String(job.payload_redacted?.case_id || '');
+  if (!caseId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'CASE_ID_REQUIRED', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const { prepareOffer } = await import('@deintarifheld/db');
+  const result = await prepareOffer(ctx.pool, {
+    caseId,
+    requireApproval: job.payload_redacted?.require_approval === true,
+  });
+  if (!result.ok) {
+    return {
+      ok: false,
+      errorClass: offerControlish(result.code) ? WorkflowErrorClass.CONTROL_BLOCKED : WorkflowErrorClass.VALIDATION_PERMANENT,
+      errorCode: result.code,
+      permanent: result.code === 'CASE_ID_REQUIRED',
+    };
+  }
+  return { ok: true, completeWorkflow: false, workflowState: result.state || 'OFFER_PREPARED' };
+}
+
+export async function handleOfferApprovalRequest(job, ctx) {
+  void job;
+  void ctx;
+  return { ok: true, completeWorkflow: false, workflowState: 'OFFER_APPROVAL_PENDING' };
+}
+
+export async function handleOfferDeliver(job, ctx) {
+  const revisionId = String(job.payload_redacted?.offer_revision_id || '');
+  if (!revisionId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'REVISION_ID_REQUIRED', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const { deliverOffer, createMockEmailProvider } = await import('@deintarifheld/db');
+  const result = await deliverOffer(ctx.pool, {
+    offerRevisionId: revisionId,
+    emailProvider: ctx.emailProvider || createMockEmailProvider(),
+  });
+  if (!result.ok) {
+    return {
+      ok: false,
+      errorClass: offerControlish(result.code) ? WorkflowErrorClass.CONTROL_BLOCKED : WorkflowErrorClass.VALIDATION_PERMANENT,
+      errorCode: result.code,
+      permanent: ['REVISION_NOT_FOUND', 'SYNTHETIC_LIVE_BLOCK'].includes(result.code),
+    };
+  }
+  return { ok: true, completeWorkflow: false, workflowState: result.sent ? 'OFFER_SENT' : (result.outcomeUnknown ? 'OFFER_SEND_UNKNOWN' : 'OFFER_DELIVER_DONE') };
+}
+
+export async function handleOfferFollowupDue(job, ctx) {
+  const revisionId = String(job.payload_redacted?.offer_revision_id || '');
+  if (!revisionId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'REVISION_ID_REQUIRED', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const { executeOfferFollowup, createMockEmailProvider } = await import('@deintarifheld/db');
+  const result = await executeOfferFollowup(ctx.pool, {
+    offerRevisionId: revisionId,
+    generation: Number(job.payload_redacted?.generation || 1),
+    emailProvider: ctx.emailProvider || createMockEmailProvider(),
+  });
+  return { ok: true, completeWorkflow: false, workflowState: result.cancelled ? 'OFFER_FOLLOWUP_CANCELLED' : 'OFFER_FOLLOWUP_DONE' };
+}
+
+export async function handleOfferExpire(job, ctx) {
+  const revisionId = String(job.payload_redacted?.offer_revision_id || '');
+  if (!revisionId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'REVISION_ID_REQUIRED', permanent: true };
+  }
+  const { expireOffer } = await import('@deintarifheld/db');
+  const result = await expireOffer(ctx.pool, { offerRevisionId: revisionId });
+  return { ok: true, completeWorkflow: false, workflowState: result.ok ? 'OFFER_EXPIRED' : (result.code || 'OFFER_EXPIRE_SKIP') };
+}
+
+export async function handleOfferReconcile(job, ctx) {
+  const revisionId = String(job.payload_redacted?.offer_revision_id || '');
+  if (!revisionId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'REVISION_ID_REQUIRED', permanent: true };
+  }
+  const { reconcileOfferDelivery } = await import('@deintarifheld/db');
+  await reconcileOfferDelivery(ctx.pool, { offerRevisionId: revisionId });
+  return { ok: true, completeWorkflow: false, workflowState: 'OFFER_RECONCILED' };
+}
+
+export async function handleSwitchPreparation(job, ctx) {
+  const revisionId = String(job.payload_redacted?.offer_revision_id || '');
+  if (!revisionId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'REVISION_ID_REQUIRED', permanent: true };
+  }
+  const { ackSwitchPreparation } = await import('@deintarifheld/db');
+  const result = await ackSwitchPreparation(ctx.pool, { offerRevisionId: revisionId });
+  if (!result.ok) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: result.code, permanent: false };
+  }
+  return { ok: true, completeWorkflow: false, workflowState: 'SWITCH_PREPARATION_READY' };
+}
+
 export function registerAllSyntheticHandlers() {
   installDefaultSyntheticCapabilities({
     [SyntheticCapability.SYNTHETIC_NOOP]: handleSyntheticNoop,
@@ -655,5 +779,12 @@ export function registerAllSyntheticHandlers() {
     [DOCUMENT_INTELLIGENCE_PREPARE_CAPABILITY]: handleDocumentIntelligencePrepare,
     [DOCUMENT_PROCESS_CAPABILITY]: handleDocumentProcess,
     [ENERGY_TARIFF_EVALUATION_PREPARE_CAPABILITY]: handleEnergyTariffEvaluationPrepare,
+    [OFFER_PREPARE_CAPABILITY]: handleOfferPrepare,
+    [OFFER_APPROVAL_REQUEST_CAPABILITY]: handleOfferApprovalRequest,
+    [OFFER_DELIVER_CAPABILITY]: handleOfferDeliver,
+    [OFFER_FOLLOWUP_DUE_CAPABILITY]: handleOfferFollowupDue,
+    [OFFER_EXPIRE_CAPABILITY]: handleOfferExpire,
+    [OFFER_RECONCILE_CAPABILITY]: handleOfferReconcile,
+    [SWITCH_PREPARATION_CAPABILITY]: handleSwitchPreparation,
   });
 }

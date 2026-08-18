@@ -22,6 +22,7 @@ import {
   PROVIDER_EVENT_PRECEDENCE,
   isAllowedMessagePurpose,
   isAppointmentMessagePurpose,
+  isOfferMessagePurpose,
 } from '@deintarifheld/shared';
 import {
   getCurrentQualification,
@@ -331,6 +332,14 @@ async function preSendChecks(pool, intent, contact) {
 
   const qual = await getCurrentQualification(pool, intent.case_id);
   if (!qual) reasons.push('NO_QUALIFICATION');
+  else if (isOfferMessagePurpose(intent.purpose)) {
+    if (qual.outcome !== QualificationOutcome.QUALIFIED_FOR_CALL) {
+      reasons.push('NOT_QUALIFIED_FOR_CALL');
+    }
+    const { assertOfferIntentSendable } = await import('../a8/gate.js');
+    const offerGate = await assertOfferIntentSendable(pool, intent);
+    if (!offerGate.ok) reasons.push(...offerGate.reasons);
+  }
   else if (isAppointmentMessagePurpose(intent.purpose)) {
     // Appointment communications require call-ready qualification
     if (qual.outcome !== QualificationOutcome.QUALIFIED_FOR_CALL) {
@@ -371,10 +380,12 @@ async function preSendChecks(pool, intent, contact) {
   else if (qual.revision !== intent.qualification_revision) reasons.push('STALE_REVISION');
   else if (qual.outcome !== QualificationOutcome.MISSING_INFORMATION) reasons.push('NOT_MISSING');
 
-  const open = isAppointmentMessagePurpose(intent.purpose)
+  const skipMissingInfoShape = isAppointmentMessagePurpose(intent.purpose)
+    || isOfferMessagePurpose(intent.purpose);
+  const open = skipMissingInfoShape
     ? []
     : await getOpenMissingRequirements(pool, intent.case_id);
-  if (!isAppointmentMessagePurpose(intent.purpose)) {
+  if (!skipMissingInfoShape) {
     const openIds = new Set(open.map((r) => r.id));
     const bound = intent.requirement_ids || [];
     if (!bound.every((id) => openIds.has(id))) reasons.push('REQUIREMENTS_CHANGED');
@@ -506,9 +517,13 @@ export async function executeCommunicationSend(pool, {
        SET last_message_at = now(), updated_at = now(),
            status = CASE WHEN $2 THEN status ELSE 'WAITING_CUSTOMER' END
        WHERE id = $1`,
-      [intent.conversation_id, isAppointmentMessagePurpose(intent.purpose)],
+      [intent.conversation_id, isAppointmentMessagePurpose(intent.purpose) || isOfferMessagePurpose(intent.purpose)],
     );
-    if (!isAppointmentMessagePurpose(intent.purpose)) {
+    if (isOfferMessagePurpose(intent.purpose)) {
+      const { markOfferSentIfProviderAccepted } = await import('../a8/gate.js');
+      await markOfferSentIfProviderAccepted(client, intent);
+    }
+    if (!isAppointmentMessagePurpose(intent.purpose) && !isOfferMessagePurpose(intent.purpose)) {
       await client.query(
         `UPDATE workflow.workflow_instances
          SET current_state = 'WAITING_CUSTOMER_RESPONSE', updated_at = now()
