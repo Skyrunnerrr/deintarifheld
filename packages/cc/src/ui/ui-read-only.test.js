@@ -11,11 +11,11 @@ import {
 import { createOpsReadClient, CC_NAV_ITEMS } from './ops-client.js';
 import { createLocalCcServer } from './create-local-cc-server.js';
 
-test('navigation has exactly three primary items', () => {
-  assert.equal(CC_NAV_ITEMS.length, 3);
+test('navigation has production command center items', () => {
+  assert.equal(CC_NAV_ITEMS.length, 9);
   assert.deepEqual(
     CC_NAV_ITEMS.map((n) => n.label),
-    ['Inbox', 'Vorgänge', 'Aufgaben'],
+    ['Übersicht', 'Inbox', 'Vorgänge', 'Freigaben', 'Aufgaben', 'Workflows', 'Kunden', 'Steuerung', 'Audit'],
   );
 });
 
@@ -42,7 +42,7 @@ test('shell and views render without mutation controls or fake metrics', () => {
   assert.match(shell, /Inbox/);
   assert.match(shell, /Vorgänge/);
   assert.match(shell, /Aufgaben/);
-  assert.doesNotMatch(shell, /Dashboard|Provision|Marketing|Audit|Kill/);
+  assert.doesNotMatch(shell, /Provision|Marketing/);
   assert.equal(countMutationControls(shell), 0);
   assert.doesNotMatch(shell, /Conversion|KPI|Umsatz/);
 
@@ -137,7 +137,7 @@ test('local CC server serves shell for three routes', async () => {
       const html = await res.text();
       assert.match(html, /data-mutation-controls="0"/);
       assert.equal(countMutationControls(html), 0);
-      assert.match(html, /Lokal \/ Dev/);
+      assert.match(html, /Lokal \/ E2/);
     }
     const post = await fetch(`http://127.0.0.1:${port}/inbox`, { method: 'POST' });
     assert.equal(post.status, 405);

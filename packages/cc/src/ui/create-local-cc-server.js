@@ -21,9 +21,15 @@ function isProduction(env) {
 }
 
 function viewFromPath(pathname) {
-  if (pathname === '/' || pathname === '/inbox') return 'inbox';
+  if (pathname === '/' || pathname === '/overview') return 'overview';
+  if (pathname === '/inbox') return 'inbox';
   if (pathname === '/vorgaenge' || pathname === '/cases') return 'cases';
+  if (pathname === '/freigaben' || pathname === '/approvals') return 'approvals';
   if (pathname === '/aufgaben' || pathname === '/tasks') return 'tasks';
+  if (pathname === '/workflows') return 'workflows';
+  if (pathname === '/kunden' || pathname === '/lifecycle') return 'lifecycle';
+  if (pathname === '/steuerung' || pathname === '/controls') return 'controls';
+  if (pathname === '/audit') return 'audit';
   return null;
 }
 
@@ -213,8 +219,9 @@ export function createLocalCcServer({
 
     res.writeHead(200, {
       'content-type': 'text/html; charset=utf-8',
-      'cache-control': 'no-store',
-      'x-dth-cc-mode': 'read-only-local',
+      'cache-control': 'private, no-store',
+      'x-robots-tag': 'noindex, nofollow',
+      'x-dth-cc-mode': 'operator-local-e2',
     });
     res.end(html);
   });

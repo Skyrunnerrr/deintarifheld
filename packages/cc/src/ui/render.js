@@ -24,7 +24,7 @@ export function countMutationControls(html) {
   return count;
 }
 
-function esc(value) {
+export function esc(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -91,21 +91,33 @@ export function renderShell({
   }).join('\n');
 
   const titles = {
+    overview: 'Übersicht',
     inbox: 'Inbox',
     cases: 'Vorgänge',
+    approvals: 'Freigaben',
     tasks: 'Aufgaben',
+    workflows: 'Workflows',
+    lifecycle: 'Kunden',
+    controls: 'Steuerung',
+    audit: 'Audit',
   };
   const leads = {
-    inbox: 'Eingehende Anfragen aus Lead- und Karriere-Intake — nur lesen.',
-    cases: 'Operative Vorgänge mit Notizen, Historie und Kommunikation — nur lesen.',
-    tasks: 'Aufgaben und Wiedervorlagen — nur lesen, ohne Aktionsflächen.',
+    overview: 'Operative Systemlage — Ausnahmen, Freigaben, Kill-Status. Kein Live-Ticker.',
+    inbox: 'Ausnahmen und Handlungsbedarf über A1–A10 — Projektion, keine zweite Wahrheit.',
+    cases: 'Vorgänge mit Stage-Projektion. Canonical Domain bleibt Autorität.',
+    approvals: 'Konsolidierte Freigaben A8/A9 — revisionsgebunden.',
+    tasks: 'Interne Aufgaben. Aufgabenstatus ändert keine Fachautorität.',
+    workflows: 'Jobs und Dead Letter. Kein Roh-Payload.',
+    lifecycle: 'A10 Lifecycle-Projektion.',
+    controls: 'Dauerhaftes Kill/Takeover. Kein UI-only Toggle.',
+    audit: 'Nur Lesen. Audit ist unveränderlich.',
   };
 
   return `<!doctype html>
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
   <title>${esc(titles[activeView])} · DeinTarifHeld Command Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -116,7 +128,7 @@ export function renderShell({
   <div class="dth-shell" data-view="${esc(activeView)}" data-mutation-controls="0">
     <aside class="dth-side" aria-label="Hauptnavigation">
       <p class="dth-brand">Dein<span>Tarif</span>Held</p>
-      <div class="dth-local-badge">Lokal / Dev — Read-only</div>
+      <div class="dth-local-badge">Lokal / E2 — Operator Control Plane</div>
       <div class="dth-session" id="dth-session">
         ${esc(sessionLabel || 'Keine lokale Sitzung')}
       </div>

@@ -1,17 +1,25 @@
-/**
- * Typed CC read client — GET only. Never issues write verbs.
- */
-
 export const CcNavItem = Object.freeze({
+  OVERVIEW: { id: 'overview', href: '/', label: 'Übersicht' },
   INBOX: { id: 'inbox', href: '/inbox', label: 'Inbox' },
   CASES: { id: 'cases', href: '/vorgaenge', label: 'Vorgänge' },
+  APPROVALS: { id: 'approvals', href: '/freigaben', label: 'Freigaben' },
   TASKS: { id: 'tasks', href: '/aufgaben', label: 'Aufgaben' },
+  WORKFLOWS: { id: 'workflows', href: '/workflows', label: 'Workflows' },
+  LIFECYCLE: { id: 'lifecycle', href: '/kunden', label: 'Kunden' },
+  CONTROLS: { id: 'controls', href: '/steuerung', label: 'Steuerung' },
+  AUDIT: { id: 'audit', href: '/audit', label: 'Audit' },
 });
 
 export const CC_NAV_ITEMS = Object.freeze([
+  CcNavItem.OVERVIEW,
   CcNavItem.INBOX,
   CcNavItem.CASES,
+  CcNavItem.APPROVALS,
   CcNavItem.TASKS,
+  CcNavItem.WORKFLOWS,
+  CcNavItem.LIFECYCLE,
+  CcNavItem.CONTROLS,
+  CcNavItem.AUDIT,
 ]);
 
 export function createOpsReadClient({
@@ -51,6 +59,24 @@ export function createOpsReadClient({
     };
   }
 
+  async function postCommand(body, tokenOverride) {
+    const token = tokenOverride || (typeof getToken === 'function' ? getToken() : getToken);
+    const headers = { 'content-type': 'application/json' };
+    if (token) headers.authorization = `DTH-Local ${token}`;
+    const res = await fetchImpl(new URL('/ops/v1/a11/commands', baseUrl).toString(), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    let parsed = null;
+    try {
+      parsed = await res.json();
+    } catch {
+      parsed = { ok: false, code: 'MALFORMED_RESPONSE' };
+    }
+    return { status: res.status, body: parsed, ok: res.ok };
+  }
+
   return {
     CC_NAV_ITEMS,
     getWriteAttempts: () => [...writeAttempts],
@@ -61,13 +87,13 @@ export function createOpsReadClient({
       return get('/ops/v1/dev/health');
     },
     async listInbox({ limit } = {}) {
-      return get('/ops/v1/inbox', { limit });
+      return get('/ops/v1/a11/inbox', { limit });
     },
     async listCases({ limit } = {}) {
-      return get('/ops/v1/cases', { limit });
+      return get('/ops/v1/a11/cases', { limit });
     },
     async getCaseDetail(id) {
-      return get(`/ops/v1/cases/${encodeURIComponent(id)}/detail`);
+      return get(`/ops/v1/a11/cases/${encodeURIComponent(id)}`);
     },
     async listTasks({ limit, caseId } = {}) {
       return get('/ops/v1/tasks', { limit, case_id: caseId });
@@ -75,7 +101,10 @@ export function createOpsReadClient({
     async getTaskDetail(id) {
       return get(`/ops/v1/tasks/${encodeURIComponent(id)}/detail`);
     },
-    // Hard gate — exposed only so tests can prove rejection
+    async overview() {
+      return get('/ops/v1/a11/overview');
+    },
+    postCommand,
     post: (path) => forbidWrite('POST', path),
     put: (path) => forbidWrite('PUT', path),
     patch: (path) => forbidWrite('PATCH', path),

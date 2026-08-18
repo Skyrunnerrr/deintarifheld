@@ -229,7 +229,13 @@ table.dth-table {
   font-family: var(--font-display);
 }
 
-.dth-logout {
+.dth-strip {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--dth-line);
+  background: #fff;
+  font-size: 0.9rem;
+}
   margin-top: 1.5rem;
   border: 1px solid var(--dth-line);
   background: transparent;
