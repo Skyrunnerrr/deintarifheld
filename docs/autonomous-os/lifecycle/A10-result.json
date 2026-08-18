@@ -1,0 +1,15 @@
+{
+  "tranche": "DTH-A10",
+  "result": "CLOSED_E2_LOCAL_LIVE_LIFECYCLE_STAGING_PENDING",
+  "base": "9a317395074adc2c5b9fa7128626be05efdce32d",
+  "branch": "feat/dth-a10-customer-lifecycle-renewal-001",
+  "git": { "final": "PENDING_TIP_ALIGN" },
+  "tests": { "a10": "18/18", "a9": "24/24" },
+  "a2_a3_isolation": "PASS_HARNESS_FLAKE_WHEN_SEQUENCED_AFTER_A9",
+  "invariants": {
+    "A10_RECOMPUTED_TARIFF_PRICING": 0,
+    "INVENTED_CONTRACT_END_DATES": 0,
+    "LIVE_LIFECYCLE_PROVIDER_CALLS": 0,
+    "CUSTOMER_REJECTIONS_AUTO_CANCELLING_CURRENT_CONTRACT": 0
+  }
+}
