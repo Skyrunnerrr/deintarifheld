@@ -1,0 +1,11 @@
+{
+  "tranche": "DTH-A11",
+  "result": "CLOSED_E2_LOCAL_STAGING_AUTHZ_DEPLOYMENT_GATES_PENDING",
+  "base": "6d443e71319410c0669523b73a13ee455ea888b1",
+  "branch": "feat/dth-a11-production-command-center-001",
+  "git": { "final": "PENDING_PIN" },
+  "tests": { "a11": "15/15", "a10": "18/18", "a9": "PASS", "a8": "PASS", "a1_isolated": "PASS" },
+  "a2_a3_isolation": "PASS_HARNESS_FLAKE_WHEN_SEQUENCED_AFTER_LATER_SUITES",
+  "staging_autonomy_ready": false,
+  "production_autonomy_ready": false
+}
