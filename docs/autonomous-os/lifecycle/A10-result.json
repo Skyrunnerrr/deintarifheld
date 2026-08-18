@@ -3,8 +3,8 @@
   "result": "CLOSED_E2_LOCAL_LIVE_LIFECYCLE_STAGING_PENDING",
   "base": "9a317395074adc2c5b9fa7128626be05efdce32d",
   "branch": "feat/dth-a10-customer-lifecycle-renewal-001",
-  "git": { "final": "PENDING_TIP_ALIGN" },
-  "tests": { "a10": "18/18", "a9": "24/24" },
+  "git": { "final": "abc7869ef32c586c9b3ef4de5b0f5ef57e0fac28" },
+  "tests": { "a10": "18/18", "a9": "24/24", "a8": "24/24" },
   "a2_a3_isolation": "PASS_HARNESS_FLAKE_WHEN_SEQUENCED_AFTER_A9",
   "invariants": {
     "A10_RECOMPUTED_TARIFF_PRICING": 0,
