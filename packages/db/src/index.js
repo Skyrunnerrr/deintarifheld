@@ -260,3 +260,35 @@ export {
 } from './a9/reconcile.js';
 export { requestSwitchMissingInfo, requestSwitchConfirmation } from './a9/communicate-switch.js';
 
+/* DTH-A10 Customer Lifecycle + Renewal */
+export { ContractDatePolicyV1, addCalendarMonths, addCalendarDays, parseIsoDate, daysInMonth, todayIso } from './a10/dates.js';
+export { TestLifecyclePolicyV1, mergeLifecyclePolicy } from './a10/policy.js';
+export {
+  createTestLifecycleProvider,
+  resetLifecycleProviderTestStore,
+  setLifecycleProviderTestMode,
+  getLifecycleProviderLiveCallCount,
+} from './a10/provider.js';
+export {
+  prepareLifecycle,
+  getLifecycle,
+  getCurrentContractSnapshot,
+  listA11LifecycleProjection,
+  lifecycleControlGate,
+  deriveContractAnchors,
+} from './a10/prepare.js';
+export {
+  activateLifecycleDue,
+  cancelLifecycle,
+  endLifecycle,
+  applyLifecycleProviderEvent,
+} from './a10/activate.js';
+export {
+  openRenewalWindow,
+  evaluateRenewalEvidence,
+  prepareRenewalEvaluation,
+  prepareRenewalOffer,
+  recordRenewalCustomerDecision,
+  getCurrentRenewalCycle,
+} from './a10/renewal.js';
+

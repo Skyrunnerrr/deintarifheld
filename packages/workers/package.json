@@ -20,7 +20,8 @@
     "test:a6": "node --test --test-concurrency=1 tests/a6-document-intelligence.test.js",
     "test:a7": "node --test --test-concurrency=1 tests/a7-energy-tariff.test.js",
     "test:a8": "node --test --test-concurrency=1 tests/a8-offer-engine.test.js",
-    "test:a9": "node --test --test-concurrency=1 tests/a9-switching-workflow.test.js"
+    "test:a9": "node --test --test-concurrency=1 tests/a9-switching-workflow.test.js",
+    "test:a10": "node --test --test-concurrency=1 tests/a10-customer-lifecycle.test.js"
   },
   "dth": {
     "tranche": "DTH-A1",

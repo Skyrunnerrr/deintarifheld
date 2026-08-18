@@ -31,6 +31,11 @@ import {
   SWITCH_SUBMIT_CAPABILITY,
   SWITCH_RECONCILE_CAPABILITY,
   CUSTOMER_LIFECYCLE_PREPARE_CAPABILITY,
+  LIFECYCLE_ACTIVATE_DUE_CAPABILITY,
+  LIFECYCLE_RECONCILE_CAPABILITY,
+  RENEWAL_WINDOW_OPEN_CAPABILITY,
+  RENEWAL_EVALUATION_PREPARE_CAPABILITY,
+  RENEWAL_OFFER_PREPARE_CAPABILITY,
   QualificationOutcome,
 } from '@deintarifheld/shared';
 import { installDefaultSyntheticCapabilities } from './capability-registry.js';
@@ -823,9 +828,88 @@ export async function handleCustomerLifecyclePrepare(job, ctx) {
   if (!attemptId || !ctx?.pool) {
     return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'ATTEMPT_ID_REQUIRED', permanent: true };
   }
-  const { ackCustomerLifecyclePrepare } = await import('@deintarifheld/db');
-  await ackCustomerLifecyclePrepare(ctx.pool, { switchAttemptId: attemptId });
-  return { ok: true, completeWorkflow: false, workflowState: 'A10_LIFECYCLE_PREPARE_READY' };
+  const { ackCustomerLifecyclePrepare, prepareLifecycle } = await import('@deintarifheld/db');
+  const { rows } = await ctx.pool.query(`SELECT to_regclass('ops.customer_lifecycles') AS c`);
+  if (!rows[0]?.c) {
+    await ackCustomerLifecyclePrepare(ctx.pool, { switchAttemptId: attemptId });
+    return { ok: true, completeWorkflow: false, workflowState: 'A10_LIFECYCLE_PREPARE_READY' };
+  }
+  const result = await prepareLifecycle(ctx.pool, { switchAttemptId: attemptId });
+  if (!result.ok && result.code !== 'A10_SCHEMA_MISSING') {
+    const controlish = ['GLOBAL_KILL', 'LIFECYCLE_DOMAIN_KILL', 'TAKEOVER', 'CONTROL_UNAVAILABLE'].includes(result.code);
+    return {
+      ok: false,
+      errorClass: controlish ? WorkflowErrorClass.CONTROL_BLOCKED : WorkflowErrorClass.VALIDATION_PERMANENT,
+      errorCode: result.code,
+      permanent: result.code === 'SWITCH_NOT_CONFIRMED',
+    };
+  }
+  return { ok: true, completeWorkflow: false, workflowState: result.status || 'LIFECYCLE_PREPARED' };
+}
+
+export async function handleLifecycleActivateDue(job, ctx) {
+  const lifecycleId = String(job.payload_redacted?.lifecycle_id || '');
+  if (!lifecycleId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'LIFECYCLE_ID_REQUIRED', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const fp = job.payload_redacted?.fingerprint;
+  const { getLifecycle, activateLifecycleDue } = await import('@deintarifheld/db');
+  const lc = await getLifecycle(ctx.pool, lifecycleId);
+  if (fp && lc && lc.fingerprint !== fp) {
+    return { ok: true, completeWorkflow: false, workflowState: 'STALE_ACTIVATION_SKIPPED' };
+  }
+  const result = await activateLifecycleDue(ctx.pool, { lifecycleId });
+  return { ok: true, completeWorkflow: false, workflowState: result.status || result.code || 'ACTIVATION_DONE' };
+}
+
+export async function handleRenewalWindowOpen(job, ctx) {
+  const lifecycleId = String(job.payload_redacted?.lifecycle_id || '');
+  if (!lifecycleId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'LIFECYCLE_ID_REQUIRED', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const { openRenewalWindow } = await import('@deintarifheld/db');
+  await openRenewalWindow(ctx.pool, { lifecycleId });
+  return { ok: true, completeWorkflow: false, workflowState: 'RENEWAL_WINDOW' };
+}
+
+export async function handleRenewalEvaluationPrepare(job, ctx) {
+  const lifecycleId = String(job.payload_redacted?.lifecycle_id || '');
+  const cycleId = String(job.payload_redacted?.cycle_id || '');
+  if (!lifecycleId || !cycleId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'RENEWAL_ARGS', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const { prepareRenewalEvaluation } = await import('@deintarifheld/db');
+  await prepareRenewalEvaluation(ctx.pool, { lifecycleId, cycleId });
+  return { ok: true, completeWorkflow: false, workflowState: 'RENEWAL_EVALUATION' };
+}
+
+export async function handleRenewalOfferPrepare(job, ctx) {
+  const lifecycleId = String(job.payload_redacted?.lifecycle_id || '');
+  const cycleId = String(job.payload_redacted?.cycle_id || '');
+  if (!lifecycleId || !cycleId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'RENEWAL_ARGS', permanent: true };
+  }
+  const { prepareRenewalOffer } = await import('@deintarifheld/db');
+  await prepareRenewalOffer(ctx.pool, { lifecycleId, cycleId });
+  return { ok: true, completeWorkflow: false, workflowState: 'RENEWAL_OFFER' };
 }
 
 export function registerAllSyntheticHandlers() {
@@ -863,5 +947,10 @@ export function registerAllSyntheticHandlers() {
     [SWITCH_SUBMIT_CAPABILITY]: handleSwitchSubmit,
     [SWITCH_RECONCILE_CAPABILITY]: handleSwitchReconcile,
     [CUSTOMER_LIFECYCLE_PREPARE_CAPABILITY]: handleCustomerLifecyclePrepare,
+    [LIFECYCLE_ACTIVATE_DUE_CAPABILITY]: handleLifecycleActivateDue,
+    [LIFECYCLE_RECONCILE_CAPABILITY]: handleLifecycleActivateDue,
+    [RENEWAL_WINDOW_OPEN_CAPABILITY]: handleRenewalWindowOpen,
+    [RENEWAL_EVALUATION_PREPARE_CAPABILITY]: handleRenewalEvaluationPrepare,
+    [RENEWAL_OFFER_PREPARE_CAPABILITY]: handleRenewalOfferPrepare,
   });
 }

@@ -153,6 +153,7 @@ export function buildCommercialSnapshot({ evaluation, selected, policy }) {
     currency: first?.currency || 'EUR',
     price_basis: first?.priceBasis || 'NET',
     validity_ms: policy.validityMs,
+    offer_purpose: policy.offerPurpose || 'INITIAL_SWITCH',
     options: selected.map((r, i) => ({
       option_index: i + 1,
       tariff_version_id: String(r.tariffVersionId),
@@ -194,6 +195,7 @@ export function commercialFingerprint({ snapshot, policy }) {
     template_id: policy.templateId,
     template_version: policy.templateVersion,
     auto_approve: policy.autoApproveSynthetic && !policy.requireApproval,
+    offer_purpose: policy.offerPurpose || 'INITIAL_SWITCH',
   });
 }
 
@@ -269,7 +271,7 @@ export async function prepareOffer(pool, {
     [caseId],
   );
   const existing = existingCurrent[0];
-  if (existing && ['ACCEPTED'].includes(existing.state)) {
+  if (existing && ['ACCEPTED'].includes(existing.state) && policy.offerPurpose !== 'RENEWAL') {
     return { ok: false, code: 'ALREADY_ACCEPTED', offerId: existing.offer_id, revisionId: existing.id };
   }
 
