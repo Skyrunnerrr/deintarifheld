@@ -4,7 +4,7 @@
   "base": "ecbc1251cf18def17a2228a6cc5d9b902fd7a415",
   "branch": "feat/dth-a12-content-autopilot-001",
   "git": {
-    "final": "PENDING_TIP_PIN"
+    "final": "31c23736c8395e65e3c41450c909effafa23ab42"
   },
   "POST_A12_A11": "PASS",
   "POST_A12_A10": "PASS",
