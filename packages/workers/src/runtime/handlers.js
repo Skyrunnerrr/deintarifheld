@@ -36,6 +36,9 @@ import {
   RENEWAL_WINDOW_OPEN_CAPABILITY,
   RENEWAL_EVALUATION_PREPARE_CAPABILITY,
   RENEWAL_OFFER_PREPARE_CAPABILITY,
+  CONTENT_PUBLICATION_DUE_CAPABILITY,
+  CONTENT_RECONCILE_CAPABILITY,
+  CONTENT_METRICS_REFRESH_CAPABILITY,
   QualificationOutcome,
 } from '@deintarifheld/shared';
 import { installDefaultSyntheticCapabilities } from './capability-registry.js';
@@ -912,6 +915,48 @@ export async function handleRenewalOfferPrepare(job, ctx) {
   return { ok: true, completeWorkflow: false, workflowState: 'RENEWAL_OFFER' };
 }
 
+export async function handleContentPublicationDue(job, ctx) {
+  const intentId = String(job.payload_redacted?.intent_id || '');
+  if (!intentId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'CONTENT_INTENT_REQUIRED', permanent: true };
+  }
+  if (typeof ctx.preEffectControlCheck === 'function') {
+    const gate = await ctx.preEffectControlCheck();
+    if (!gate.allowed) {
+      return { ok: false, errorClass: WorkflowErrorClass.CONTROL_BLOCKED, errorCode: gate.code, permanent: true };
+    }
+  }
+  const { publishContentIntent } = await import('@deintarifheld/db');
+  const result = await publishContentIntent(ctx.pool, { intentId });
+  if (result.outcomeUnknown) {
+    return { ok: true, completeWorkflow: false, workflowState: 'CONTENT_OUTCOME_UNKNOWN' };
+  }
+  if (!result.ok && result.code === 'RECONCILIATION_REQUIRED') {
+    return { ok: true, completeWorkflow: false, workflowState: 'CONTENT_RECONCILE_REQUIRED' };
+  }
+  return { ok: true, completeWorkflow: false, workflowState: result.code || (result.published ? 'CONTENT_PUBLISHED' : 'CONTENT_PUBLICATION_DONE') };
+}
+
+export async function handleContentReconcile(job, ctx) {
+  const intentId = String(job.payload_redacted?.intent_id || '');
+  if (!intentId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'CONTENT_INTENT_REQUIRED', permanent: true };
+  }
+  const { reconcileContentPublication } = await import('@deintarifheld/db');
+  const result = await reconcileContentPublication(ctx.pool, { intentId });
+  return { ok: true, completeWorkflow: false, workflowState: result.code || (result.adopted ? 'CONTENT_ADOPTED' : 'CONTENT_RECONCILED') };
+}
+
+export async function handleContentMetricsRefresh(job, ctx) {
+  const publicationId = String(job.payload_redacted?.publication_id || '');
+  if (!publicationId || !ctx?.pool) {
+    return { ok: false, errorClass: WorkflowErrorClass.VALIDATION_PERMANENT, errorCode: 'CONTENT_PUBLICATION_REQUIRED', permanent: true };
+  }
+  const { refreshContentMetrics } = await import('@deintarifheld/db');
+  await refreshContentMetrics(ctx.pool, { publicationId });
+  return { ok: true, completeWorkflow: false, workflowState: 'CONTENT_METRICS_REFRESHED' };
+}
+
 export function registerAllSyntheticHandlers() {
   installDefaultSyntheticCapabilities({
     [SyntheticCapability.SYNTHETIC_NOOP]: handleSyntheticNoop,
@@ -952,5 +997,8 @@ export function registerAllSyntheticHandlers() {
     [RENEWAL_WINDOW_OPEN_CAPABILITY]: handleRenewalWindowOpen,
     [RENEWAL_EVALUATION_PREPARE_CAPABILITY]: handleRenewalEvaluationPrepare,
     [RENEWAL_OFFER_PREPARE_CAPABILITY]: handleRenewalOfferPrepare,
+    [CONTENT_PUBLICATION_DUE_CAPABILITY]: handleContentPublicationDue,
+    [CONTENT_RECONCILE_CAPABILITY]: handleContentReconcile,
+    [CONTENT_METRICS_REFRESH_CAPABILITY]: handleContentMetricsRefresh,
   });
 }

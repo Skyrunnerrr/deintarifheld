@@ -41,6 +41,10 @@ export const OperatorCapability = Object.freeze({
   GLOBAL_KILL_MANAGE: 'GLOBAL_KILL_MANAGE',
   DOMAIN_KILL_MANAGE: 'DOMAIN_KILL_MANAGE',
   AUDIT_VIEW: 'AUDIT_VIEW',
+  CONTENT_VIEW: 'CONTENT_VIEW',
+  CONTENT_APPROVE: 'CONTENT_APPROVE',
+  CONTENT_CANCEL: 'CONTENT_CANCEL',
+  CONTENT_RECONCILE: 'CONTENT_RECONCILE',
 });
 
 const ALL_CAPS = Object.freeze(Object.values(OperatorCapability));
@@ -49,6 +53,7 @@ export const ROLE_CAPABILITIES = Object.freeze({
   [OperatorRole.VIEWER]: Object.freeze([
     OperatorCapability.CASE_VIEW,
     OperatorCapability.AUDIT_VIEW,
+    OperatorCapability.CONTENT_VIEW,
   ]),
   [OperatorRole.OPERATOR]: Object.freeze([
     OperatorCapability.CASE_VIEW,
@@ -58,12 +63,17 @@ export const ROLE_CAPABILITIES = Object.freeze({
     OperatorCapability.TAKEOVER_MANAGE,
     OperatorCapability.WORKFLOW_REPROCESS,
     OperatorCapability.PROVIDER_RECONCILE,
+    OperatorCapability.CONTENT_VIEW,
+    OperatorCapability.CONTENT_CANCEL,
+    OperatorCapability.CONTENT_RECONCILE,
   ]),
   [OperatorRole.APPROVER]: Object.freeze([
     OperatorCapability.CASE_VIEW,
     OperatorCapability.AUDIT_VIEW,
     OperatorCapability.APPROVAL_DECIDE,
     OperatorCapability.NOTE_WRITE,
+    OperatorCapability.CONTENT_VIEW,
+    OperatorCapability.CONTENT_APPROVE,
   ]),
   [OperatorRole.OWNER]: ALL_CAPS,
 });
@@ -114,6 +124,10 @@ export const OperatorCommandType = Object.freeze({
   RECONCILE_OFFER_DELIVERY: 'RECONCILE_OFFER_DELIVERY',
   RECONCILE_SWITCH: 'RECONCILE_SWITCH',
   RECONCILE_LIFECYCLE: 'RECONCILE_LIFECYCLE',
+  APPROVE_CONTENT: 'APPROVE_CONTENT',
+  REJECT_CONTENT: 'REJECT_CONTENT',
+  CANCEL_CONTENT_PUBLICATION: 'CANCEL_CONTENT_PUBLICATION',
+  RECONCILE_CONTENT_PUBLICATION: 'RECONCILE_CONTENT_PUBLICATION',
   SET_GLOBAL_KILL: 'SET_GLOBAL_KILL',
   SET_DOMAIN_KILL: 'SET_DOMAIN_KILL',
   CREATE_TASK: 'CREATE_TASK',
@@ -134,6 +148,10 @@ export const COMMAND_REQUIRED_CAPABILITY = Object.freeze({
   [OperatorCommandType.RECONCILE_OFFER_DELIVERY]: OperatorCapability.PROVIDER_RECONCILE,
   [OperatorCommandType.RECONCILE_SWITCH]: OperatorCapability.PROVIDER_RECONCILE,
   [OperatorCommandType.RECONCILE_LIFECYCLE]: OperatorCapability.PROVIDER_RECONCILE,
+  [OperatorCommandType.APPROVE_CONTENT]: OperatorCapability.CONTENT_APPROVE,
+  [OperatorCommandType.REJECT_CONTENT]: OperatorCapability.CONTENT_APPROVE,
+  [OperatorCommandType.CANCEL_CONTENT_PUBLICATION]: OperatorCapability.CONTENT_CANCEL,
+  [OperatorCommandType.RECONCILE_CONTENT_PUBLICATION]: OperatorCapability.CONTENT_RECONCILE,
   [OperatorCommandType.SET_GLOBAL_KILL]: OperatorCapability.GLOBAL_KILL_MANAGE,
   [OperatorCommandType.SET_DOMAIN_KILL]: OperatorCapability.DOMAIN_KILL_MANAGE,
   [OperatorCommandType.CREATE_TASK]: OperatorCapability.TASK_WRITE,
@@ -145,6 +163,9 @@ export const HIGH_RISK_COMMANDS = Object.freeze([
   OperatorCommandType.SET_GLOBAL_KILL,
   OperatorCommandType.SET_DOMAIN_KILL,
   OperatorCommandType.APPROVE_SWITCH_SUBMISSION,
+  OperatorCommandType.APPROVE_CONTENT,
+  OperatorCommandType.CANCEL_CONTENT_PUBLICATION,
+  OperatorCommandType.RECONCILE_CONTENT_PUBLICATION,
   OperatorCommandType.REPROCESS_JOB,
   OperatorCommandType.RECONCILE_SWITCH,
   OperatorCommandType.TAKEOVER_CASE,
@@ -158,6 +179,8 @@ export const COMMANDS_REQUIRING_REASON = Object.freeze([
   OperatorCommandType.REPROCESS_JOB,
   OperatorCommandType.REJECT_OFFER_APPROVAL,
   OperatorCommandType.REJECT_SWITCH_SUBMISSION,
+  OperatorCommandType.REJECT_CONTENT,
+  OperatorCommandType.CANCEL_CONTENT_PUBLICATION,
 ]);
 
 export const ReconcileDomain = Object.freeze({
@@ -166,6 +189,7 @@ export const ReconcileDomain = Object.freeze({
   OFFER_DELIVERY: 'OFFER_DELIVERY',
   SWITCH: 'SWITCH',
   LIFECYCLE: 'LIFECYCLE',
+  CONTENT: 'CONTENT',
 });
 
 export const ExceptionSeverity = Object.freeze({

@@ -26,6 +26,8 @@ import { reconcileAppointment } from '../a5/booking.js';
 import { reconcileOfferDelivery } from '../a8/deliver.js';
 import { reconcileSwitchAttempt } from '../a9/reconcile.js';
 import { applyLifecycleProviderEvent } from '../a10/activate.js';
+import { approveContentRevision, rejectContentRevision } from '../a12/approval.js';
+import { cancelContentPublication, reconcileContentPublication } from '../a12/publish.js';
 import { authorizeCommand } from './authz.js';
 
 function payloadHash(commandType, targetId, expectedRevision, extra) {
@@ -234,7 +236,8 @@ export async function executeOperatorCommand(pool, envelope = {}, identity) {
 }
 
 async function dispatchCommand(pool, ctx) {
-  const { commandType, targetId, expectedRevision, reason, envelope, identity, correlationId } = ctx;
+  const { commandType, targetId, expectedRevision, reason, identity, correlationId } = ctx;
+  const envelope = ctx.envelope || {};
   switch (commandType) {
     case OperatorCommandType.TAKEOVER_CASE:
       return takeoverCase(pool, { caseId: targetId, reason, actor: identity.personId, correlationId, expectedRevision });
@@ -260,6 +263,26 @@ async function dispatchCommand(pool, ctx) {
       return reconcileSwitchAttempt(pool, { switchAttemptId: targetId });
     case OperatorCommandType.RECONCILE_LIFECYCLE:
       return reconcileLifecycle(pool, envelope);
+    case OperatorCommandType.APPROVE_CONTENT:
+      return approveContentRevision(pool, {
+        revisionId: targetId,
+        expectedHash: expectedRevision || envelope.contentHash || null,
+        actorType: 'HUMAN',
+      });
+    case OperatorCommandType.REJECT_CONTENT:
+      return rejectContentRevision(pool, {
+        revisionId: targetId,
+        actorType: 'HUMAN',
+        reasonCode: reason || 'OPERATOR_REJECTED',
+      });
+    case OperatorCommandType.CANCEL_CONTENT_PUBLICATION:
+      return cancelContentPublication(pool, {
+        intentId: envelope.intentId || targetId,
+        contentItemId: envelope.contentItemId || null,
+        reason: reason || 'OPERATOR_CANCEL',
+      });
+    case OperatorCommandType.RECONCILE_CONTENT_PUBLICATION:
+      return reconcileContentPublication(pool, { intentId: targetId });
     case OperatorCommandType.SET_GLOBAL_KILL:
       return setKillGlobal(pool, envelope, identity, reason, correlationId, expectedRevision);
     case OperatorCommandType.SET_DOMAIN_KILL:

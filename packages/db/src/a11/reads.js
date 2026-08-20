@@ -150,6 +150,12 @@ export function createA11ReadService({ pool }) {
       );
       provider += rows[0].n;
     }
+    if (await hasRel(pool, 'ops.content_publication_intents')) {
+      const { rows } = await pool.query(
+        `SELECT count(*)::int AS n FROM ops.content_publication_intents WHERE state='OUTCOME_UNKNOWN'`,
+      );
+      provider += rows[0].n;
+    }
     return { customer, provider };
   }
 
@@ -164,6 +170,12 @@ export function createA11ReadService({ pool }) {
     if (await hasRel(pool, 'ops.switch_approvals')) {
       const { rows } = await pool.query(
         `SELECT count(*)::int AS n FROM ops.switch_approvals WHERE decision='PENDING'`,
+      );
+      n += rows[0].n;
+    }
+    if (await hasRel(pool, 'ops.content_approvals')) {
+      const { rows } = await pool.query(
+        `SELECT count(*)::int AS n FROM ops.content_approvals WHERE decision='PENDING'`,
       );
       n += rows[0].n;
     }
@@ -414,6 +426,48 @@ export function createA11ReadService({ pool }) {
           ageMs: ageMs(r.created_at),
           targetType: 'LIFECYCLE',
           targetId: r.id,
+        });
+      }
+    }
+    if (await hasRel(pool, 'ops.content_items')) {
+      const { rows } = await pool.query(
+        `SELECT i.id, i.status, i.risk_class, i.created_at, i.current_revision_id,
+                p.id AS intent_id, p.state AS intent_state
+         FROM ops.content_items i
+         LEFT JOIN ops.content_publication_intents p ON p.content_item_id = i.id
+         WHERE i.status IN ('BLOCKED','APPROVAL_REQUIRED','OUTCOME_UNKNOWN','FAILED')
+            OR p.state = 'OUTCOME_UNKNOWN'
+         ORDER BY i.created_at ASC
+         LIMIT $1`,
+        [lim],
+      );
+      for (const r of rows) {
+        const unknown = r.status === 'OUTCOME_UNKNOWN' || r.intent_state === 'OUTCOME_UNKNOWN';
+        items.push({
+          id: `content:${r.id}:${r.intent_id || 'item'}`,
+          domain: 'A12',
+          caseId: null,
+          reasonCode: unknown ? 'PUBLICATION_OUTCOME_UNKNOWN' : r.status,
+          explanation: unknown
+            ? 'EXTERNAL EFFECT MAY HAVE OCCURRED. DO NOT REPOST BLINDLY.'
+            : r.status === 'BLOCKED'
+              ? 'Content blocked by claim/brand policy.'
+              : r.status === 'APPROVAL_REQUIRED'
+                ? 'Content revision requires operator approval.'
+                : 'Content publication failed.',
+          severity: unknown || r.status === 'BLOCKED' ? ExceptionSeverity.HIGH : ExceptionSeverity.ACTION_REQUIRED,
+          waitingOn: r.status === 'APPROVAL_REQUIRED' ? WaitingOn.HUMAN_APPROVAL : WaitingOn.PROVIDER,
+          recommendedAction: unknown
+            ? 'RECONCILE_CONTENT_PUBLICATION'
+            : r.status === 'APPROVAL_REQUIRED'
+              ? 'APPROVE_CONTENT'
+              : r.status === 'BLOCKED'
+                ? 'REJECT_CONTENT'
+                : 'RECONCILE_CONTENT_PUBLICATION',
+          createdAt: r.created_at,
+          ageMs: ageMs(r.created_at),
+          targetType: unknown ? 'CONTENT_INTENT' : 'CONTENT_REVISION',
+          targetId: unknown ? r.intent_id : r.current_revision_id,
         });
       }
     }
@@ -755,6 +809,34 @@ export function createA11ReadService({ pool }) {
           decidedAt: r.decided_at,
           what: 'Supplier switch submission payload hash',
           ifApproved: 'Switch submit job may run; provider effect possible after submit',
+        });
+      }
+    }
+    if (await hasRel(pool, 'ops.content_approvals')) {
+      const { rows } = await pool.query(
+        `SELECT a.id, a.decision, a.content_hash, a.created_at, a.decided_at,
+                r.id AS revision_id, r.is_current, r.headline, i.channel
+         FROM ops.content_approvals a
+         JOIN ops.content_revisions r ON r.id = a.content_revision_id
+         JOIN ops.content_items i ON i.id = r.content_item_id
+         ORDER BY a.created_at DESC LIMIT $1`,
+        [lim],
+      );
+      for (const r of rows) {
+        items.push({
+          id: r.id,
+          domain: 'A12',
+          action: 'APPROVE_CONTENT',
+          caseId: null,
+          targetId: r.revision_id,
+          decision: r.decision,
+          stale: !r.is_current,
+          revision: r.content_hash,
+          revisionState: r.is_current ? 'CURRENT' : 'SUPERSEDED',
+          createdAt: r.created_at,
+          decidedAt: r.decided_at,
+          what: `Content revision (${r.channel})`,
+          ifApproved: 'Revision may be scheduled; provider effect only after durable intent',
         });
       }
     }
