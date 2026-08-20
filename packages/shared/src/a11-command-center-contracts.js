@@ -45,6 +45,11 @@ export const OperatorCapability = Object.freeze({
   CONTENT_APPROVE: 'CONTENT_APPROVE',
   CONTENT_CANCEL: 'CONTENT_CANCEL',
   CONTENT_RECONCILE: 'CONTENT_RECONCILE',
+  ACQUISITION_VIEW: 'ACQUISITION_VIEW',
+  ACQUISITION_APPROVE: 'ACQUISITION_APPROVE',
+  ACQUISITION_ACTIVATE: 'ACQUISITION_ACTIVATE',
+  ACQUISITION_PAUSE: 'ACQUISITION_PAUSE',
+  ACQUISITION_RECONCILE: 'ACQUISITION_RECONCILE',
 });
 
 const ALL_CAPS = Object.freeze(Object.values(OperatorCapability));
@@ -54,6 +59,7 @@ export const ROLE_CAPABILITIES = Object.freeze({
     OperatorCapability.CASE_VIEW,
     OperatorCapability.AUDIT_VIEW,
     OperatorCapability.CONTENT_VIEW,
+    OperatorCapability.ACQUISITION_VIEW,
   ]),
   [OperatorRole.OPERATOR]: Object.freeze([
     OperatorCapability.CASE_VIEW,
@@ -66,6 +72,9 @@ export const ROLE_CAPABILITIES = Object.freeze({
     OperatorCapability.CONTENT_VIEW,
     OperatorCapability.CONTENT_CANCEL,
     OperatorCapability.CONTENT_RECONCILE,
+    OperatorCapability.ACQUISITION_VIEW,
+    OperatorCapability.ACQUISITION_PAUSE,
+    OperatorCapability.ACQUISITION_RECONCILE,
   ]),
   [OperatorRole.APPROVER]: Object.freeze([
     OperatorCapability.CASE_VIEW,
@@ -74,6 +83,8 @@ export const ROLE_CAPABILITIES = Object.freeze({
     OperatorCapability.NOTE_WRITE,
     OperatorCapability.CONTENT_VIEW,
     OperatorCapability.CONTENT_APPROVE,
+    OperatorCapability.ACQUISITION_VIEW,
+    OperatorCapability.ACQUISITION_APPROVE,
   ]),
   [OperatorRole.OWNER]: ALL_CAPS,
 });
@@ -128,6 +139,12 @@ export const OperatorCommandType = Object.freeze({
   REJECT_CONTENT: 'REJECT_CONTENT',
   CANCEL_CONTENT_PUBLICATION: 'CANCEL_CONTENT_PUBLICATION',
   RECONCILE_CONTENT_PUBLICATION: 'RECONCILE_CONTENT_PUBLICATION',
+  APPROVE_ACQUISITION_CAMPAIGN: 'APPROVE_ACQUISITION_CAMPAIGN',
+  REJECT_ACQUISITION_CAMPAIGN: 'REJECT_ACQUISITION_CAMPAIGN',
+  ACTIVATE_ACQUISITION_CAMPAIGN: 'ACTIVATE_ACQUISITION_CAMPAIGN',
+  PAUSE_ACQUISITION_CAMPAIGN: 'PAUSE_ACQUISITION_CAMPAIGN',
+  CANCEL_ACQUISITION_CAMPAIGN: 'CANCEL_ACQUISITION_CAMPAIGN',
+  RECONCILE_ACQUISITION_CAMPAIGN: 'RECONCILE_ACQUISITION_CAMPAIGN',
   SET_GLOBAL_KILL: 'SET_GLOBAL_KILL',
   SET_DOMAIN_KILL: 'SET_DOMAIN_KILL',
   CREATE_TASK: 'CREATE_TASK',
@@ -152,6 +169,12 @@ export const COMMAND_REQUIRED_CAPABILITY = Object.freeze({
   [OperatorCommandType.REJECT_CONTENT]: OperatorCapability.CONTENT_APPROVE,
   [OperatorCommandType.CANCEL_CONTENT_PUBLICATION]: OperatorCapability.CONTENT_CANCEL,
   [OperatorCommandType.RECONCILE_CONTENT_PUBLICATION]: OperatorCapability.CONTENT_RECONCILE,
+  [OperatorCommandType.APPROVE_ACQUISITION_CAMPAIGN]: OperatorCapability.ACQUISITION_APPROVE,
+  [OperatorCommandType.REJECT_ACQUISITION_CAMPAIGN]: OperatorCapability.ACQUISITION_APPROVE,
+  [OperatorCommandType.ACTIVATE_ACQUISITION_CAMPAIGN]: OperatorCapability.ACQUISITION_ACTIVATE,
+  [OperatorCommandType.PAUSE_ACQUISITION_CAMPAIGN]: OperatorCapability.ACQUISITION_PAUSE,
+  [OperatorCommandType.CANCEL_ACQUISITION_CAMPAIGN]: OperatorCapability.ACQUISITION_PAUSE,
+  [OperatorCommandType.RECONCILE_ACQUISITION_CAMPAIGN]: OperatorCapability.ACQUISITION_RECONCILE,
   [OperatorCommandType.SET_GLOBAL_KILL]: OperatorCapability.GLOBAL_KILL_MANAGE,
   [OperatorCommandType.SET_DOMAIN_KILL]: OperatorCapability.DOMAIN_KILL_MANAGE,
   [OperatorCommandType.CREATE_TASK]: OperatorCapability.TASK_WRITE,
@@ -166,6 +189,11 @@ export const HIGH_RISK_COMMANDS = Object.freeze([
   OperatorCommandType.APPROVE_CONTENT,
   OperatorCommandType.CANCEL_CONTENT_PUBLICATION,
   OperatorCommandType.RECONCILE_CONTENT_PUBLICATION,
+  OperatorCommandType.APPROVE_ACQUISITION_CAMPAIGN,
+  OperatorCommandType.ACTIVATE_ACQUISITION_CAMPAIGN,
+  OperatorCommandType.PAUSE_ACQUISITION_CAMPAIGN,
+  OperatorCommandType.CANCEL_ACQUISITION_CAMPAIGN,
+  OperatorCommandType.RECONCILE_ACQUISITION_CAMPAIGN,
   OperatorCommandType.REPROCESS_JOB,
   OperatorCommandType.RECONCILE_SWITCH,
   OperatorCommandType.TAKEOVER_CASE,
@@ -181,6 +209,9 @@ export const COMMANDS_REQUIRING_REASON = Object.freeze([
   OperatorCommandType.REJECT_SWITCH_SUBMISSION,
   OperatorCommandType.REJECT_CONTENT,
   OperatorCommandType.CANCEL_CONTENT_PUBLICATION,
+  OperatorCommandType.REJECT_ACQUISITION_CAMPAIGN,
+  OperatorCommandType.PAUSE_ACQUISITION_CAMPAIGN,
+  OperatorCommandType.CANCEL_ACQUISITION_CAMPAIGN,
 ]);
 
 export const ReconcileDomain = Object.freeze({
@@ -190,6 +221,7 @@ export const ReconcileDomain = Object.freeze({
   SWITCH: 'SWITCH',
   LIFECYCLE: 'LIFECYCLE',
   CONTENT: 'CONTENT',
+  ACQUISITION: 'ACQUISITION',
 });
 
 export const ExceptionSeverity = Object.freeze({
