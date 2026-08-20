@@ -28,6 +28,13 @@ import { reconcileSwitchAttempt } from '../a9/reconcile.js';
 import { applyLifecycleProviderEvent } from '../a10/activate.js';
 import { approveContentRevision, rejectContentRevision } from '../a12/approval.js';
 import { cancelContentPublication, reconcileContentPublication } from '../a12/publish.js';
+import { approveAcquisitionCampaign, rejectAcquisitionCampaign } from '../a13/approval.js';
+import {
+  activateAcquisitionCampaign,
+  pauseAcquisitionCampaign,
+  reconcileAcquisitionCampaign,
+  cancelAcquisitionCampaign,
+} from '../a13/activate.js';
 import { authorizeCommand } from './authz.js';
 
 function payloadHash(commandType, targetId, expectedRevision, extra) {
@@ -283,6 +290,35 @@ async function dispatchCommand(pool, ctx) {
       });
     case OperatorCommandType.RECONCILE_CONTENT_PUBLICATION:
       return reconcileContentPublication(pool, { intentId: targetId });
+    case OperatorCommandType.APPROVE_ACQUISITION_CAMPAIGN:
+      return approveAcquisitionCampaign(pool, {
+        revisionId: targetId,
+        expectedBudgetHash: expectedRevision || envelope.budgetHash || null,
+        actorType: 'HUMAN',
+      });
+    case OperatorCommandType.REJECT_ACQUISITION_CAMPAIGN:
+      return rejectAcquisitionCampaign(pool, {
+        revisionId: targetId,
+        actorType: 'HUMAN',
+        reasonCode: reason || 'OPERATOR_REJECTED',
+      });
+    case OperatorCommandType.ACTIVATE_ACQUISITION_CAMPAIGN:
+      return activateAcquisitionCampaign(pool, { campaignId: targetId });
+    case OperatorCommandType.PAUSE_ACQUISITION_CAMPAIGN:
+      return pauseAcquisitionCampaign(pool, {
+        campaignId: targetId,
+        reason: reason || 'OPERATOR_PAUSE',
+      });
+    case OperatorCommandType.CANCEL_ACQUISITION_CAMPAIGN:
+      return cancelAcquisitionCampaign(pool, {
+        campaignId: targetId,
+        reason: reason || 'OPERATOR_CANCEL',
+      });
+    case OperatorCommandType.RECONCILE_ACQUISITION_CAMPAIGN:
+      return reconcileAcquisitionCampaign(pool, {
+        intentId: envelope.intentId || null,
+        campaignId: targetId,
+      });
     case OperatorCommandType.SET_GLOBAL_KILL:
       return setKillGlobal(pool, envelope, identity, reason, correlationId, expectedRevision);
     case OperatorCommandType.SET_DOMAIN_KILL:

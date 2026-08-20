@@ -335,3 +335,68 @@ export { refreshContentMetrics, listContentMetricSnapshots } from './a12/metrics
 export { buildA13ContentHandoff } from './a12/handoff.js';
 export { wipeContentDomain } from './a12/wipe.js';
 
+/* DTH-A13 Acquisition Autopilot */
+export {
+  acquisitionControlGate,
+  isAllowedAcquisitionDestination,
+  resolveServerProviderAccount,
+  assertNoLiveAcquisition,
+  AcquisitionAttributionPolicyV1,
+  AcquisitionBudgetPolicyV1,
+  AcquisitionApprovalPolicyV1,
+} from './a13/policy.js';
+export {
+  toMicroEur as toAcquisitionMicroEur,
+  fromMicroEurDisplay as fromAcquisitionMicroEurDisplay,
+  parseBudgetMicroEur,
+  assertAcquisitionMoneyExact,
+} from './a13/money.js';
+export {
+  createAcquisitionCampaign,
+  reviseAcquisitionCampaign,
+  getAcquisitionCampaign,
+} from './a13/campaign.js';
+export {
+  issueAcquisitionRef,
+  resolveAcquisitionRef,
+  recordTouchpoint,
+} from './a13/tracking.js';
+export { attributeLeadPrimary } from './a13/attribution.js';
+export { acceptLeadWithAcquisition } from './a13/intake.js';
+export {
+  approveAcquisitionCampaign,
+  rejectAcquisitionCampaign,
+  loadBoundApproval,
+} from './a13/approval.js';
+export {
+  createDeterministicTestAcquisitionProvider,
+  resetAcquisitionProviderTestStore,
+  setAcquisitionProviderTestMode,
+  getAcquisitionProviderLiveCallCount,
+  getAcquisitionProviderCreateCount,
+  getAcquisitionProviderActivateCount,
+} from './a13/provider.js';
+export {
+  scheduleProviderIntent,
+  executeCreateCampaignIntent,
+  executeActivateCampaignIntent,
+  activateAcquisitionCampaign,
+  pauseAcquisitionCampaign,
+  reconcileAcquisitionCampaign,
+  cancelAcquisitionCampaign,
+} from './a13/activate.js';
+export {
+  refreshAcquisitionMetrics,
+  listAcquisitionMetricSnapshots,
+  computeCplMicroEur,
+  computeRoas,
+} from './a13/metrics.js';
+export { buildA14AcquisitionHandoff } from './a13/handoff.js';
+export { wipeAcquisitionDomain } from './a13/wipe.js';
+export {
+  resetA13InvariantCounters,
+  getA13InvariantCounters,
+  assertA13CriticalInvariantsZero,
+  bumpA13Invariant,
+} from './a13/invariants.js';
+

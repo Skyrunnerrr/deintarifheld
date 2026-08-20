@@ -23,7 +23,8 @@
     "test:a9": "node --test --test-concurrency=1 tests/a9-switching-workflow.test.js",
     "test:a10": "node --test --test-concurrency=1 tests/a10-customer-lifecycle.test.js",
     "test:a11": "node --test --test-concurrency=1 tests/a11-command-center.test.js",
-    "test:a12": "node --test --test-concurrency=1 tests/a12-content-autopilot.test.js"
+    "test:a12": "node --test --test-concurrency=1 tests/a12-content-autopilot.test.js",
+    "test:a13": "node --test --test-concurrency=1 tests/a13-acquisition-autopilot.test.js"
   },
   "dth": {
     "tranche": "DTH-A1",

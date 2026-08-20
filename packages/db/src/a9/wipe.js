@@ -2,6 +2,11 @@
  * Test wipe for A8 offer + A9 switching rows so A1–A8 resets can DELETE cases.
  */
 export async function wipeOfferAndSwitchingDomain(pool) {
+  const { rows: a13 } = await pool.query(`SELECT to_regclass('ops.acquisition_campaigns') AS c`);
+  if (a13[0]?.c) {
+    const { wipeAcquisitionDomain } = await import('../a13/wipe.js');
+    await wipeAcquisitionDomain(pool);
+  }
   const { rows: a12 } = await pool.query(`SELECT to_regclass('ops.content_briefs') AS c`);
   if (a12[0]?.c) {
     const { wipeContentDomain } = await import('../a12/wipe.js');
