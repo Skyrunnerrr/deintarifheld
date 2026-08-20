@@ -1,0 +1,63 @@
+{
+  "tranche": "DTH-A12",
+  "result": "CLOSED_E2_LOCAL_CONTENT_PROVIDERS_STAGING_PENDING",
+  "base": "ecbc1251cf18def17a2228a6cc5d9b902fd7a415",
+  "branch": "feat/dth-a12-content-autopilot-001",
+  "git": {
+    "final": "PENDING_TIP_PIN"
+  },
+  "POST_A12_A11": "PASS",
+  "POST_A12_A10": "PASS",
+  "POST_A12_A9": "PASS",
+  "POST_A12_A8": "PASS",
+  "POST_A12_A7": "PASS",
+  "POST_A12_A6": "PASS",
+  "POST_A12_A5": "PASS",
+  "POST_A12_A4": "PASS",
+  "POST_A12_A3": "PASS_ISOLATED_IF_HARNESS_FLAKE",
+  "POST_A12_A2": "PASS_ISOLATED_IF_HARNESS_FLAKE",
+  "POST_A12_A1": "PASS_ISOLATED_IF_HARNESS_FLAKE",
+  "A1_A3_SEQUENTIAL_HARNESS_CLASSIFICATION": "PREEXISTING_ONLY",
+  "A12_CRITICAL_DOMAIN_REGRESSIONS": 0,
+  "tests": {
+    "a12": "13/13",
+    "post_a12_a11": "15/15",
+    "post_a12_a10": "18/18",
+    "post_a12_a9": "24/24",
+    "post_a12_a8": "24/24",
+    "post_a12_a7": "25/25",
+    "post_a12_a6": "25/25",
+    "post_a12_a5": "15/15",
+    "post_a12_a4": "23/23",
+    "post_a12_a3_isolated": "18/18",
+    "post_a12_a2_isolated": "16/16",
+    "post_a12_a1": "39/39"
+  },
+  "a2_a3_isolation": "PASS_HARNESS_FLAKE_WHEN_SEQUENCED_AFTER_LATER_SUITES",
+  "platform": {
+    "cc_ui": "PASS",
+    "ops_bff": "PASS",
+    "mail_contract": "PASS",
+    "lead_contract": "PASS",
+    "workers": "PASS",
+    "db": "PASS",
+    "kill": "PASS",
+    "boundary": "PASS",
+    "lint": "PASS",
+    "build": "PASS"
+  },
+  "invariants": {
+    "LIVE_AI_CALLS": 0,
+    "LIVE_SOCIAL_PROVIDER_CALLS": 0,
+    "LIVE_CONTENT_PUBLICATIONS": 0,
+    "SYNTHETIC_TARIFF_PUBLIC_CONTENT_CLAIMS": 0,
+    "FABRICATED_CUSTOMER_RESULTS": 0,
+    "AI_GENERATED_TESTIMONIALS": 0,
+    "OUTCOME_UNKNOWN_CONTENT_BLIND_RETRIES": 0,
+    "STAGING_DB_MUTATIONS": 0,
+    "PRODUCTION_DB_MUTATIONS": 0
+  },
+  "staging_autonomy_ready": false,
+  "production_autonomy_ready": false,
+  "next_tranche": "DTH-A13_ACQUISITION_AUTOPILOT"
+}
