@@ -299,3 +299,39 @@ export { getProductionReadinessView } from './a11/readiness.js';
 export { createA11ReadService } from './a11/reads.js';
 export { executeOperatorCommand } from './a11/commands.js';
 
+/* DTH-A12 Content Autopilot */
+export {
+  contentControlGate,
+  mergeContentStrategyPolicy,
+  mergeContentApprovalPolicy,
+} from './a12/policy.js';
+export { extractClaimsFromText, validateClaimSet, extractAndValidateLinks } from './a12/claims.js';
+export { validateBrand, escapePlaintext } from './a12/brand.js';
+export { classifyContentRisk } from './a12/risk.js';
+export { createDeterministicTestContentGenerator, TEST_GENERATOR_FIXTURES } from './a12/generator.js';
+export { createContentBrief, getContentBrief } from './a12/brief.js';
+export { renderForChannel, channelFactsEquivalent } from './a12/channel.js';
+export {
+  produceContentCandidate,
+  createSupersedingRevision,
+  getContentRevision,
+  listContentClaims,
+} from './a12/revision.js';
+export { approveContentRevision, rejectContentRevision } from './a12/approval.js';
+export { scheduleContentPublication, listDueContentPublicationIntents } from './a12/schedule.js';
+export {
+  createDeterministicTestPublishingProvider,
+  resetContentPublisherTestStore,
+  setContentPublisherTestMode,
+  getContentPublisherLiveCallCount,
+  getContentPublisherPublishCount,
+} from './a12/provider.js';
+export {
+  publishContentIntent,
+  reconcileContentPublication,
+  cancelContentPublication,
+} from './a12/publish.js';
+export { refreshContentMetrics, listContentMetricSnapshots } from './a12/metrics.js';
+export { buildA13ContentHandoff } from './a12/handoff.js';
+export { wipeContentDomain } from './a12/wipe.js';
+
