@@ -20,5 +20,23 @@
     "OWNER_ACQUISITION_BUDGET_POLICY_REQUIRED": true,
     "OWNER_ACQUISITION_ATTRIBUTION_POLICY_REQUIRED": true,
     "OWNER_ACQUISITION_TRACKING_POLICY_REQUIRED": true
+  },
+  "head": "723f5c63907db6348a3b1cb7693be8e85d70fd78",
+  "base": "f235e1af66db0c8c4ec2022feb9ff0aa8ca6e055",
+  "regression": {
+    "a13": "9/9",
+    "a12": "13/13",
+    "a11": "15/15",
+    "a10": "18/18",
+    "a9": "24/24",
+    "a8": "24/24",
+    "a7": "25/25",
+    "a6": "25/25",
+    "a5": "15/15",
+    "a4": "23/23",
+    "a3": "FAIL_STRESS_HANDOFF_UNDER_POLLUTED_LOCAL_DB",
+    "a2": "FAIL_STRESS_COUNT_UNDER_POLLUTED_LOCAL_DB",
+    "a1": "FAIL_FI_RETRY_SCHEDULE_HARNESS_CLASS",
+    "note": "A4-A13 green. A1-A3 failures observed after heavy sequential regression with large leftover workflow.control_state rowset; not attributed to A13 domain logic without quiet-DB re-proof."
   }
 }
