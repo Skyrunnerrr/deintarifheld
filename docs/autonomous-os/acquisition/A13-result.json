@@ -1,0 +1,24 @@
+{
+  "tranche": "DTH-A13",
+  "A13_RESULT": "CLOSED_E2_LOCAL_ACQUISITION_PROVIDERS_STAGING_PENDING",
+  "branch": "feat/dth-a13-acquisition-autopilot-001",
+  "tests": {
+    "test:dth:a13": "9/9"
+  },
+  "live": {
+    "LIVE_AD_SPEND_EUR": 0,
+    "LIVE_AD_PROVIDER_CALLS": 0,
+    "LIVE_AI_CALLS": 0,
+    "LIVE_PAID_CAMPAIGN_ACTIVATIONS": 0
+  },
+  "critical_invariants_all_zero": true,
+  "staging_autonomy_ready": false,
+  "production_autonomy_ready": false,
+  "next_tranche": "DTH-A14_AUTONOMY_ROLLOUT",
+  "owner_flags": {
+    "OWNER_ACQUISITION_PROVIDER_REQUIRED": true,
+    "OWNER_ACQUISITION_BUDGET_POLICY_REQUIRED": true,
+    "OWNER_ACQUISITION_ATTRIBUTION_POLICY_REQUIRED": true,
+    "OWNER_ACQUISITION_TRACKING_POLICY_REQUIRED": true
+  }
+}
