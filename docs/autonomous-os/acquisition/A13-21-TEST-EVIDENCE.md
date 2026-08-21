@@ -6,23 +6,77 @@
 
 Critical invariants all **0** at close of suite.
 
-## Post-A13 re-verification (this close)
+## A13R — Post-implementation regression closure
 
-| Suite | Result |
-|-------|--------|
-| test:dth:a13 | 9/9 |
-| test:dth:a12 | 13/13 |
-| test:dth:a11 | 15/15 |
-| test:dth:a1 (quiet DB) | 39/39 |
-| test:dth:a2 | 14/16 — fail only A2-16 two-worker + A2 stress counts |
-| test:dth:a3 | 17/18 — fail only A3-31 stress handoff |
+Task: `REMEDIATE_ONLY_PROVEN_A13_EVIDENCE_GAP`  
+Source tip during proof: `f6f9ebd605226f16b9d4de89372dd7920d27c963`  
+Source mutation during A13R: **NONE** (evidence docs only)
 
-A2/A3 failures classified **HARNESS_ISOLATION_FLAKE_PREEXISTING** (concurrent handoff drain under shared local Postgres). Not sold as A13 domain regression.
+### Isolated A1–A3 after local disposable wipe
 
-A4–A10: green in implementation-session sequential regression; not re-run in this wipe-hardening pass.
+Quiet baseline: `wipeOfferAndSwitchingDomain` + cases/outbox/leads/jobs clear on `127.0.0.1:55432/dth_a1`.
 
-## Harness remediation included
+| Suite | Run 1 | Run 2 |
+|-------|-------|-------|
+| `test:dth:a1` | **39/39** | — |
+| `test:dth:a2` | **16/16** | **16/16** |
+| `test:dth:a3` | **18/18** | **18/18** |
 
-- `wipeAcquisitionDomain` / `wipeContentDomain` use `TRUNCATE … CASCADE`
-- A13 test `reset()` clears outbox/cases/leads before domain wipe
-- A13-08..15 handoff scoped to the accepted lead’s outbox event
+Prior sequential/polluted-DB recordings of A2=`14/16` and A3=`17/18` remain historical. Classification:
+
+`A1_A3_SEQUENTIAL_HARNESS_CLASSIFICATION=HARNESS_ISOLATION_FLAKE_PREEXISTING`
+
+`A13_CAUSED_A1_A12_REGRESSIONS=0`
+
+### POST-A13 domain regression (after final wipe/handoff tip)
+
+| Key | Result |
+|-----|--------|
+| POST_A13_A13 | PASS_9_9 |
+| POST_A13_A12 | PASS_13_13 |
+| POST_A13_A11 | PASS_15_15 |
+| POST_A13_A10 | PASS_18_18 |
+| POST_A13_A9 | PASS_24_24 |
+| POST_A13_A8 | PASS_24_24 |
+| POST_A13_A7 | PASS_25_25 |
+| POST_A13_A6 | PASS_25_25 |
+| POST_A13_A5 | PASS_15_15 |
+| POST_A13_A4 | PASS_23_23 |
+| POST_A13_A3 | PASS_ISOLATED_18_18 |
+| POST_A13_A2 | PASS_ISOLATED_16_16 |
+| POST_A13_A1 | PASS_ISOLATED_39_39 |
+
+### Platform (canonical scripts)
+
+| Surface | Result |
+|---------|--------|
+| Command Center (`cc:ui:test`) | PASS |
+| Ops API (`ops:bff:test`) | PASS |
+| Kill/control (`kill:test`) | PASS |
+| AuthN (`authn:test`) | PASS |
+| Workers (`workers:test`) | PASS |
+| DB draft (`db:draft:test`) | PASS |
+| Shared (`test -w @deintarifheld/shared`) | PASS 76/76 |
+| Lead (`leads:contract`) | PASS |
+| Boundary (`packages:boundary:check`) | PASS |
+| Lint | PASS (preexisting warnings only) |
+| Build (`NEXT_DIST_DIR=.next-a13r-closure`) | PASS |
+| M11 named regression script | **NOT_PRESENT** (ops grant / private-schema coverage via A13-01 + A4/A6/A7 grants + boundary) |
+
+Mail: covered by A4 suite PASS_23_23 + `MAIL_FAILURE_PATH_TESTABLE=YES` in leads contract; no live send (`LIVE_EMAIL_SENDS=0`).
+
+### Intake / A12 / A11 (covered by final `test:dth:a13` 9/9)
+
+- Tracked / untracked / forged `acq_ref` → lead accepted; forged never credits
+- Soft-fail attribution → lead preserved
+- A2 handoff via existing path; `ACQUISITION_DIRECT_CASE_CREATIONS=0`
+- Unsupported savings / claim gate blocks campaign create/provider effect
+- A11 APPROVE/REJECT/ACTIVATE/PAUSE/CANCEL/RECONCILE acquisition commands + AuthZ
+
+### Critical invariants
+
+`A13_CRITICAL_INVARIANTS=ALL_EXPECTED_ZERO` including live spend/provider/AI and attribution forgery counters.
+
+## Historical note (pre-A13R)
+
+Earlier wipe-hardening pass documented A2/A3 stress failures under polluted sequential load and did **not** re-run A4–A10. That evidence gap is closed by this A13R run.

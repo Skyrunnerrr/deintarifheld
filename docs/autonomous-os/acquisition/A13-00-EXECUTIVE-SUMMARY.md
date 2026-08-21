@@ -10,6 +10,10 @@ Plus a separate synthetic paid path with durable create/activate intents and `De
 
 `A13_RESULT=CLOSED_E2_LOCAL_ACQUISITION_PROVIDERS_STAGING_PENDING`
 
+`A13R_RESULT=POST_IMPLEMENTATION_REGRESSION_GATE_CLOSED`
+
+Post-implementation proof (A13R, no source mutation): isolated A1 **39/39**, A2 **16/16** (×2), A3 **18/18** (×2); domain A13→A4 all PASS after final wipe tip; platform CC/Ops/Kill/Workers/DB/Shared/Lead/Boundary/Lint/Build PASS.
+
 ## Hard guarantees (E2)
 
 - `LIVE_AD_SPEND_EUR=0`

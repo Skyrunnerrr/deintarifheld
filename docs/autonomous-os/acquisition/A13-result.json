@@ -1,7 +1,12 @@
 {
   "tranche": "DTH-A13",
+  "A13R_RESULT": "POST_IMPLEMENTATION_REGRESSION_GATE_CLOSED",
   "A13_RESULT": "CLOSED_E2_LOCAL_ACQUISITION_PROVIDERS_STAGING_PENDING",
+  "A13_READY": "YES_E2_LOCAL",
   "branch": "feat/dth-a13-acquisition-autopilot-001",
+  "base": "f235e1af66db0c8c4ec2022feb9ff0aa8ca6e055",
+  "head": "f6f9ebd605226f16b9d4de89372dd7920d27c963",
+  "a13r_source_mutation": "NONE",
   "tests": {
     "test:dth:a13": "9/9"
   },
@@ -9,7 +14,9 @@
     "LIVE_AD_SPEND_EUR": 0,
     "LIVE_AD_PROVIDER_CALLS": 0,
     "LIVE_AI_CALLS": 0,
-    "LIVE_PAID_CAMPAIGN_ACTIVATIONS": 0
+    "LIVE_PAID_CAMPAIGN_ACTIVATIONS": 0,
+    "LIVE_SOCIAL_PROVIDER_CALLS": 0,
+    "LIVE_EMAIL_SENDS": 0
   },
   "critical_invariants_all_zero": true,
   "staging_autonomy_ready": false,
@@ -21,23 +28,56 @@
     "OWNER_ACQUISITION_ATTRIBUTION_POLICY_REQUIRED": true,
     "OWNER_ACQUISITION_TRACKING_POLICY_REQUIRED": true
   },
-  "head": "9cc3c19d5611907b3054a4504018559b73ad23c0",
-  "base": "f235e1af66db0c8c4ec2022feb9ff0aa8ca6e055",
-  "regression": {
-    "a13": "9/9",
-    "a12": "13/13",
-    "a11": "15/15",
-    "a10": "18/18_PRIOR_SESSION",
-    "a9": "24/24_PRIOR_SESSION",
-    "a8": "24/24_PRIOR_SESSION",
-    "a7": "25/25_PRIOR_SESSION",
-    "a6": "25/25_PRIOR_SESSION",
-    "a5": "15/15_PRIOR_SESSION",
-    "a4": "23/23_PRIOR_SESSION",
-    "a3": "17/18_STRESS_HANDOFF_FLAKE_PREEXISTING",
-    "a2": "14/16_CONCURRENT_HANDOFF_STRESS_FLAKE_PREEXISTING",
-    "a1": "39/39_QUIET_DB",
-    "note": "A13/A12/A11 re-verified green after TRUNCATE wipe hardening. A1 quiet-DB 39/39. A2/A3 only fail concurrent/stress handoff counts \u2014 same preexisting harness class; not attributed to A13 domain."
+  "post_a13": {
+    "POST_A13_A13": "PASS_9_9",
+    "POST_A13_A12": "PASS_13_13",
+    "POST_A13_A11": "PASS_15_15",
+    "POST_A13_A10": "PASS_18_18",
+    "POST_A13_A9": "PASS_24_24",
+    "POST_A13_A8": "PASS_24_24",
+    "POST_A13_A7": "PASS_25_25",
+    "POST_A13_A6": "PASS_25_25",
+    "POST_A13_A5": "PASS_15_15",
+    "POST_A13_A4": "PASS_23_23",
+    "POST_A13_A3": "PASS_ISOLATED_18_18",
+    "POST_A13_A2": "PASS_ISOLATED_16_16",
+    "POST_A13_A1": "PASS_ISOLATED_39_39"
   },
-  "harness_remediation": "TRUNCATE CASCADE wipe + outbox-first reset + lead-scoped handoff assert"
+  "harness": {
+    "A1_A3_SEQUENTIAL_HARNESS_CLASSIFICATION": "HARNESS_ISOLATION_FLAKE_PREEXISTING",
+    "A13_CAUSED_A1_A12_REGRESSIONS": 0,
+    "isolated_a2_runs": ["16/16", "16/16"],
+    "isolated_a3_runs": ["18/18", "18/18"],
+    "historical_polluted_sequential": {
+      "a2": "14/16",
+      "a3": "17/18",
+      "note": "Historical only; superseded by isolated clean-wipe proof in A13R"
+    }
+  },
+  "platform": {
+    "cc": "PASS",
+    "ops": "PASS",
+    "kill": "PASS",
+    "authn": "PASS",
+    "workers": "PASS",
+    "db": "PASS",
+    "shared": "PASS_76_76",
+    "lead": "PASS",
+    "boundary": "PASS",
+    "lint": "PASS",
+    "build": "PASS",
+    "M11_NAMED_REGRESSION_SCRIPT": "NOT_PRESENT"
+  },
+  "domains": {
+    "ACQUISITION_DOMAIN": "PROVEN_E2_LOCAL",
+    "PUBLIC_INTAKE_INTEGRATION": "PROVEN_E2_LOCAL",
+    "LEAD_ATTRIBUTION": "PROVEN_E2_LOCAL_WITH_TEST_POLICY",
+    "ACQUISITION_PROVIDER_PORT": "PROVEN_E2_TEST_ADAPTER",
+    "A11_ACQUISITION_OPERATIONS": "PROVEN_E2_LOCAL",
+    "A2_GROWTH_TO_BUSINESS_HANDOFF": "PROVEN_E2_LOCAL",
+    "A14_HANDOFF": "READY_E2_LOCAL",
+    "LIVE_ACQUISITION_PROVIDER": "NOT_PROVEN",
+    "LIVE_AD_SPEND": "NOT_PROVEN",
+    "LIVE_ATTRIBUTION_TRACKING": "NOT_PROVEN"
+  }
 }
