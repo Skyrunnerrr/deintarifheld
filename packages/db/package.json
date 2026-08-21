@@ -11,7 +11,8 @@
   "scripts": {
     "build": "node -e \"console.log('[@deintarifheld/db] draft+claim build OK')\"",
     "typecheck": "node -e \"process.exit(0)\"",
-    "test": "node --test tests/p3-f2a-static.test.js"
+    "test": "node --test tests/p3-f2a-static.test.js",
+    "test:m11f": "node --test --test-concurrency=1 tests/m11f-runtime-login-roles.test.js"
   },
   "dth": {
     "tranche": "P3-F5",
