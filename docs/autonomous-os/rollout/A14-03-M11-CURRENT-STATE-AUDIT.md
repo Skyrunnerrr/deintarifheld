@@ -10,7 +10,7 @@ Repository-first. **No invented hosted PASS.**
 - Reports: `docs/autonomous-os/evidence-reports/DTH-M11A` … `DTH-M11E-R4` (letters A–E only)
 - Migrations: only `*m11e*` private-schema / routine hardening
 - Security scripts: only `scripts/security-tests/dth-m11e-*`
-- Plan freeze: `DO_NOT_START_M11F=YES` after R4
+- Plan freeze `DO_NOT_START_M11F` lifted under A14 security execution; M11F CLOSED_E2_LOCAL
 
 ## Letter status
 
@@ -18,7 +18,7 @@ Repository-first. **No invented hosted PASS.**
 |------|----------------|-------|
 | M11A–D | E1/hosted planning evidence | Cutover security track |
 | M11E | PARTIAL | Staging Data API private-schema exposure proven (R4). Production private schemas still ABSENT per M11B notes |
-| M11F | NOT_FOUND | No migration/report; not started |
+| M11F | IMPLEMENTED_E2_LOCAL | Migration + test:dth:m11f; hosted NOT_PROVEN |
 | M11G | NOT_FOUND | Plan only |
 | M11H | NOT_FOUND | Person mapping unblocked for **design** (Supabase `auth.users.id`→operator); still requires M11F/G first |
 | M11I | NOT_FOUND | Plan only |
@@ -46,7 +46,7 @@ Repository-first. **No invented hosted PASS.**
 ## Staging security readiness
 
 `M11_STAGING_SECURITY=NOT_PROVEN`  
-`SECURITY_FOR_STAGING` cannot PASS until M11F→P evidence exist. Auth provider Owner decision is **APPROVED (SUPABASE_AUTH)**; AuthN/MFA/AuthZ implementation remain NOT_PROVEN.
+`SECURITY_FOR_STAGING` cannot PASS until M11G→P evidence exist (M11F E2 local closed). Auth provider Owner decision is **APPROVED (SUPABASE_AUTH)**; AuthN/MFA/AuthZ implementation remain NOT_PROVEN.
 
 ## Named M11 regression script
 
@@ -64,7 +64,7 @@ Supabase Auth (email/password + TOTP aal2)
 → security operator mapping (M11H)
 → capabilities (M11I)
 → strong App AuthZ (M11J)
-→ request DB context / roles (M11K + M11F/G)
+→ request DB context / roles (M11K + M11G grants on M11F LOGINs)
 ```
 
-Do **not** skip to M11H implementation before M11F/G.
+Do **not** skip to M11H implementation before M11G.
