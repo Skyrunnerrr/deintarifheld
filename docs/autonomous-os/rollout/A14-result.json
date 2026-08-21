@@ -12,7 +12,7 @@
   "STAGING": "NOT_STARTED",
   "PRODUCTION_CANARY": "NOT_STARTED",
   "PRODUCTION_AUTONOMY": "NO",
-  "NEXT_BLOCKING_DECISION": "OWNER_DECISION_REQUIRED:OD-A11-AUTH-PROVIDER",
+  "NEXT_BLOCKING_DECISION": "M11_SECURITY_GATE:M11F_RUNTIME_LOGIN_ROLES",
   "branch_convergence": {
     "strategy": "KEEP_LINES_SEPARATE_TEMPORARILY",
     "merge_base": "2195872af240e422da274f8b6cc19e4fc0fb3892",
@@ -25,5 +25,19 @@
   "merge": false,
   "staging_mutation": false,
   "production_mutation": false,
-  "head": "c46fcc287b86afb53daa167ffcf27b1a85f0d0f0"
+  "head": "c46fcc287b86afb53daa167ffcf27b1a85f0d0f0",
+  "OD_A11_AUTH_PROVIDER": "APPROVED_SUPABASE_AUTH",
+  "AUTH_PROVIDER_DECISION_READY": true,
+  "AUTH_IMPLEMENTATION_READY": false,
+  "MFA_READY": false,
+  "STRONG_AUTHZ_READY": false,
+  "auth_freeze": {
+    "provider": "SUPABASE_AUTH",
+    "scope": "COMMAND_CENTER_OPERATORS_ONLY",
+    "mfa": "TOTP_REQUIRED",
+    "min_aal": "aal2",
+    "authn_authority": "SUPABASE_AUTH",
+    "authz_authority": "DTH_SERVER_SIDE_CAPABILITY_MODEL",
+    "session_policy": "OD-A11-SESSION-POLICY_OPEN"
+  }
 }

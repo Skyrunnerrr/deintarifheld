@@ -21,7 +21,7 @@ A13R_RESULT=POST_IMPLEMENTATION_REGRESSION_GATE_CLOSED
 
 ## Truth in one line
 
-E2 local autonomous loop is proven. Staging/Production readiness is **not**. Next hard stop is an Owner AuthN decision before M11F+ and any staging Command Center.
+E2 local autonomous loop is proven. Staging/Production readiness is **not**. Auth provider Owner decision **APPROVED = SUPABASE_AUTH**. Next hard stop is **M11F runtime LOGIN roles**, then G→H (Supabase UUID→operator). Staging Auth still NOT_PROVEN.
 
 ## A14_PHASE
 

@@ -24,7 +24,7 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 | A9-O01 | A9 | Submission/payment/multi-supply | Partial E2 | E2 | Staging/Canary | OD-A9-SWITCH-POLICY | | YES SEPA | YES | Policy | YES | YES | YES | | | OWNER | OWNER_REQUIRED |
 | A10-P01 | A10 | Lifecycle provider/readback | Test adapter | E2 | Provider | OD-A10-LIFECYCLE-PROVIDER | YES | | | Adapter | YES | YES | YES | | | PROVIDER | PROVIDER_REQUIRED |
 | A10-O01 | A10 | Renewal timing/comms | Test policy | E2 | Staging | OD-A10-RENEWAL-POLICY | | | | Policy | YES | | | | | OWNER | OWNER_REQUIRED |
-| A11-S01 | A11 | Production AuthN/MFA/session | TEST_* only | E2 | Security | OD-A11-AUTH-PROVIDER | IdP | YES | | IdP integrate | YES | | | | | SECURITY | OWNER_REQUIRED |
+| A11-S01 | A11 | Auth provider decision | **SUPABASE_AUTH approved** | E1 Owner | Security impl | OD-A11-AUTH-PROVIDER | Supabase Auth | YES | | Implement AuthN+MFA | YES | | | | | SECURITY | PASS_OWNER_APPROVED |
 | A11-S02 | A11 | Strong AuthZ/roles | E2 matrix | E2 | Security | OD-A11-ROLE-CAPABILITY | | YES M11J | | M11J | YES | | | | | SECURITY | SECURITY_REQUIRED |
 | A11-D01 | A11 | CC deployment model | Loopback | E2 | Staging | OD-A11-DEPLOYMENT | | YES | | Hosted server | YES | | | Deploy RB | | OWNER | OWNER_REQUIRED |
 | A12-P01 | A12 | Content AI provider | DeterministicTest | E2 | Provider | OD-A12-AI | YES | | YES | Adapter | YES | | | | | PROVIDER | PROVIDER_REQUIRED |
@@ -48,3 +48,18 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 - Owner decision IDs: see A14-02 (~35 normalized)
 - Provider gates: ≥12
 - Security: M11F–P NOT_STARTED; M11E PARTIAL (staging exposure only)
+
+
+## Auth decision status (post OD-A11-AUTH-PROVIDER)
+
+| Key | Status |
+|-----|--------|
+| AUTH_PROVIDER_DECISION | PASS_OWNER_APPROVED |
+| AUTH_IMPLEMENTATION | NOT_PROVEN |
+| MFA_IMPLEMENTATION | NOT_PROVEN |
+| STAGING_AUTH | NOT_PROVEN |
+| PRODUCTION_AUTH | NOT_PROVEN |
+| STRONG_AUTHZ | NOT_PROVEN |
+| SECURITY_FOR_STAGING | NOT_PASS |
+
+Next gate: `M11F` runtime LOGIN roles (then G → H Supabase UUID→operator mapping → I/J …).

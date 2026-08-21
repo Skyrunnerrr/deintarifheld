@@ -20,7 +20,7 @@ Repository-first. **No invented hosted PASS.**
 | M11E | PARTIAL | Staging Data API private-schema exposure proven (R4). Production private schemas still ABSENT per M11B notes |
 | M11F | NOT_FOUND | No migration/report; not started |
 | M11G | NOT_FOUND | Plan only |
-| M11H | NOT_FOUND | Person mapping / IdP — blocked on OD-A11-AUTH-PROVIDER |
+| M11H | NOT_FOUND | Person mapping unblocked for **design** (Supabase `auth.users.id`→operator); still requires M11F/G first |
 | M11I | NOT_FOUND | Plan only |
 | M11J | NOT_FOUND | Strong App AuthZ; A11 E2 ≠ production AuthZ |
 | M11K | NOT_FOUND | Pooler proof |
@@ -46,8 +46,25 @@ Repository-first. **No invented hosted PASS.**
 ## Staging security readiness
 
 `M11_STAGING_SECURITY=NOT_PROVEN`  
-`SECURITY_FOR_STAGING` cannot PASS until AuthN Owner decision + M11F→P evidence exist.
+`SECURITY_FOR_STAGING` cannot PASS until M11F→P evidence exist. Auth provider Owner decision is **APPROVED (SUPABASE_AUTH)**; AuthN/MFA/AuthZ implementation remain NOT_PROVEN.
 
 ## Named M11 regression script
 
 `M11_NAMED_REGRESSION_SCRIPT=NOT_PRESENT` (A13R). Boundary/grant tests cover fragments only.
+
+
+## Post OD-A11-AUTH-PROVIDER
+
+Identity path (planned, not implemented):
+
+```text
+Supabase Auth (email/password + TOTP aal2)
+→ verified server session
+→ auth.users.id
+→ security operator mapping (M11H)
+→ capabilities (M11I)
+→ strong App AuthZ (M11J)
+→ request DB context / roles (M11K + M11F/G)
+```
+
+Do **not** skip to M11H implementation before M11F/G.
