@@ -1,18 +1,23 @@
 /**
- * Wipe A13 acquisition tables (FK-safe order).
+ * Wipe A13 acquisition tables (FK-safe). Prefer TRUNCATE CASCADE for harness isolation.
  */
 export async function wipeAcquisitionDomain(pool) {
   const { rows } = await pool.query(`SELECT to_regclass('ops.acquisition_campaigns') AS c`);
   if (!rows[0]?.c) return { wiped: false };
-  await pool.query(`DELETE FROM ops.acquisition_metric_snapshots`);
-  await pool.query(`DELETE FROM ops.acquisition_provider_campaigns`);
-  await pool.query(`DELETE FROM ops.acquisition_provider_intents`);
-  await pool.query(`DELETE FROM ops.campaign_approvals`);
-  await pool.query(`DELETE FROM ops.lead_attributions`);
-  await pool.query(`DELETE FROM ops.acquisition_touchpoints`);
-  await pool.query(`DELETE FROM ops.acquisition_refs`);
-  await pool.query(`UPDATE ops.acquisition_campaigns SET current_revision_id=NULL`);
-  await pool.query(`DELETE FROM ops.acquisition_campaign_revisions`);
-  await pool.query(`DELETE FROM ops.acquisition_campaigns`);
+
+  // Single statement — avoids mid-wipe FK races under concurrent harness pollution.
+  await pool.query(`
+    TRUNCATE TABLE
+      ops.acquisition_metric_snapshots,
+      ops.acquisition_provider_campaigns,
+      ops.acquisition_provider_intents,
+      ops.campaign_approvals,
+      ops.lead_attributions,
+      ops.acquisition_touchpoints,
+      ops.acquisition_refs,
+      ops.acquisition_campaign_revisions,
+      ops.acquisition_campaigns
+    RESTART IDENTITY CASCADE
+  `);
   return { wiped: true };
 }

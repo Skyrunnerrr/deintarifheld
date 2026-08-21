@@ -113,17 +113,19 @@ async function ensureSchemas() {
 
 async function reset() {
   await ensureSchemas();
+  await pool.query(`SET lock_timeout = '5s'`);
+  // Outbox/cases/leads first so A2 handoff cannot claim orphaned events mid-wipe.
+  await pool.query(`DELETE FROM workflow.job_queue`).catch(() => {});
+  await pool.query(`DELETE FROM workflow.workflow_instances`).catch(() => {});
+  await pool.query(`DELETE FROM public.cases`).catch(() => {});
+  await pool.query(`DELETE FROM public.transactional_outbox`).catch(() => {});
+  await pool.query(`DELETE FROM public.leads`).catch(() => {});
   await wipeAcquisitionDomain(pool);
   await wipeContentDomain(pool);
   resetAcquisitionProviderTestStore();
   setAcquisitionProviderTestMode('CREATE_ACCEPTED');
   resetA13InvariantCounters();
   // Local isolation only — never touch staging/production.
-  await pool.query(`DELETE FROM workflow.job_queue`).catch(() => {});
-  await pool.query(`DELETE FROM workflow.workflow_instances`).catch(() => {});
-  await pool.query(`DELETE FROM public.cases`).catch(() => {});
-  await pool.query(`DELETE FROM public.transactional_outbox`).catch(() => {});
-  await pool.query(`DELETE FROM public.leads`).catch(() => {});
   await pool.query(
     `INSERT INTO security.control_state (scope,scope_key,state,reason,updated_by)
      VALUES ('GLOBAL','AUTOMATION','INACTIVE','a13','TEST')
@@ -309,7 +311,20 @@ test('A13-08..15 tracking intake attribution soft-fail forged direct', async () 
   );
   assert.equal(beforeCases.rows[0].n, 0);
   assert.equal(lead.caseCreatedByAcquisition, false);
-  await processOneBusinessLeadHandoff(pool);
+  // Only our lead's outbox may remain — drop any foreign pending events first.
+  await pool.query(
+    `DELETE FROM public.transactional_outbox
+     WHERE event_type='BUSINESS_LEAD_ACCEPTED' AND aggregate_id <> $1`,
+    [lead.leadId],
+  );
+  const handoff = await processOneBusinessLeadHandoff(pool);
+  assert.equal(handoff.ok, true);
+  assert.equal(handoff.processed, true);
+  const afterCases = await pool.query(
+    `SELECT count(*)::int AS n FROM public.cases WHERE source_lead_id=$1`,
+    [lead.leadId],
+  );
+  assert.equal(afterCases.rows[0].n, 1);
 });
 
 test('A13-16..22 approval budget paid provider create≠active', async () => {

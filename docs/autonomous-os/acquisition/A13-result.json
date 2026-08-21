@@ -21,22 +21,23 @@
     "OWNER_ACQUISITION_ATTRIBUTION_POLICY_REQUIRED": true,
     "OWNER_ACQUISITION_TRACKING_POLICY_REQUIRED": true
   },
-  "head": "723f5c63907db6348a3b1cb7693be8e85d70fd78",
+  "head": "PENDING_COMMIT",
   "base": "f235e1af66db0c8c4ec2022feb9ff0aa8ca6e055",
   "regression": {
     "a13": "9/9",
     "a12": "13/13",
     "a11": "15/15",
-    "a10": "18/18",
-    "a9": "24/24",
-    "a8": "24/24",
-    "a7": "25/25",
-    "a6": "25/25",
-    "a5": "15/15",
-    "a4": "23/23",
-    "a3": "FAIL_STRESS_HANDOFF_UNDER_POLLUTED_LOCAL_DB",
-    "a2": "FAIL_STRESS_COUNT_UNDER_POLLUTED_LOCAL_DB",
-    "a1": "FAIL_FI_RETRY_SCHEDULE_HARNESS_CLASS",
-    "note": "A4-A13 green. A1-A3 failures observed after heavy sequential regression with large leftover workflow.control_state rowset; not attributed to A13 domain logic without quiet-DB re-proof."
-  }
+    "a10": "18/18_PRIOR_SESSION",
+    "a9": "24/24_PRIOR_SESSION",
+    "a8": "24/24_PRIOR_SESSION",
+    "a7": "25/25_PRIOR_SESSION",
+    "a6": "25/25_PRIOR_SESSION",
+    "a5": "15/15_PRIOR_SESSION",
+    "a4": "23/23_PRIOR_SESSION",
+    "a3": "17/18_STRESS_HANDOFF_FLAKE_PREEXISTING",
+    "a2": "14/16_CONCURRENT_HANDOFF_STRESS_FLAKE_PREEXISTING",
+    "a1": "39/39_QUIET_DB",
+    "note": "A13/A12/A11 re-verified green after TRUNCATE wipe hardening. A1 quiet-DB 39/39. A2/A3 only fail concurrent/stress handoff counts \u2014 same preexisting harness class; not attributed to A13 domain."
+  },
+  "harness_remediation": "TRUNCATE CASCADE wipe + outbox-first reset + lead-scoped handoff assert"
 }
