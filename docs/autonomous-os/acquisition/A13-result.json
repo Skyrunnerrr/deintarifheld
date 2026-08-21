@@ -5,7 +5,7 @@
   "A13_READY": "YES_E2_LOCAL",
   "branch": "feat/dth-a13-acquisition-autopilot-001",
   "base": "f235e1af66db0c8c4ec2022feb9ff0aa8ca6e055",
-  "head": "f6f9ebd605226f16b9d4de89372dd7920d27c963",
+  "head": "0fa0f6f6475f6159f59a9cca7d9f3eff88b1348a",
   "a13r_source_mutation": "NONE",
   "tests": {
     "test:dth:a13": "9/9"
@@ -46,8 +46,14 @@
   "harness": {
     "A1_A3_SEQUENTIAL_HARNESS_CLASSIFICATION": "HARNESS_ISOLATION_FLAKE_PREEXISTING",
     "A13_CAUSED_A1_A12_REGRESSIONS": 0,
-    "isolated_a2_runs": ["16/16", "16/16"],
-    "isolated_a3_runs": ["18/18", "18/18"],
+    "isolated_a2_runs": [
+      "16/16",
+      "16/16"
+    ],
+    "isolated_a3_runs": [
+      "18/18",
+      "18/18"
+    ],
     "historical_polluted_sequential": {
       "a2": "14/16",
       "a3": "17/18",
@@ -79,5 +85,6 @@
     "LIVE_ACQUISITION_PROVIDER": "NOT_PROVEN",
     "LIVE_AD_SPEND": "NOT_PROVEN",
     "LIVE_ATTRIBUTION_TRACKING": "NOT_PROVEN"
-  }
+  },
+  "a13r_evidence_commit": "0fa0f6f6475f6159f59a9cca7d9f3eff88b1348a"
 }
