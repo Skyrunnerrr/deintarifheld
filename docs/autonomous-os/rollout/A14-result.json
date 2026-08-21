@@ -1,0 +1,28 @@
+{
+  "tranche": "DTH-A14",
+  "A14_PHASE": "ROLLOUT_AUDIT",
+  "A14_FEATURE_DEVELOPMENT": "NO",
+  "branch": "rollout/dth-a14-autonomy-rollout-001",
+  "base": "b7e45d1a3d64adbf81db0929cd757f995e43f33b",
+  "A1_A13_E2": "CLOSED",
+  "A13R_RESULT": "POST_IMPLEMENTATION_REGRESSION_GATE_CLOSED",
+  "OWNER_DECISIONS": "OPEN",
+  "M11_STAGING_SECURITY": "NOT_PROVEN",
+  "REAL_PROVIDERS": "NOT_PROVEN",
+  "STAGING": "NOT_STARTED",
+  "PRODUCTION_CANARY": "NOT_STARTED",
+  "PRODUCTION_AUTONOMY": "NO",
+  "NEXT_BLOCKING_DECISION": "OWNER_DECISION_REQUIRED:OD-A11-AUTH-PROVIDER",
+  "branch_convergence": {
+    "strategy": "KEEP_LINES_SEPARATE_TEMPORARILY",
+    "merge_base": "2195872af240e422da274f8b6cc19e4fc0fb3892",
+    "cutover_tip": "3ed243bcb9d85013f48191c1609f9483f069749a",
+    "autonomy_ahead": 87,
+    "cutover_ahead": 1
+  },
+  "push": false,
+  "pr": false,
+  "merge": false,
+  "staging_mutation": false,
+  "production_mutation": false
+}
