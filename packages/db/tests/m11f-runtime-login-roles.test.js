@@ -81,6 +81,11 @@ async function membersOf(rolname) {
   return rows.map((r) => r.member_of);
 }
 
+async function m11gApplied() {
+  const { rows } = await admin.query(`SELECT 1 FROM pg_roles WHERE rolname = 'dth_grp_worker'`);
+  return rows.length > 0;
+}
+
 test('M11F-00 apply migration + password bootstrap local-only', async () => {
   await applyMigration();
   assert.ok(true);
@@ -110,9 +115,15 @@ test('M11F-03..08 LOGIN attributes deny admin powers', async () => {
 
 test('M11F-09 no broad admin membership', async () => {
   const forbidden = new Set(['postgres', 'service_role', 'supabase_admin', 'pg_read_all_data', 'pg_write_all_data']);
+  const m11g = await m11gApplied();
+  const expected = {
+    dth_ops_api: m11g ? ['dth_grp_runtime', 'dth_grp_ops_api'] : [GROUP_ROLE],
+    dth_worker: m11g ? ['dth_grp_runtime', 'dth_grp_worker'] : [GROUP_ROLE],
+    dth_public_intake: m11g ? ['dth_grp_runtime', 'dth_grp_public_intake'] : [GROUP_ROLE],
+  };
   for (const r of LOGIN_ROLES) {
     const mem = await membersOf(r);
-    assert.deepEqual(mem, [GROUP_ROLE]);
+    assert.deepEqual([...mem].sort(), [...expected[r]].sort());
     for (const m of mem) assert.equal(forbidden.has(m), false);
   }
 });
@@ -129,8 +140,8 @@ test('M11F-10/11/20 CREATE ROLE / DATABASE / SET ROLE / GRANT negatives', async 
       }
       await assert.rejects(() => c.query('ALTER ROLE postgres NOLOGIN'), /permission denied|must be/);
       await assert.rejects(
-        () => c.query('GRANT ALL ON SCHEMA ops TO CURRENT_USER'),
-        /permission denied|must be|does not exist/,
+        () => c.query('GRANT dth_grp_worker TO CURRENT_USER'),
+        /permission denied|must be|cannot/,
       );
     });
   }
@@ -180,7 +191,8 @@ test('M11F-14/15 anon + authenticated unchanged (or absent locally)', async () =
   }
 });
 
-test('M11F-16 private schema: runtime LOGIN has no USAGE yet', async () => {
+test('M11F-16 private schema: runtime LOGIN has no USAGE yet', async (t) => {
+  if (await m11gApplied()) return t.skip('M11G grants active — schema USAGE proof owned by M11G suite');
   for (const role of LOGIN_ROLES) {
     for (const schema of ['ops', 'security', 'workflow']) {
       const { rows } = await admin.query(
@@ -217,7 +229,8 @@ test('M11F-18/19 role connection + current_user/session_user', async () => {
   }
 });
 
-test('M11F-21 private schema SELECT denied', async () => {
+test('M11F-21 private schema SELECT denied', async (t) => {
+  if (await m11gApplied()) return t.skip('M11G grants active — private SELECT proof owned by M11G suite');
   for (const role of LOGIN_ROLES) {
     await asRole(role, async (c) => {
       await assert.rejects(() => c.query('SELECT 1 FROM ops.acquisition_campaigns LIMIT 1'), /permission denied|does not exist/);
