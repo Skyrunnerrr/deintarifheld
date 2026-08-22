@@ -33,7 +33,7 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 | A13-P01 | A13 | Paid acquisition provider | DeterministicTest | E2 | Provider | OD-A13-PROVIDER | YES | | YES | Adapter | YES | YES late | YES | Pause | Spend alerts | PROVIDER | PROVIDER_REQUIRED |
 | A13-O01 | A13 | Budget/attribution/tracking | Test policies | E2 | Staging/Canary | OD-A13-ACQUISITION-POLICY | | YES consent | YES | Policy | YES | YES | YES | Cap/pause | | OWNER | OWNER_REQUIRED |
 | M11-E | M11 | Private schema exposure | Staging R4 proven; prod schemas absent | E4 staging / E0 prod | Staging/Prod | | | YES | | Continue F+ | YES | | Hosted | | | SECURITY | PARTIAL |
-| M11-F-P | M11 | AuthZ/runtime/session/pooler | **M11F E2 proven**; G–P open | E2/E0 | Staging | | | YES | | M11G next | YES | | | | | SECURITY | PARTIAL |
+| M11-F-P | M11 | AuthZ/runtime/session/pooler | **M11F+G E2 proven**; H–P open | E2/E0 | Staging | | | YES | | M11H next | YES | | | | | SECURITY | PARTIAL |
 | M11-O | M11 | Durable controls | E2 local control_state | E2 | Staging | | | YES | | Hosted prove | YES | | | Kill | | SECURITY | E2_PROVEN |
 | M11-T | M11 | Intake AuthZ mapping | E2 local | E2 | Staging | | | YES | | Hosted | YES | | | | | SECURITY | E2_PROVEN |
 | M11-QRS | M11 | service_role retirement | PENDING | E0 | Production | | | YES | | Cutover | | | | | | SECURITY | NOT_STARTED |
@@ -47,7 +47,7 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 - Matrix rows above: 34 gate rows
 - Owner decision IDs: see A14-02 (~35 normalized)
 - Provider gates: ≥12
-- Security: M11F PROVEN_E2_LOCAL; M11G–P NOT_STARTED; M11E PARTIAL (staging exposure only)
+- Security: M11F+M11G PROVEN_E2_LOCAL; M11H–P NOT_STARTED; M11E PARTIAL (staging exposure only)
 
 
 ## Auth decision status (post OD-A11-AUTH-PROVIDER)
@@ -62,7 +62,7 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 | STRONG_AUTHZ | NOT_PROVEN |
 | SECURITY_FOR_STAGING | NOT_PASS |
 
-Next gate: `M11G` object grants / ACL-02 (then H Supabase UUID→operator mapping → I/J …).
+Next gate: `M11H` Supabase `auth.users.id` → operator mapping (then I/J …).
 
 
 ## M11F status
@@ -71,7 +71,8 @@ Next gate: `M11G` object grants / ACL-02 (then H Supabase UUID→operator mappin
 |-----|--------|
 | M11F_RUNTIME_LOGIN_ROLES | PROVEN_E2_LOCAL |
 | M11F_HOSTED_LOGIN_ROLES | NOT_PROVEN |
-| M11G | NEXT |
-| M11H | NOT_STARTED |
+| M11G_RUNTIME_LEAST_PRIVILEGE | PROVEN_E2_LOCAL |
+| M11G_HOSTED_GRANTS | NOT_PROVEN |
+| M11H | NEXT |
 | AUTH_IMPLEMENTATION | NOT_STARTED |
 | STAGING_SECURITY | NOT_PROVEN |
