@@ -25,7 +25,7 @@
   "merge": false,
   "staging_mutation": false,
   "production_mutation": false,
-  "head": "PLACEHOLDER",
+  "head": "c4917bb5769235626c5d29306770c07638dc4497",
   "OD_A11_AUTH_PROVIDER": "APPROVED_SUPABASE_AUTH",
   "AUTH_PROVIDER_DECISION_READY": true,
   "AUTH_IMPLEMENTATION_READY": false,
@@ -48,5 +48,6 @@
   "M11G_HOSTED_GRANTS": "NOT_PROVEN",
   "M11G": "CLOSED_E2_LOCAL",
   "M11H": "NEXT",
-  "M11F_TIP": "f95deb743f58fff3af2c6c4da152c02a0cb1a16d"
+  "M11F_TIP": "f95deb743f58fff3af2c6c4da152c02a0cb1a16d",
+  "M11G_TIP": "fc773a6f8f7c36c02af31824b74df2d84f57f60a"
 }
