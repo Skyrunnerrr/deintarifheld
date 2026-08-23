@@ -22,7 +22,6 @@ Repository-first. **No invented hosted PASS.**
 | M11G | IMPLEMENTED_E2_LOCAL | Workload groups + grants + ACL-02 + test:dth:m11g 18/18; hosted NOT_PROVEN |
 | M11H | IMPLEMENTED_E2_LOCAL | `security.operators` + auth binding + `test:dth:m11h` 17/17; hosted NOT_PROVEN |
 | M11I | NOT_STARTED | Role/capability mapping next |
-| M11I | NOT_FOUND | Plan only |
 | M11J | NOT_FOUND | Strong App AuthZ; A11 E2 ≠ production AuthZ |
 | M11K | NOT_FOUND | Pooler proof |
 | M11L | NOT_FOUND | Plan only |
