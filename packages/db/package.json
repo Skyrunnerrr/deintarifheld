@@ -13,7 +13,9 @@
     "typecheck": "node -e \"process.exit(0)\"",
     "test": "node --test tests/p3-f2a-static.test.js",
     "test:m11f": "node --test --test-concurrency=1 tests/m11f-runtime-login-roles.test.js",
-    "test:m11g": "node --test --test-concurrency=1 tests/m11g-runtime-least-privilege-grants.test.js"
+    "test:m11g": "node --test --test-concurrency=1 tests/m11g-runtime-least-privilege-grants.test.js",
+    "test:m11h": "node --test --test-concurrency=1 tests/m11h-operator-identity-mapping.test.js",
+    "test:m11h": "node --test --test-concurrency=1 tests/m11h-operator-identity-mapping.test.js"
   },
   "dth": {
     "tranche": "P3-F5",
