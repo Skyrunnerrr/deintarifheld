@@ -46,6 +46,10 @@ Machine-oriented privilege contract derived from code paths (not table-name gues
 | ops_api | public.cases | TABLE | SELECT,UPDATE | a11 commands | Case operator updates | update | none | YES | |
 | ops_api | public.audit_events | TABLE | SELECT,INSERT | a11 | Audit read/append | append | none | YES | |
 | ops_api | public.transactional_outbox | TABLE | SELECT | a11 reads | Outbox visibility | none | none | YES | |
+| ops_api | security.operators | TABLE | SELECT | M11H operator resolution | identity lookup | none | none | YES | |
+| ops_api | security.operator_auth_identities | TABLE | SELECT | M11H operator resolution | auth subject bind | none | none | YES | |
+| ops_api | security.operators | TABLE | SELECT | M11H operator resolution | identity lookup | none | none | YES | |
+| ops_api | security.operator_auth_identities | TABLE | SELECT | M11H operator resolution | auth subject bind | none | none | YES | |
 
 ## Explicit non-grants (deferred / denied)
 

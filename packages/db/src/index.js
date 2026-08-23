@@ -294,6 +294,12 @@ export {
 
 /* DTH-A11 Production Command Center */
 export { resolveOperatorIdentity, authorizeCommand, authorizeRead } from './a11/authz.js';
+export {
+  resolveOperatorByVerifiedAuthSubject,
+  rejectClientOperatorIdentity,
+  rejectMetadataOperatorAuthority,
+  OperatorIdentityResolutionCode,
+} from './a11/operator-identity.js';
 export { StageProjectionPolicyV1, deriveCaseStage, deriveWaitingOn, inboxSeverity } from './a11/stage.js';
 export { getProductionReadinessView } from './a11/readiness.js';
 export { createA11ReadService } from './a11/reads.js';
