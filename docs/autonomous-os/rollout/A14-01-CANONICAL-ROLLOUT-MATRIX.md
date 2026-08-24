@@ -25,7 +25,7 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 | A10-P01 | A10 | Lifecycle provider/readback | Test adapter | E2 | Provider | OD-A10-LIFECYCLE-PROVIDER | YES | | | Adapter | YES | YES | YES | | | PROVIDER | PROVIDER_REQUIRED |
 | A10-O01 | A10 | Renewal timing/comms | Test policy | E2 | Staging | OD-A10-RENEWAL-POLICY | | | | Policy | YES | | | | | OWNER | OWNER_REQUIRED |
 | A11-S01 | A11 | Auth provider decision | **SUPABASE_AUTH approved** | E1 Owner | Security impl | OD-A11-AUTH-PROVIDER | Supabase Auth | YES | | Implement AuthN+MFA | YES | | | | | SECURITY | PASS_OWNER_APPROVED |
-| A11-S02 | A11 | Strong AuthZ/roles | E2 matrix + M11J/K enforced | E2 | Security | OD-A11-ROLE-CAPABILITY | | YES M11L | | M11L | YES | | | | | SECURITY | SECURITY_REQUIRED |
+| A11-S02 | A11 | Strong AuthZ/roles | E2 matrix + M11J/K/L enforced | E2 | Security | OD-A11-ROLE-CAPABILITY | | YES M11M | | M11M | YES | | | | | SECURITY | SECURITY_REQUIRED |
 | A11-D01 | A11 | CC deployment model | Loopback | E2 | Staging | OD-A11-DEPLOYMENT | | YES | | Hosted server | YES | | | Deploy RB | | OWNER | OWNER_REQUIRED |
 | A12-P01 | A12 | Content AI provider | DeterministicTest | E2 | Provider | OD-A12-AI | YES | | YES | Adapter | YES | | | | | PROVIDER | PROVIDER_REQUIRED |
 | A12-P02 | A12 | Publishing provider/accounts | DeterministicTest | E2 | Provider | OD-A12-PUBLISHING | YES | | | Adapter | YES | YES | YES | | | PROVIDER | PROVIDER_REQUIRED |
@@ -33,7 +33,7 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 | A13-P01 | A13 | Paid acquisition provider | DeterministicTest | E2 | Provider | OD-A13-PROVIDER | YES | | YES | Adapter | YES | YES late | YES | Pause | Spend alerts | PROVIDER | PROVIDER_REQUIRED |
 | A13-O01 | A13 | Budget/attribution/tracking | Test policies | E2 | Staging/Canary | OD-A13-ACQUISITION-POLICY | | YES consent | YES | Policy | YES | YES | YES | Cap/pause | | OWNER | OWNER_REQUIRED |
 | M11-E | M11 | Private schema exposure | Staging R4 proven; prod schemas absent | E4 staging / E0 prod | Staging/Prod | | | YES | | Continue F+ | YES | | Hosted | | | SECURITY | PARTIAL |
-| M11-F-P | M11 | AuthZ/runtime/session/pooler | **M11F–K E2 proven**; L–P open | E2/E0 | Staging | | | YES | | M11L next | YES | | | | | SECURITY | PARTIAL |
+| M11-F-P | M11 | AuthZ/runtime/session/pooler | **M11F–L E2 proven**; M–P open | E2/E0 | Staging | | | YES | | M11M next | YES | | | | | SECURITY | PARTIAL |
 | M11-O | M11 | Durable controls | E2 local control_state | E2 | Staging | | | YES | | Hosted prove | YES | | | Kill | | SECURITY | E2_PROVEN |
 | M11-T | M11 | Intake AuthZ mapping | E2 local | E2 | Staging | | | YES | | Hosted | YES | | | | | SECURITY | E2_PROVEN |
 | M11-QRS | M11 | service_role retirement | PENDING | E0 | Production | | | YES | | Cutover | | | | | | SECURITY | NOT_STARTED |
@@ -47,7 +47,7 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 - Matrix rows above: 34 gate rows
 - Owner decision IDs: see A14-02 (~35 normalized)
 - Provider gates: ≥12
-- Security: M11F+M11G+M11H+M11I+M11J+M11K PROVEN_E2_LOCAL; M11L–P NOT_STARTED; M11E PARTIAL (staging exposure only)
+- Security: M11F+M11G+M11H+M11I+M11J+M11K+M11L PROVEN_E2_LOCAL; M11M–P NOT_STARTED; M11E PARTIAL (staging exposure only)
 
 
 ## Auth decision status (post OD-A11-AUTH-PROVIDER)
@@ -62,10 +62,10 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 | STRONG_AUTHZ | NOT_PROVEN |
 | SECURITY_FOR_STAGING | NOT_PASS |
 
-Next gate: `M11L` database RLS enforcement (after M11K trusted request context close).
+Next gate: `M11M` business-row data-scope RLS (after M11L database enforcement foundation close).
 
 
-## M11F–K status
+## M11F–L status
 
 | Key | Status |
 |-----|--------|
@@ -76,6 +76,8 @@ Next gate: `M11L` database RLS enforcement (after M11K trusted request context c
 | M11I_ROLE_CAPABILITY_MAPPING | PROVEN_E2_LOCAL |
 | M11J_SERVER_OPERATOR_AUTHZ | PROVEN_E2_LOCAL |
 | M11K_TRUSTED_DB_REQUEST_CONTEXT | PROVEN_E2_LOCAL |
-| M11L | NEXT |
+| M11L_DATABASE_RLS_FOUNDATION | PROVEN_E2_LOCAL |
+| M11M | NEXT |
+| OPEN_SECURITY_RISK | M11-OPEN-DB-CONTEXT-FORGERY (OPEN) |
 | AUTH_IMPLEMENTATION | NOT_STARTED |
 | STAGING_SECURITY | NOT_PROVEN |

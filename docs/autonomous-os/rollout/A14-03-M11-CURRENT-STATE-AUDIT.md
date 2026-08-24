@@ -24,8 +24,8 @@ Repository-first. **No invented hosted PASS.**
 | M11I | IMPLEMENTED_E2_LOCAL | Role/capability catalog + assignments + `test:dth:m11i` 29/29; hosted NOT_PROVEN |
 | M11J | IMPLEMENTED_E2_LOCAL | Server capability AuthZ on commands/reads + `test:dth:m11j` 21/21; hosted NOT_PROVEN |
 | M11K | IMPLEMENTED_E2_LOCAL | Transaction-local DB context + `test:dth:m11k` 14/14; hosted NOT_PROVEN |
-| M11L | NOT_STARTED | Database RLS enforcement next |
-| M11L | NOT_FOUND | Plan only |
+| M11L | IMPLEMENTED_E2_LOCAL | Database RLS foundation + `test:dth:m11l` 21/21; hosted NOT_PROVEN |
+| M11M | NOT_STARTED | Business-row data-scope RLS next |
 | M11M | NOT_FOUND | Plan only |
 | M11N | NOT_FOUND | Durable session hosted |
 | M11O | IMPLEMENTED_E2_LOCAL | `security.control_state` / CONTROL_VERSION; hosted NOT_PROVEN |
