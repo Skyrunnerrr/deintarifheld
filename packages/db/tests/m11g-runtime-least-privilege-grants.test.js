@@ -175,13 +175,21 @@ test('M11G-06/29 ops_api positive read + bounded control audit insert', async ()
   const pool = rolePool(LOGIN.ops);
   const snap = await readFreshControlSnapshot(pool, { domain: KillDomain.AUTOMATION_ENGINE });
   assert.ok(snap);
+  const { rows: m11lPolicy } = await admin.query(
+    `SELECT 1 FROM pg_policies
+     WHERE schemaname = 'security' AND tablename = 'control_audit'
+       AND policyname = 'dth_m11l_ops_control_audit_insert'`,
+  );
   await asRole(LOGIN.ops, async (c) => {
     await c.query('BEGIN');
-    await c.query(
-      `INSERT INTO security.control_audit
+    const insertSql = `INSERT INTO security.control_audit
         (scope, scope_key, to_state, control_version, reason, actor)
-       VALUES ('GLOBAL','AUTOMATION','ACTIVE',1,'m11g-test','M11G_TEST')`,
-    );
+       VALUES ('GLOBAL','AUTOMATION','ACTIVE',1,'m11g-test','M11G_TEST')`;
+    if (m11lPolicy.length) {
+      await assert.rejects(() => c.query(insertSql), /row-level security|violates/);
+    } else {
+      await c.query(insertSql);
+    }
     await c.query('ROLLBACK');
   });
   await pool.end();

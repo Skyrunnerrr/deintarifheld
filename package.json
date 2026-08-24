@@ -68,7 +68,8 @@
     "test:dth:m11h": "npm run test:m11h -w @deintarifheld/db",
     "test:dth:m11i": "npm run test:m11i -w @deintarifheld/db",
     "test:dth:m11j": "npm run test:m11j -w @deintarifheld/db",
-    "test:dth:m11k": "npm run test:m11k -w @deintarifheld/db"
+    "test:dth:m11k": "npm run test:m11k -w @deintarifheld/db",
+    "test:dth:m11l": "npm run test:m11l -w @deintarifheld/db"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
