@@ -5,7 +5,7 @@
 | OD-A11-AUTH-PROVIDER | All staging CC | **APPROVED SUPABASE_AUTH** | Decision cleared; impl still required |
 | M11E private schemas (prod) | Prod | NOT_PROVEN | YES for prod |
 | M11E private schemas (staging exposure) | Staging | R4 proven | Partial |
-| M11F→P | Staging autonomy | **M11F–H CLOSED_E2_LOCAL**; I–P open | YES |
+| M11F→P | Staging autonomy | **M11F–I CLOSED_E2_LOCAL**; J–P open | YES |
 | M11O hosted controls | Staging | E2 only | YES |
 | M11T hosted | Staging | E2 only | YES |
 | M11Q/R/S | Production autonomy | PENDING | YES for prod autonomy |
@@ -22,6 +22,6 @@ Target architecture remains: Browser → authenticated server → verified opera
 
 ## Next single gate
 
-`M11_SECURITY_GATE:M11I` (role/capability mapping)
+`M11_SECURITY_GATE:M11J` (strong application AuthZ)
 
-Reason: M11H maps verified Supabase Auth subject → stable `operator_id` with provisioning boundary. Next is M11I roles/capabilities before M11J strong AuthZ. Hosted session verification remains NOT_PROVEN.
+Reason: M11I defines canonical role/capability state + `resolveOperatorAuthority`. Next is M11J fresh server-side command/read enforcement before M11K request DB context. Hosted session verification remains NOT_PROVEN.

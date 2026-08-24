@@ -33,7 +33,7 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 | A13-P01 | A13 | Paid acquisition provider | DeterministicTest | E2 | Provider | OD-A13-PROVIDER | YES | | YES | Adapter | YES | YES late | YES | Pause | Spend alerts | PROVIDER | PROVIDER_REQUIRED |
 | A13-O01 | A13 | Budget/attribution/tracking | Test policies | E2 | Staging/Canary | OD-A13-ACQUISITION-POLICY | | YES consent | YES | Policy | YES | YES | YES | Cap/pause | | OWNER | OWNER_REQUIRED |
 | M11-E | M11 | Private schema exposure | Staging R4 proven; prod schemas absent | E4 staging / E0 prod | Staging/Prod | | | YES | | Continue F+ | YES | | Hosted | | | SECURITY | PARTIAL |
-| M11-F-P | M11 | AuthZ/runtime/session/pooler | **M11F–H E2 proven**; I–P open | E2/E0 | Staging | | | YES | | M11I next | YES | | | | | SECURITY | PARTIAL |
+| M11-F-P | M11 | AuthZ/runtime/session/pooler | **M11F–I E2 proven**; J–P open | E2/E0 | Staging | | | YES | | M11J next | YES | | | | | SECURITY | PARTIAL |
 | M11-O | M11 | Durable controls | E2 local control_state | E2 | Staging | | | YES | | Hosted prove | YES | | | Kill | | SECURITY | E2_PROVEN |
 | M11-T | M11 | Intake AuthZ mapping | E2 local | E2 | Staging | | | YES | | Hosted | YES | | | | | SECURITY | E2_PROVEN |
 | M11-QRS | M11 | service_role retirement | PENDING | E0 | Production | | | YES | | Cutover | | | | | | SECURITY | NOT_STARTED |
@@ -47,7 +47,7 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 - Matrix rows above: 34 gate rows
 - Owner decision IDs: see A14-02 (~35 normalized)
 - Provider gates: ≥12
-- Security: M11F+M11G+M11H PROVEN_E2_LOCAL; M11I–P NOT_STARTED; M11E PARTIAL (staging exposure only)
+- Security: M11F+M11G+M11H+M11I PROVEN_E2_LOCAL; M11J–P NOT_STARTED; M11E PARTIAL (staging exposure only)
 
 
 ## Auth decision status (post OD-A11-AUTH-PROVIDER)
@@ -62,10 +62,10 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 | STRONG_AUTHZ | NOT_PROVEN |
 | SECURITY_FOR_STAGING | NOT_PASS |
 
-Next gate: `M11I` role/capability mapping (then J/K strong AuthZ + DB request context).
+Next gate: `M11J` strong application AuthZ (then K request DB context).
 
 
-## M11F–H status
+## M11F–I status
 
 | Key | Status |
 |-----|--------|
@@ -73,6 +73,7 @@ Next gate: `M11I` role/capability mapping (then J/K strong AuthZ + DB request co
 | M11G_RUNTIME_LEAST_PRIVILEGE | PROVEN_E2_LOCAL |
 | M11H_OPERATOR_IDENTITY | PROVEN_E2_LOCAL |
 | M11H_HOSTED_AUTH_BINDING | NOT_PROVEN |
-| M11I | NEXT |
+| M11I_ROLE_CAPABILITY_MAPPING | PROVEN_E2_LOCAL |
+| M11J | NEXT |
 | AUTH_IMPLEMENTATION | NOT_STARTED |
 | STAGING_SECURITY | NOT_PROVEN |

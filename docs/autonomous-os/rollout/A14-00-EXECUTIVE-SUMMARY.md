@@ -21,7 +21,7 @@ A13R_RESULT=POST_IMPLEMENTATION_REGRESSION_GATE_CLOSED
 
 ## Truth in one line
 
-E2 local autonomous loop is proven. Staging/Production readiness is **not**. Auth provider **APPROVED = SUPABASE_AUTH**. M11F–H **CLOSED_E2_LOCAL**. Next hard stop is **M11I** (operator roles/capabilities). Staging Auth still NOT_PROVEN.
+E2 local autonomous loop is proven. Staging/Production readiness is **not**. Auth provider **APPROVED = SUPABASE_AUTH**. M11F–I **CLOSED_E2_LOCAL**. Next hard stop is **M11J** (strong server-side AuthZ). Staging Auth still NOT_PROVEN.
 
 ## A14_PHASE
 
