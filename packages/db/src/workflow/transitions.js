@@ -8,6 +8,7 @@ import {
   isRetryableErrorClass,
 } from '@deintarifheld/shared';
 import { createFollowOnJob, completeWorkflowIfTerminal, markWorkflowBlocked } from './instances.js';
+import { isPgPool } from '../pg-pool-or-client.js';
 
 /**
  * Deterministic bounded exponential backoff with optional jitter source.
@@ -271,20 +272,17 @@ export async function cancelJob(pool, jobId, { reason } = {}) {
  * Reprocess dead-letter: preserve history; new job generation with new idempotency key.
  * Respects current control version.
  */
-export async function reprocessDeadLetter(pool, jobId, {
+export async function reprocessDeadLetter(poolOrClient, jobId, {
   actor = 'LOCAL_TEST',
   correlationId = null,
 } = {}) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
+  const run = async (client) => {
     const { rows } = await client.query(
       `SELECT * FROM workflow.jobs WHERE id = $1 FOR UPDATE`,
       [jobId],
     );
     const job = rows[0];
     if (!job || job.status !== JobStatus.DEAD_LETTER) {
-      await client.query('ROLLBACK');
       return { ok: false, code: 'NOT_DEAD_LETTER' };
     }
 
@@ -298,7 +296,6 @@ export async function reprocessDeadLetter(pool, jobId, {
       [job.workflow_instance_id],
     );
     if (wf.rows[0]?.status === 'PAUSED' || wf.rows[0]?.status === 'CANCELLED') {
-      await client.query('ROLLBACK');
       return { ok: false, code: 'WORKFLOW_NOT_RUNNABLE' };
     }
 
@@ -306,11 +303,9 @@ export async function reprocessDeadLetter(pool, jobId, {
       `SELECT state FROM security.control_state WHERE scope='GLOBAL' AND scope_key='AUTOMATION'`,
     );
     if (global.rows[0]?.state === 'ACTIVE') {
-      await client.query('ROLLBACK');
       return { ok: false, code: 'GLOBAL_KILL_ACTIVE' };
     }
 
-    // Resume workflow from BLOCKED_EXCEPTION without erasing history
     await client.query(
       `UPDATE workflow.workflow_instances
        SET status = 'RUNNING', failure_class = NULL, failure_code = NULL, updated_at = now()
@@ -338,8 +333,6 @@ export async function reprocessDeadLetter(pool, jobId, {
       ],
     );
 
-    // Original DLQ row unchanged (history preserved)
-    await client.query('COMMIT');
     return {
       ok: true,
       code: 'REPROCESS_CREATED',
@@ -347,6 +340,22 @@ export async function reprocessDeadLetter(pool, jobId, {
       newJobId: ins.rows[0].id,
       historyMutated: false,
     };
+  };
+
+  if (!isPgPool(poolOrClient)) {
+    return run(poolOrClient);
+  }
+
+  const client = await poolOrClient.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await run(client);
+    if (!result.ok) {
+      await client.query('ROLLBACK');
+      return result;
+    }
+    await client.query('COMMIT');
+    return result;
   } catch (err) {
     try {
       await client.query('ROLLBACK');

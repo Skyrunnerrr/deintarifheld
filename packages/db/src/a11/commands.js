@@ -36,6 +36,7 @@ import {
   cancelAcquisitionCampaign,
 } from '../a13/activate.js';
 import { authorizeOperatorCommand } from './operator-authz.js';
+import { withAuthorizedOperatorTransaction } from './operator-db-context.js';
 
 function payloadHash(commandType, targetId, expectedRevision, extra) {
   return createHash('sha256')
@@ -163,103 +164,96 @@ export async function executeOperatorCommand(pool, envelope = {}, identity) {
     title: envelope.title,
   });
 
-  const client = await pool.connect();
-  let replay = null;
-  try {
-    await client.query('BEGIN');
-    replay = await loadCommandLog(client, idempotencyKey);
-    if (replay) {
-      await client.query('COMMIT');
-      if (replay.payload_hash !== hash) {
-        return { ok: false, status: 409, code: 'IDEMPOTENCY_PAYLOAD_CONFLICT' };
+  return withAuthorizedOperatorTransaction(
+    pool,
+    { authzEvidence: auth, requestId: correlationId, verifyFreshness: true },
+    async (client) => {
+      const replay = await loadCommandLog(client, idempotencyKey);
+      if (replay) {
+        if (replay.payload_hash !== hash) {
+          return { ok: false, status: 409, code: 'IDEMPOTENCY_PAYLOAD_CONFLICT' };
+        }
+        return {
+          ok: true,
+          idempotentReplay: true,
+          status: 200,
+          ...(replay.result_json || {}),
+        };
       }
-      return {
-        ok: true,
-        idempotentReplay: true,
-        status: 200,
-        ...(replay.result_json || {}),
+
+      let result;
+      await client.query('SAVEPOINT m11k_operator_dispatch');
+      try {
+        result = await dispatchCommand(client, {
+          commandType,
+          targetId,
+          expectedRevision,
+          reason,
+          envelope,
+          identity: trustedIdentity,
+          correlationId,
+        });
+      } catch (err) {
+        await client.query('ROLLBACK TO SAVEPOINT m11k_operator_dispatch');
+        if (err?.code === 'CONTROL_STATE_UNAVAILABLE' || err?.message === 'CONTROL_STATE_UNAVAILABLE') {
+          result = { ok: false, status: 503, code: A11ErrorCode.CONTROL_UNAVAILABLE };
+        } else {
+          result = {
+            ok: false,
+            status: 500,
+            code: 'COMMAND_FAILED',
+            detail: err?.code || err?.message || 'unknown',
+          };
+        }
+      }
+
+      const snap = await readFreshControlSnapshot(client).catch(() => ({ controlVersion: null }));
+      const stored = {
+        ok: result.ok === true,
+        code: result.code || (result.ok ? 'OK' : 'FAILED'),
+        ...result,
       };
-    }
-    await client.query('COMMIT');
-  } catch (err) {
-    try { await client.query('ROLLBACK'); } catch { /* ignore */ }
-    throw err;
-  } finally {
-    client.release();
-  }
-
-  let result;
-  try {
-    result = await dispatchCommand(pool, {
-      commandType,
-      targetId,
-      expectedRevision,
-      reason,
-      envelope,
-      identity: trustedIdentity,
-      correlationId,
-    });
-  } catch (err) {
-    if (err?.code === 'CONTROL_STATE_UNAVAILABLE' || err?.message === 'CONTROL_STATE_UNAVAILABLE') {
-      result = { ok: false, status: 503, code: A11ErrorCode.CONTROL_UNAVAILABLE };
-    } else {
-      result = { ok: false, status: 500, code: 'COMMAND_FAILED', detail: err?.code || 'unknown' };
-    }
-  }
-
-  const logClient = await pool.connect();
-  try {
-    await logClient.query('BEGIN');
-    const existing = await loadCommandLog(logClient, idempotencyKey);
-    if (existing) {
-      await logClient.query('COMMIT');
-      return { ok: true, idempotentReplay: true, status: 200, ...(existing.result_json || {}) };
-    }
-    const snap = await readFreshControlSnapshot(logClient).catch(() => ({ controlVersion: null }));
-    const stored = {
-      ok: result.ok === true,
-      code: result.code || (result.ok ? 'OK' : 'FAILED'),
-      ...result,
-    };
-    await insertCommandLog(logClient, {
-      commandType,
-      idempotencyKey,
-      operatorPersonId: trustedIdentity.personId,
-      operatorRole: trustedIdentity.role,
-      operatorId: trustedIdentity.operatorId,
-      authorityVersion: trustedIdentity.authorityVersion,
-      requiredCapability: trustedIdentity.requiredCapability,
-      targetType: commandType,
-      targetId: targetId ? String(targetId) : null,
-      correlationId,
-      expectedRevision: expectedRevision ? String(expectedRevision) : null,
-      reason,
-      payloadHash: hash,
-      resultCode: stored.code,
-      resultJson: stored,
-      controlVersion: snap.controlVersion,
-    });
-    if (result.ok) {
-      await auditWrite(logClient, {
-        eventType: `a11.command.${commandType}`,
-        detail: {
-          actor: trustedIdentity.personId,
-          operator_id: trustedIdentity.operatorId,
-          actor_type: 'PERSON_PRINCIPAL',
-          role: trustedIdentity.role,
-          authority_version: trustedIdentity.authorityVersion,
-          required_capability: trustedIdentity.requiredCapability,
-          command_type: commandType,
-          target_id: targetId,
-          correlation_id: correlationId,
-          control_version: snap.controlVersion,
-          result: stored.code,
-        },
+      await insertCommandLog(client, {
+        commandType,
+        idempotencyKey,
+        operatorPersonId: trustedIdentity.personId,
+        operatorRole: trustedIdentity.role,
+        operatorId: trustedIdentity.operatorId,
+        authorityVersion: trustedIdentity.authorityVersion,
+        requiredCapability: trustedIdentity.requiredCapability,
+        targetType: commandType,
+        targetId: targetId ? String(targetId) : null,
+        correlationId,
+        expectedRevision: expectedRevision ? String(expectedRevision) : null,
+        reason,
+        payloadHash: hash,
+        resultCode: stored.code,
+        resultJson: stored,
+        controlVersion: snap.controlVersion,
       });
-    }
-    await logClient.query('COMMIT');
-  } catch (err) {
-    try { await logClient.query('ROLLBACK'); } catch { /* ignore */ }
+      if (result.ok) {
+        await auditWrite(client, {
+          eventType: `a11.command.${commandType}`,
+          detail: {
+            actor: trustedIdentity.personId,
+            operator_id: trustedIdentity.operatorId,
+            actor_type: 'PERSON_PRINCIPAL',
+            role: trustedIdentity.role,
+            authority_version: trustedIdentity.authorityVersion,
+            required_capability: trustedIdentity.requiredCapability,
+            command_type: commandType,
+            target_id: targetId,
+            correlation_id: correlationId,
+            request_id: correlationId,
+            control_version: snap.controlVersion,
+            result: stored.code,
+          },
+        });
+      }
+
+      return { ...result, idempotentReplay: false, status: result.ok ? 200 : result.status || 400 };
+    },
+  ).catch(async (err) => {
     if (err?.code === '23505') {
       const again = await pool.query(
         `SELECT result_json FROM ops.operator_commands WHERE idempotency_key=$1`,
@@ -270,11 +264,7 @@ export async function executeOperatorCommand(pool, envelope = {}, identity) {
       }
     }
     throw err;
-  } finally {
-    logClient.release();
-  }
-
-  return { ...result, idempotentReplay: false, status: result.ok ? 200 : result.status || 400 };
+  });
 }
 
 async function dispatchCommand(pool, ctx) {

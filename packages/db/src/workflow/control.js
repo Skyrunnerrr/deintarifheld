@@ -7,6 +7,7 @@ import {
   ControlStateValue,
   isKillDomain,
 } from '@deintarifheld/shared';
+import { isPgPool } from '../pg-pool-or-client.js';
 
 const GLOBAL_KEY = 'AUTOMATION';
 
@@ -76,8 +77,11 @@ async function upsertControl(client, { scope, scopeKey, state, reason, actor, co
   return { version, fromState, state };
 }
 
-export async function withControlTx(pool, fn) {
-  const client = await pool.connect();
+export async function withControlTx(poolOrClient, fn) {
+  if (!isPgPool(poolOrClient)) {
+    return fn(poolOrClient);
+  }
+  const client = await poolOrClient.connect();
   try {
     await client.query('BEGIN');
     const result = await fn(client);

@@ -9,6 +9,7 @@ import {
 } from '@deintarifheld/shared';
 import { isTariffEvaluationCurrent } from '../a7/handoff.js';
 import { enqueueOfferJob, offerControlGate, hasTakeover } from './prepare.js';
+import { isPgPool } from '../pg-pool-or-client.js';
 
 /**
  * recordSyntheticOfferApproval — SYSTEM_TEST actor. Recheck evaluation current, then READY + enqueue deliver.
@@ -58,9 +59,7 @@ export async function recordSyntheticOfferApproval(pool, {
     return { ok: false, code: 'APPROVAL_REJECTED' };
   }
 
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
+  const runApprovalWrite = async (client) => {
     const upd = await client.query(
       `UPDATE ops.offer_approvals
        SET decision = 'APPROVED', actor_type = $2, reason_code = 'SYNTHETIC_TEST_APPROVAL', decided_at = $3
@@ -69,7 +68,6 @@ export async function recordSyntheticOfferApproval(pool, {
       [revisionId, actorType, new Date(now).toISOString()],
     );
     if (!upd.rows[0]) {
-      await client.query('ROLLBACK');
       return { ok: false, code: 'APPROVAL_NOT_PENDING' };
     }
     await client.query(
@@ -85,12 +83,28 @@ export async function recordSyntheticOfferApproval(pool, {
        VALUES ('offer.approved',$1::jsonb)`,
       [JSON.stringify({ offer_revision_id: revisionId, actor_type: actorType })],
     );
-    await client.query('COMMIT');
-  } catch (err) {
-    try { await client.query('ROLLBACK'); } catch { /* ignore */ }
-    throw err;
-  } finally {
-    client.release();
+    return { ok: true };
+  };
+
+  if (!isPgPool(pool)) {
+    const write = await runApprovalWrite(pool);
+    if (!write.ok) return write;
+  } else {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const write = await runApprovalWrite(client);
+      if (!write.ok) {
+        await client.query('ROLLBACK');
+        return write;
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      try { await client.query('ROLLBACK'); } catch { /* ignore */ }
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   await enqueueOfferJob(pool, {

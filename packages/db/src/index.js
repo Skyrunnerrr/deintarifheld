@@ -314,6 +314,16 @@ export {
   highRiskCommandsPreferAuthorityVersion,
 } from './a11/operator-authz.js';
 export {
+  OperatorDbContextKey,
+  OperatorDbContextCode,
+  buildTrustedDbRequestContext,
+  installOperatorRequestContext,
+  readCurrentOperatorRequestContext,
+  verifyOperatorAuthorityFreshness,
+  withAuthorizedOperatorTransaction,
+} from './a11/operator-db-context.js';
+export { isPgPool, withOptionalTransaction } from './pg-pool-or-client.js';
+export {
   bootstrapE2TestOperatorAuthority,
   ensureM11AuthoritySchema,
   resolveTestOperatorIdFromPersonId,
