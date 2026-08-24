@@ -3,7 +3,7 @@
  * A11 adds capability AuthZ over test identities. Client role is not authority.
  * STRONG_AUTHZ_COMPLETE=NO · CURRENT_LOCAL_AUTHZ_MODE=SYNTHETIC_OWNER_ONLY_DEV_GATE
  */
-import { PrincipalType, isPersonPrincipal, TEST_OPERATOR_BY_PERSON_ID, capabilitiesForRole } from '@deintarifheld/shared';
+import { PrincipalType, isPersonPrincipal, TEST_OPERATOR_BY_PERSON_ID, TEST_OPERATOR_ID_BY_PERSON_ID } from '@deintarifheld/shared';
 import { SYNTHETIC_OWNER_PERSON_ID } from '../auth/local-owner-auth.js';
 
 function personSessionOrDeny({ principal, session, sharedSecretContext } = {}) {
@@ -61,6 +61,10 @@ export function gateA11Request({ principal, session, sharedSecretContext, claime
   if (!bound) {
     return { ok: false, status: 403, code: 'NOT_AUTHORIZED' };
   }
+  const operatorId = TEST_OPERATOR_ID_BY_PERSON_ID[session.personId] || null;
+  if (!operatorId) {
+    return { ok: false, status: 403, code: 'NOT_AUTHORIZED' };
+  }
   const forged = Boolean(claimedRole && claimedRole !== bound.role);
   return {
     ok: true,
@@ -68,13 +72,13 @@ export function gateA11Request({ principal, session, sharedSecretContext, claime
     actorId: bound.personId,
     sessionId: session.sessionId,
     personId: bound.personId,
-    role: bound.role,
+    operatorId,
     label: bound.label,
-    capabilities: capabilitiesForRole(bound.role),
+    identitySource: 'TEST_E2_ONLY',
     productionIdentity: false,
     forgedRoleIgnored: forged,
     strongAuthzComplete: false,
     productionAuthzReady: false,
-    currentLocalAuthzMode: 'A11_TEST_IDENTITY_CAPABILITY_GATE',
+    currentLocalAuthzMode: 'A11_M11J_TEST_IDENTITY_GATE',
   };
 }

@@ -306,6 +306,18 @@ export {
   rejectClientOperatorCapabilities,
   OperatorAuthorityResolutionCode,
 } from './a11/operator-authority.js';
+export {
+  authorizeOperatorAction,
+  authorizeOperatorRead,
+  authorizeOperatorCommand,
+  OperatorAuthzCode,
+  highRiskCommandsPreferAuthorityVersion,
+} from './a11/operator-authz.js';
+export {
+  bootstrapE2TestOperatorAuthority,
+  ensureM11AuthoritySchema,
+  resolveTestOperatorIdFromPersonId,
+} from './a11/test-operator-bridge.js';
 export { StageProjectionPolicyV1, deriveCaseStage, deriveWaitingOn, inboxSeverity } from './a11/stage.js';
 export { getProductionReadinessView } from './a11/readiness.js';
 export { createA11ReadService } from './a11/reads.js';

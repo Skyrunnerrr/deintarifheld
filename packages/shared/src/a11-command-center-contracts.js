@@ -122,6 +122,37 @@ export const TEST_OPERATOR_BY_PERSON_ID = Object.freeze(
   ),
 );
 
+/** Deterministic M11H operator_id values for E2 TEST_* identities only. */
+export const TEST_OPERATOR_STABLE_IDS = Object.freeze({
+  TEST_OWNER: 'a1111111-1111-4111-8111-111111110001',
+  TEST_OPERATOR: 'a1111111-1111-4111-8111-111111110002',
+  TEST_APPROVER: 'a1111111-1111-4111-8111-111111110003',
+  TEST_VIEWER: 'a1111111-1111-4111-8111-111111110004',
+});
+
+export const TEST_OPERATOR_ID_BY_PERSON_ID = Object.freeze(
+  Object.fromEntries(
+    Object.entries(TEST_OPERATOR_IDENTITIES).map(([key, row]) => [
+      row.personId,
+      TEST_OPERATOR_STABLE_IDS[key],
+    ]),
+  ),
+);
+
+/** M11J protected A11 BFF read surfaces → required capability. */
+export const A11_PROTECTED_VIEW_CAPABILITY = Object.freeze({
+  overview: OperatorCapability.CASE_VIEW,
+  inbox: OperatorCapability.CASE_VIEW,
+  cases: OperatorCapability.CASE_VIEW,
+  'case-detail': OperatorCapability.CASE_VIEW,
+  approvals: OperatorCapability.CASE_VIEW,
+  jobs: OperatorCapability.CASE_VIEW,
+  lifecycle: OperatorCapability.CASE_VIEW,
+  controls: OperatorCapability.CASE_VIEW,
+  readiness: OperatorCapability.CASE_VIEW,
+  audit: OperatorCapability.AUDIT_VIEW,
+});
+
 export const OperatorCommandType = Object.freeze({
   TAKEOVER_CASE: 'TAKEOVER_CASE',
   RESUME_CASE: 'RESUME_CASE',

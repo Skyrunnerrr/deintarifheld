@@ -35,7 +35,7 @@ import {
   reconcileAcquisitionCampaign,
   cancelAcquisitionCampaign,
 } from '../a13/activate.js';
-import { authorizeCommand } from './authz.js';
+import { authorizeOperatorCommand } from './operator-authz.js';
 
 function payloadHash(commandType, targetId, expectedRevision, extra) {
   return createHash('sha256')
@@ -59,15 +59,19 @@ async function loadCommandLog(client, key) {
 async function insertCommandLog(client, row) {
   const { rows } = await client.query(
     `INSERT INTO ops.operator_commands
-      (command_type, idempotency_key, operator_person_id, operator_role, target_type, target_id,
+      (command_type, idempotency_key, operator_person_id, operator_role, operator_id,
+       authority_version, required_capability, target_type, target_id,
        correlation_id, expected_revision, reason, payload_hash, result_code, result_json, control_version)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,$16)
      RETURNING *`,
     [
       row.commandType,
       row.idempotencyKey,
       row.operatorPersonId,
       row.operatorRole,
+      row.operatorId || null,
+      row.authorityVersion ?? null,
+      row.requiredCapability || null,
       row.targetType,
       row.targetId,
       row.correlationId,
@@ -98,13 +102,41 @@ async function workflowsForCase(pool, caseId) {
 }
 
 export async function executeOperatorCommand(pool, envelope = {}, identity) {
-  const auth = authorizeCommand(identity, envelope.commandType);
-  if (!auth.ok) return auth;
+  if (!identity?.operatorId) {
+    return { ok: false, status: 403, code: A11ErrorCode.NOT_AUTHORIZED };
+  }
 
   const commandType = envelope.commandType;
   if (!isOperatorCommandType(commandType)) {
     return { ok: false, status: 422, code: A11ErrorCode.UNKNOWN_COMMAND };
   }
+
+  const auth = await authorizeOperatorCommand(pool, {
+    operatorId: identity.operatorId,
+    commandType,
+    expectedAuthorityVersion: envelope.expectedAuthorityVersion,
+    clientRole: envelope.role || envelope.operatorRole,
+    clientCapabilities: envelope.capabilities,
+    clientOperatorId: envelope.operatorId,
+    clientAuthUserId: envelope.authUserId,
+    clientPersonId: envelope.personId,
+  });
+  if (!auth.ok) {
+    return {
+      ok: false,
+      status: auth.status || 403,
+      code: auth.a11Code || A11ErrorCode.NOT_AUTHORIZED,
+      authzCode: auth.code,
+    };
+  }
+
+  const trustedIdentity = {
+    ...identity,
+    role: auth.role,
+    authorityVersion: auth.authorityVersion,
+    requiredCapability: auth.requiredCapability,
+  };
+
   const idempotencyKey = String(envelope.idempotencyKey || '').trim();
   if (!idempotencyKey) {
     return { ok: false, status: 422, code: A11ErrorCode.IDEMPOTENCY_KEY_REQUIRED };
@@ -118,9 +150,6 @@ export async function executeOperatorCommand(pool, envelope = {}, identity) {
   }
   if (HIGH_RISK_COMMANDS.includes(commandType) && envelope.confirm !== true) {
     return { ok: false, status: 422, code: A11ErrorCode.CONFIRMATION_REQUIRED };
-  }
-  if (envelope.role || envelope.operatorRole || envelope.operatorId) {
-    // accepted as data, never as authority — identity already server-resolved
   }
 
   if (!(await hasRel(pool, 'ops.operator_commands'))) {
@@ -167,7 +196,7 @@ export async function executeOperatorCommand(pool, envelope = {}, identity) {
       expectedRevision,
       reason,
       envelope,
-      identity,
+      identity: trustedIdentity,
       correlationId,
     });
   } catch (err) {
@@ -195,8 +224,11 @@ export async function executeOperatorCommand(pool, envelope = {}, identity) {
     await insertCommandLog(logClient, {
       commandType,
       idempotencyKey,
-      operatorPersonId: identity.personId,
-      operatorRole: identity.role,
+      operatorPersonId: trustedIdentity.personId,
+      operatorRole: trustedIdentity.role,
+      operatorId: trustedIdentity.operatorId,
+      authorityVersion: trustedIdentity.authorityVersion,
+      requiredCapability: trustedIdentity.requiredCapability,
       targetType: commandType,
       targetId: targetId ? String(targetId) : null,
       correlationId,
@@ -211,9 +243,12 @@ export async function executeOperatorCommand(pool, envelope = {}, identity) {
       await auditWrite(logClient, {
         eventType: `a11.command.${commandType}`,
         detail: {
-          actor: identity.personId,
+          actor: trustedIdentity.personId,
+          operator_id: trustedIdentity.operatorId,
           actor_type: 'PERSON_PRINCIPAL',
-          role: identity.role,
+          role: trustedIdentity.role,
+          authority_version: trustedIdentity.authorityVersion,
+          required_capability: trustedIdentity.requiredCapability,
           command_type: commandType,
           target_id: targetId,
           correlation_id: correlationId,

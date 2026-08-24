@@ -3,7 +3,7 @@
  * Not registered on public intake routes.
  */
 import { KillDomain, KillState, resolveSotAlias, OperatorCapability } from '@deintarifheld/shared';
-import { createA11ReadService, executeOperatorCommand, readFreshControlSnapshot } from '@deintarifheld/db';
+import { createA11ReadService, executeOperatorCommand, readFreshControlSnapshot, authorizeOperatorRead } from '@deintarifheld/db';
 import { createKillSwitchService } from '../kill/service.js';
 import { gateOpsRequest, gateA11Request } from './auth-gate.js';
 import { INTERNAL_BFF_PREFIX, LimitedWriteOperation } from './constants.js';
@@ -226,8 +226,28 @@ export function createOpsBff({
 
   async function dispatchA11({ method, path, body, query, identity }) {
     const prefix = `${INTERNAL_BFF_PREFIX}/a11`;
-    const viewCap = identity.capabilities?.includes(OperatorCapability.CASE_VIEW);
-    if (!viewCap) return json(403, { ok: false, code: 'NOT_AUTHORIZED' });
+    if (!identity.operatorId) {
+      return json(403, { ok: false, code: 'NOT_AUTHORIZED' });
+    }
+
+    async function requireReadCapability(requiredCapability) {
+      const auth = await authorizeOperatorRead(pool, {
+        operatorId: identity.operatorId,
+        requiredCapability,
+        clientRole: body.role || body.operatorRole || query.role,
+        clientCapabilities: body.capabilities,
+        clientOperatorId: body.operatorId,
+        clientAuthUserId: body.authUserId,
+        clientPersonId: body.personId,
+      });
+      if (!auth.ok) {
+        return json(auth.status || 403, { ok: false, code: auth.a11Code || 'NOT_AUTHORIZED' });
+      }
+      return null;
+    }
+
+    const caseReadDenied = await requireReadCapability(OperatorCapability.CASE_VIEW);
+    if (caseReadDenied) return caseReadDenied;
 
     if (method === 'GET' && path === `${prefix}/overview`) {
       return json(200, await a11reads.getOpsOverview());
@@ -256,9 +276,8 @@ export function createOpsBff({
       return json(200, await a11reads.getControlState());
     }
     if (method === 'GET' && path === `${prefix}/audit`) {
-      if (!identity.capabilities.includes(OperatorCapability.AUDIT_VIEW)) {
-        return json(403, { ok: false, code: 'NOT_AUTHORIZED' });
-      }
+      const auditDenied = await requireReadCapability(OperatorCapability.AUDIT_VIEW);
+      if (auditDenied) return auditDenied;
       return json(200, await a11reads.listOpsAuditEvents({ limit: query.limit }));
     }
     if (method === 'GET' && path === `${prefix}/readiness`) {
