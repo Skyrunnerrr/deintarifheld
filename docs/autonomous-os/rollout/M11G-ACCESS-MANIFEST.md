@@ -48,8 +48,10 @@ Machine-oriented privilege contract derived from code paths (not table-name gues
 | ops_api | public.transactional_outbox | TABLE | SELECT | a11 reads | Outbox visibility | none | none | YES | |
 | ops_api | security.operators | TABLE | SELECT | M11H operator resolution | identity lookup | none | none | YES | |
 | ops_api | security.operator_auth_identities | TABLE | SELECT | M11H operator resolution | auth subject bind | none | none | YES | |
-| ops_api | security.operators | TABLE | SELECT | M11H operator resolution | identity lookup | none | none | YES | |
-| ops_api | security.operator_auth_identities | TABLE | SELECT | M11H operator resolution | auth subject bind | none | none | YES | |
+| ops_api | security.operator_roles | TABLE | SELECT | M11I authority resolution | role catalog read | none | none | YES | |
+| ops_api | security.operator_capabilities | TABLE | SELECT | M11I authority resolution | capability catalog read | none | none | YES | |
+| ops_api | security.role_capabilities | TABLE | SELECT | M11I authority resolution | role-capability matrix | none | none | YES | |
+| ops_api | security.operator_role_assignments | TABLE | SELECT | M11I authority resolution | operator role assignment | none | none | YES | |
 
 ## Explicit non-grants (deferred / denied)
 

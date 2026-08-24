@@ -300,6 +300,12 @@ export {
   rejectMetadataOperatorAuthority,
   OperatorIdentityResolutionCode,
 } from './a11/operator-identity.js';
+export {
+  resolveOperatorAuthority,
+  rejectClientOperatorRole,
+  rejectClientOperatorCapabilities,
+  OperatorAuthorityResolutionCode,
+} from './a11/operator-authority.js';
 export { StageProjectionPolicyV1, deriveCaseStage, deriveWaitingOn, inboxSeverity } from './a11/stage.js';
 export { getProductionReadinessView } from './a11/readiness.js';
 export { createA11ReadService } from './a11/reads.js';
