@@ -22,6 +22,6 @@ Target architecture remains: Browser → authenticated server → verified opera
 
 ## Next single gate
 
-`M11_SECURITY_GATE:M11J` (strong application AuthZ)
+`M11_SECURITY_GATE:M11K` (request-scoped DB context)
 
-Reason: M11I defines canonical role/capability state + `resolveOperatorAuthority`. Next is M11J fresh server-side command/read enforcement before M11K request DB context. Hosted session verification remains NOT_PROVEN.
+Reason: M11J enforces fresh server-side capability authorization on every protected read/command. Next is M11K per-request DB context so PostgreSQL/RLS can independently enforce actor boundaries. Hosted session verification remains NOT_PROVEN.

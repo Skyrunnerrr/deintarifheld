@@ -22,8 +22,8 @@ Repository-first. **No invented hosted PASS.**
 | M11G | IMPLEMENTED_E2_LOCAL | Workload groups + grants + ACL-02 + test:dth:m11g 18/18; hosted NOT_PROVEN |
 | M11H | IMPLEMENTED_E2_LOCAL | `security.operators` + auth binding + `test:dth:m11h` 17/17; hosted NOT_PROVEN |
 | M11I | IMPLEMENTED_E2_LOCAL | Role/capability catalog + assignments + `test:dth:m11i` 29/29; hosted NOT_PROVEN |
-| M11J | NOT_STARTED | Strong App AuthZ next; A11 E2 ≠ production AuthZ |
-| M11K | NOT_FOUND | Pooler proof |
+| M11J | IMPLEMENTED_E2_LOCAL | Server capability AuthZ on commands/reads + `test:dth:m11j` 21/21; hosted NOT_PROVEN |
+| M11K | NOT_STARTED | Request-scoped DB context next |
 | M11L | NOT_FOUND | Plan only |
 | M11M | NOT_FOUND | Plan only |
 | M11N | NOT_FOUND | Durable session hosted |
@@ -46,7 +46,7 @@ Repository-first. **No invented hosted PASS.**
 ## Staging security readiness
 
 `M11_STAGING_SECURITY=NOT_PROVEN`  
-`SECURITY_FOR_STAGING` cannot PASS until M11J→P evidence exist (M11F–I E2 local closed). Auth provider Owner decision is **APPROVED (SUPABASE_AUTH)**; AuthN/MFA/AuthZ implementation remain NOT_PROVEN.
+`SECURITY_FOR_STAGING` cannot PASS until M11K→P evidence exist (M11F–J E2 local closed). Auth provider Owner decision is **APPROVED (SUPABASE_AUTH)**; AuthN/MFA/AuthZ hosted implementation remain NOT_PROVEN.
 
 ## Named M11 regression script
 
