@@ -22,6 +22,6 @@ Target architecture remains: Browser → authenticated server → verified opera
 
 ## Next single gate
 
-`M11_SECURITY_GATE:M11K` (request-scoped DB context)
+`M11_SECURITY_GATE:M11L` (database RLS enforcement)
 
-Reason: M11J enforces fresh server-side capability authorization on every protected read/command. Next is M11K per-request DB context so PostgreSQL/RLS can independently enforce actor boundaries. Hosted session verification remains NOT_PROVEN.
+Reason: M11K establishes transaction-local trusted operator context for PostgreSQL. Next is M11L database-enforced access boundaries using that context. Hosted session verification remains NOT_PROVEN.
