@@ -1,0 +1,77 @@
+# DTH-M11L Evidence Report
+
+**Gate:** M11L Database RLS Enforcement Foundation  
+**Branch:** `rollout/dth-a14-autonomy-rollout-001`  
+**Base:** `3707af5cc6591ab91902c3fb6562984c1b70a5fc`  
+**Status:** CLOSED_E2_LOCAL (uncommitted implementation)
+
+## Proof summary
+
+| Area | Evidence |
+|------|----------|
+| Migration | `supabase/migrations/20260822170000_m11l_operator_context_rls.sql` |
+| Context SQL helpers | `security.dth_operator_authority_fresh()` etc. |
+| Control plane RLS | `security.control_*` ENABLE + FORCE RLS |
+| Command log RLS | `ops.operator_commands` actor binding |
+| Audit separation | `public.audit_events` AUDIT_VIEW for ops SELECT |
+| Workload preservation | worker control read, intake lead, worker audit insert |
+| Test suite | `npm run test:dth:m11l` 21/21 PASS |
+| Runtime role evidence | Tests use `dth_ops_api` login, not postgres superuser |
+
+## Critical invariants (expected 0)
+
+```text
+UNCLASSIFIED_RUNTIME_TABLES=0
+PROTECTED_OPERATOR_TABLE_ACCESS_WITHOUT_CONTEXT=0
+RUNTIME_BYPASSRLS_ROLES=0
+RUNTIME_OWNED_PROTECTED_TABLES=0
+PUBLIC_PROTECTED_OPERATOR_ACCESS=0
+ANON_PROTECTED_OPERATOR_ACCESS=0
+AUTHENTICATED_PROTECTED_OPERATOR_ACCESS=0
+PROTECTED_TABLES_WITH_RLS_DISABLED=0
+REQUIRED_FORCE_RLS_MISSING=0
+RLS_POLICY_OR_BYPASS_PATHS=0
+RLS_ROLE_LABEL_AUTHORITY=0
+JWT_METADATA_RLS_AUTHORITY=0
+INVALID_CONTEXT_RLS_SUCCESSES=0
+WRONG_CAPABILITY_RLS_SUCCESSES=0
+STALE_AUTHORITY_RLS_SUCCESSES=0
+DISABLED_OPERATOR_RLS_SUCCESSES=0
+UNKNOWN_OPERATOR_RLS_SUCCESSES=0
+OPERATOR_COMMAND_ACTOR_CONTEXT_MISMATCH_SUCCESSES=0
+VIEWER_HIGH_IMPACT_RLS_SUCCESSES=0
+AUDIT_READ_WITHOUT_AUDIT_VIEW_SUCCESSES=0
+WORKER_POLICY_REGRESSIONS=0
+PUBLIC_INTAKE_POLICY_REGRESSIONS=0
+M11L_NEW_BROAD_DB_GRANTS=0
+PRIVATE_SCHEMA_DATA_API_EXPOSURE_CHANGES=0
+STAGING_DB_MUTATIONS=0
+PRODUCTION_DB_MUTATIONS=0
+PRODUCTION_SECURITY_ACTIVATIONS=0
+```
+
+## Context forgery
+
+```text
+DB_CONTEXT_FORGERY_BY_COMPROMISED_OPS_PROCESS=POSSIBLE
+```
+
+Documented in M11L-53. Normal-path enforcement proven; compromised-process boundary deferred.
+
+## Open security risk (must remain explicit)
+
+```text
+RISK_ID=M11-OPEN-DB-CONTEXT-FORGERY
+STATE=OPEN
+NORMAL_APPLICATION_PATH=PROTECTED_E2_LOCAL
+COMPROMISED_DTH_OPS_API_PROCESS=CAN_POTENTIALLY_FORGE_GUC_CONTEXT
+CURRENT_IMPACT=PREVENTS_FULL_DATABASE_AUTHZ_CLAIM
+REQUIRED_FUTURE_ACTION=EXPLICIT_SECURITY_HARDENING_DECISION_AND_PROOF
+MUST_BE_CLOSED_BEFORE_PRODUCTION_SECURITY_SIGNOFF=YES
+```
+
+Do **not** claim `FULL_DATABASE_HUMAN_AUTHZ` until this risk is closed with proof.
+
+## Next gate
+
+`M11_SECURITY_GATE:M11M`
