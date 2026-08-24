@@ -16,7 +16,8 @@
     "test:m11g": "node --test --test-concurrency=1 tests/m11g-runtime-least-privilege-grants.test.js",
     "test:m11h": "node --test --test-concurrency=1 tests/m11h-operator-identity-mapping.test.js",
     "test:m11i": "node --test --test-concurrency=1 tests/m11i-operator-role-capability-mapping.test.js",
-    "test:m11j": "node --test --test-concurrency=1 tests/m11j-strong-operator-authz.test.js"
+    "test:m11j": "node --test --test-concurrency=1 tests/m11j-strong-operator-authz.test.js",
+    "test:m11k": "node --test --test-concurrency=1 tests/m11k-trusted-db-request-context.test.js"
   },
   "dth": {
     "tranche": "P3-F5",
