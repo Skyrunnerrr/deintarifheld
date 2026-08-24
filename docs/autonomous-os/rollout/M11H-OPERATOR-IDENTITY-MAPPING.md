@@ -80,9 +80,11 @@ No implicit fallback between modes. `TEST_*` blocked in production via existing 
 - `OD-A11-OPERATOR-PROVISIONING-POLICY` — who may provision/disable/rebind hosted operators
 - `OPERATOR_AUTH_REBIND_POLICY` — account replacement workflow
 
-## M11I handoff
+## M11J handoff
 
-Expose only: `operator_id`, `status`, resolution result. No implicit role/capability.
+M11H exposes: `operator_id`, status, resolution result.  
+M11I adds: canonical `role`, explicit `capabilities[]`, `authorityVersion` via `resolveOperatorAuthority`.  
+M11J must enforce fresh server authorization on every protected read/command.
 
 ## Local proof
 
