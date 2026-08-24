@@ -49,6 +49,7 @@ import {
   executeOperatorCommand,
   getProductionReadinessView,
   startWorkflowIdempotent,
+  bootstrapE2TestOperatorAuthority,
 } from '@deintarifheld/db';
 import { createOpsBff } from '@deintarifheld/ops-api';
 import { authenticateTestOperator } from '@deintarifheld/ops-api';
@@ -85,7 +86,10 @@ function identity(label) {
     env: { NODE_ENV: 'test', DTH_LOCAL_AUTH_ENABLED: 'true' },
   });
   assert.equal(auth.ok, true);
-  return gateA11Request({ principal: auth.principal, session: auth.session });
+  const resolved = gateA11Request({ principal: auth.principal, session: auth.session });
+  assert.equal(resolved.ok, true);
+  assert.ok(resolved.operatorId);
+  return resolved;
 }
 
 function completePayload(over = {}) {
@@ -125,6 +129,7 @@ async function ensureSchemas() {
 
 async function reset() {
   await ensureSchemas();
+  await bootstrapE2TestOperatorAuthority(pool);
   resetLocalTestDocumentStorage();
   resetProviderTestStore();
   resetSwitchProviderTestStore();

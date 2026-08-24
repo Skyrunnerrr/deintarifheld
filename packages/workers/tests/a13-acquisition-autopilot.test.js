@@ -70,6 +70,7 @@ import {
   getProductionReadinessView,
   setGlobalKill,
   processOneBusinessLeadHandoff,
+  bootstrapE2TestOperatorAuthority,
 } from '@deintarifheld/db';
 import { authenticateTestOperator } from '@deintarifheld/ops-api';
 import { gateA11Request } from '@deintarifheld/ops-api';
@@ -96,7 +97,10 @@ function identity(label) {
     env: { NODE_ENV: 'test', DTH_LOCAL_AUTH_ENABLED: 'true' },
   });
   assert.equal(auth.ok, true);
-  return gateA11Request({ principal: auth.principal, session: auth.session });
+  const resolved = gateA11Request({ principal: auth.principal, session: auth.session });
+  assert.equal(resolved.ok, true);
+  assert.ok(resolved.operatorId);
+  return resolved;
 }
 
 async function ensureSchemas() {
@@ -113,6 +117,7 @@ async function ensureSchemas() {
 
 async function reset() {
   await ensureSchemas();
+  await bootstrapE2TestOperatorAuthority(pool);
   await pool.query(`SET lock_timeout = '5s'`);
   // Outbox/cases/leads first so A2 handoff cannot claim orphaned events mid-wipe.
   await pool.query(`DELETE FROM workflow.job_queue`).catch(() => {});
