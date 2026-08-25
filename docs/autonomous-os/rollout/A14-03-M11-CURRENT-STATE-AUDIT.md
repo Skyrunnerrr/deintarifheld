@@ -25,9 +25,8 @@ Repository-first. **No invented hosted PASS.**
 | M11J | IMPLEMENTED_E2_LOCAL | Server capability AuthZ on commands/reads + `test:dth:m11j` 21/21; hosted NOT_PROVEN |
 | M11K | IMPLEMENTED_E2_LOCAL | Transaction-local DB context + `test:dth:m11k` 14/14; hosted NOT_PROVEN |
 | M11L | IMPLEMENTED_E2_LOCAL | Database RLS foundation + `test:dth:m11l` 21/21; hosted NOT_PROVEN |
-| M11M | NOT_STARTED | Business-row data-scope RLS next |
-| M11M | NOT_FOUND | Plan only |
-| M11N | NOT_FOUND | Durable session hosted |
+| M11M | IMPLEMENTED_E2_LOCAL | Business data-scope RLS + `test:dth:m11m` 21/21; app LOGIN wiring EXPLICIT_LATER_GATE |
+| M11N | NOT_STARTED | Durable session / hosted AuthN next |
 | M11O | IMPLEMENTED_E2_LOCAL | `security.control_state` / CONTROL_VERSION; hosted NOT_PROVEN |
 | M11P | NOT_FOUND | Staging E2E AuthZ→Ops |
 | M11Q | PENDING | Staging cutover |

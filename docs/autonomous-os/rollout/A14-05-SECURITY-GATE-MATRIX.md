@@ -22,6 +22,6 @@ Target architecture remains: Browser → authenticated server → verified opera
 
 ## Next single gate
 
-`M11_SECURITY_GATE:M11M` (business-row data-scope RLS)
+`M11_SECURITY_GATE:M11N` (durable session / hosted AuthN)
 
-Reason: M11L establishes database-enforced operator context boundaries on control plane + command log. Next is M11M business-row visibility policies. Hosted session verification remains NOT_PROVEN.
+Reason: M11M establishes business-domain RLS for all 83 runtime tables on intended LOGIN roles. Next is M11N durable session / hosted Auth path. Open risk M11-OPEN-DB-CONTEXT-FORGERY and service_role retirement remain. Runtime app pool LOGIN wiring remains EXPLICIT_LATER_GATE.
