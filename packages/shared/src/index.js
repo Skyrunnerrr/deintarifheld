@@ -482,6 +482,16 @@ export {
   isHighRiskCommand,
 } from './a11-command-center-contracts.js';
 
+/* DTH-M11N operator session policy */
+export {
+  OperatorAuthMode,
+  OperatorAssuranceLevel,
+  OPERATOR_SESSION_POLICY_V1,
+  HostedAuthErrorCode,
+  resolveOperatorAuthMode,
+  isSafeAuthRedirectPath,
+} from './operator-session-policy.js';
+
 /* DTH-A12 Content Autopilot */
 export {
   A12_STRATEGY_POLICY_ID,

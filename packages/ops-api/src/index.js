@@ -22,3 +22,16 @@ export {
   createLocalOpsHttpReadAdapter,
   encodeLocalAuthToken,
 } from './bff/http-read-adapter.js';
+export {
+  verifyHostedSupabaseSession,
+  resolveHostedOperatorFromSession,
+  gateHostedA11Request,
+  extractBearerAccessToken,
+  sanitizeAuthLogValue,
+  denyTestIdentityInHostedMode,
+  assertSafeAuthRedirect,
+  normalizeAssuranceLevel,
+  HostedAuthErrorCode,
+  OperatorAuthMode,
+  OPERATOR_SESSION_POLICY_V1,
+} from './auth/hosted-session.js';

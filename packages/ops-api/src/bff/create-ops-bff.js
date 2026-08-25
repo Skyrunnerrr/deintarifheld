@@ -6,6 +6,8 @@ import { KillDomain, KillState, resolveSotAlias, OperatorCapability } from '@dei
 import { createA11ReadService, executeOperatorCommand, readFreshControlSnapshot, authorizeOperatorRead } from '@deintarifheld/db';
 import { createKillSwitchService } from '../kill/service.js';
 import { gateOpsRequest, gateA11Request } from './auth-gate.js';
+import { gateHostedA11Request } from '../auth/hosted-session.js';
+import { OperatorAuthMode, resolveOperatorAuthMode } from '@deintarifheld/shared';
 import { INTERNAL_BFF_PREFIX, LimitedWriteOperation } from './constants.js';
 import { createLocalDbPool } from './db.js';
 import { createReadService } from './reads.js';
@@ -32,6 +34,8 @@ export function createOpsBff({
   databaseUrl,
   pool: injectedPool,
   killService = createKillSwitchService(),
+  env = process.env,
+  hostedAuth = null,
 } = {}) {
   const ownedPool = !injectedPool;
   const pool = injectedPool || createLocalDbPool(databaseUrl);
@@ -51,6 +55,36 @@ export function createOpsBff({
     return null;
   }
 
+  async function resolveA11Identity(req = {}) {
+    const mode = resolveOperatorAuthMode(env);
+    if (mode === OperatorAuthMode.HOSTED) {
+      if (!hostedAuth?.getUser) {
+        return {
+          ok: false,
+          status: 503,
+          code: 'AUTH_PROVIDER_UNAVAILABLE',
+        };
+      }
+      return gateHostedA11Request({
+        pool,
+        headers: req.headers || {},
+        accessToken: req.accessToken,
+        getUser: hostedAuth.getUser,
+        getAuthenticatorAssuranceLevel: hostedAuth.getAuthenticatorAssuranceLevel,
+        env,
+        body: req.body || {},
+        query: req.query || {},
+      });
+    }
+    return gateA11Request({
+      principal: req.principal,
+      session: req.session,
+      sharedSecretContext: req.sharedSecretContext,
+      claimedRole: req.body?.role || req.body?.operatorRole || req.query?.role,
+      env,
+    });
+  }
+
   async function dispatch(req = {}) {
     const method = String(req.method || 'GET').toUpperCase();
     const path = String(req.path || '');
@@ -62,12 +96,7 @@ export function createOpsBff({
     }
 
     if (path.startsWith(`${INTERNAL_BFF_PREFIX}/a11`)) {
-      const a11auth = gateA11Request({
-        principal: req.principal,
-        session: req.session,
-        sharedSecretContext: req.sharedSecretContext,
-        claimedRole: body.role || body.operatorRole || query.role,
-      });
+      const a11auth = await resolveA11Identity({ ...req, body, query });
       if (!a11auth.ok) return json(a11auth.status, { ok: false, code: a11auth.code });
       return dispatchA11({ method, path, body, query, identity: a11auth, req });
     }
@@ -76,6 +105,7 @@ export function createOpsBff({
       principal: req.principal,
       session: req.session,
       sharedSecretContext: req.sharedSecretContext,
+      env,
     });
     if (!auth.ok) return json(auth.status, { ok: false, code: auth.code });
 

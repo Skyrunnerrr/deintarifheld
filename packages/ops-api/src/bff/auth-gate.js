@@ -1,10 +1,20 @@
 /**
  * P3-F3 AuthN gate — PERSON_PRINCIPAL CC session + synthetic Owner-only local AuthZ.
  * A11 adds capability AuthZ over test identities. Client role is not authority.
+ * M11N: hosted mode denies TEST_* identities; use gateHostedA11Request for Supabase sessions.
  * STRONG_AUTHZ_COMPLETE=NO · CURRENT_LOCAL_AUTHZ_MODE=SYNTHETIC_OWNER_ONLY_DEV_GATE
  */
-import { PrincipalType, isPersonPrincipal, TEST_OPERATOR_BY_PERSON_ID, TEST_OPERATOR_ID_BY_PERSON_ID } from '@deintarifheld/shared';
+import {
+  PrincipalType,
+  isPersonPrincipal,
+  TEST_OPERATOR_BY_PERSON_ID,
+  TEST_OPERATOR_ID_BY_PERSON_ID,
+  resolveOperatorAuthMode,
+  OperatorAuthMode,
+  HostedAuthErrorCode,
+} from '@deintarifheld/shared';
 import { SYNTHETIC_OWNER_PERSON_ID } from '../auth/local-owner-auth.js';
+import { denyTestIdentityInHostedMode } from '../auth/hosted-session.js';
 
 function personSessionOrDeny({ principal, session, sharedSecretContext } = {}) {
   if (sharedSecretContext === true) {
@@ -34,7 +44,15 @@ function personSessionOrDeny({ principal, session, sharedSecretContext } = {}) {
   return { ok: true };
 }
 
-export function gateOpsRequest({ principal, session, sharedSecretContext } = {}) {
+export function gateOpsRequest({ principal, session, sharedSecretContext, env = process.env } = {}) {
+  if (resolveOperatorAuthMode(env) === OperatorAuthMode.HOSTED) {
+    return {
+      ok: false,
+      status: 401,
+      code: HostedAuthErrorCode.AUTH_SESSION_MISSING,
+      hint: 'hosted mode requires gateHostedA11Request / verified Supabase session',
+    };
+  }
   const base = personSessionOrDeny({ principal, session, sharedSecretContext });
   if (!base.ok) return base;
   if (session.personId !== SYNTHETIC_OWNER_PERSON_ID) {
@@ -54,7 +72,23 @@ export function gateOpsRequest({ principal, session, sharedSecretContext } = {})
   };
 }
 
-export function gateA11Request({ principal, session, sharedSecretContext, claimedRole } = {}) {
+export function gateA11Request({
+  principal,
+  session,
+  sharedSecretContext,
+  claimedRole,
+  env = process.env,
+} = {}) {
+  const hostedDeny = denyTestIdentityInHostedMode({
+    env,
+    identitySource: 'TEST_E2_ONLY',
+    label: TEST_OPERATOR_BY_PERSON_ID[session?.personId]?.label,
+    personId: session?.personId,
+  });
+  if (!hostedDeny.ok) {
+    return hostedDeny;
+  }
+
   const base = personSessionOrDeny({ principal, session, sharedSecretContext });
   if (!base.ok) return { ...base, code: base.code === 'MISSING_PRINCIPAL' ? 'SESSION_MISSING' : base.code };
   const bound = TEST_OPERATOR_BY_PERSON_ID[session.personId];
