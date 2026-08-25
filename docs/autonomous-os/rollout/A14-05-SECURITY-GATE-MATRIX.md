@@ -22,6 +22,6 @@ Target architecture remains: Browser → authenticated server → verified opera
 
 ## Next single gate
 
-`M11_SECURITY_GATE:M11N` (durable session / hosted AuthN)
+`M11_SECURITY_GATE:M11P` (staging AuthZ→RLS→Ops E2E)
 
-Reason: M11M establishes business-domain RLS for all 83 runtime tables on intended LOGIN roles. Next is M11N durable session / hosted Auth path. Open risk M11-OPEN-DB-CONTEXT-FORGERY and service_role retirement remain. Runtime app pool LOGIN wiring remains EXPLICIT_LATER_GATE.
+Reason: M11N establishes server-verified Supabase session + AAL2 + M11H mapping foundation (E2 local). Hosted Auth Dashboard configuration remains Owner-required. M11O durable control already E2-local. Next is M11P staging end-to-end proof. Open risks M11-OPEN-DB-CONTEXT-FORGERY and M11-OPEN-RUNTIME-DATABASE-IDENTITY-ALIGNMENT remain.

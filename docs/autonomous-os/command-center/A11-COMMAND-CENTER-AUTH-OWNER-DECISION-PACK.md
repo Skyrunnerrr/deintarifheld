@@ -23,7 +23,7 @@ Freeze (AuthN architecture only — not staging-proven):
 
 | ID | Status |
 |----|--------|
-| OD-A11-SESSION-POLICY | OPEN (lifetimes, inactivity, concurrency, step-up) |
+| OD-A11-SESSION-POLICY | APPROVED_FOR_M11N_IMPLEMENTATION (lifetimes from H0a 30m/12h; hosted JWT/refresh/single-session = HOSTED_CONFIG_REQUIRED) |
 | OD-A11-ROLE-POLICY | OPEN (capability freeze / M11J alignment) |
 | OD-A11-DEPLOYMENT | OPEN (hosted CC runtime) |
 

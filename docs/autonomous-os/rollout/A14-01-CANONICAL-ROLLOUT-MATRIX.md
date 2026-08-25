@@ -33,7 +33,7 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 | A13-P01 | A13 | Paid acquisition provider | DeterministicTest | E2 | Provider | OD-A13-PROVIDER | YES | | YES | Adapter | YES | YES late | YES | Pause | Spend alerts | PROVIDER | PROVIDER_REQUIRED |
 | A13-O01 | A13 | Budget/attribution/tracking | Test policies | E2 | Staging/Canary | OD-A13-ACQUISITION-POLICY | | YES consent | YES | Policy | YES | YES | YES | Cap/pause | | OWNER | OWNER_REQUIRED |
 | M11-E | M11 | Private schema exposure | Staging R4 proven; prod schemas absent | E4 staging / E0 prod | Staging/Prod | | | YES | | Continue F+ | YES | | Hosted | | | SECURITY | PARTIAL |
-| M11-F-P | M11 | AuthZ/runtime/session/pooler | **M11F–M E2 proven**; N–P open | E2/E0 | Staging | | | YES | | M11N next | YES | | | | | SECURITY | PARTIAL |
+| M11-F-P | M11 | AuthZ/runtime/session/pooler | **M11F–N E2 proven**; P open | E2/E0 | Staging | | | YES | | M11P next | YES | | | | | SECURITY | PARTIAL |
 | M11-O | M11 | Durable controls | E2 local control_state | E2 | Staging | | | YES | | Hosted prove | YES | | | Kill | | SECURITY | E2_PROVEN |
 | M11-T | M11 | Intake AuthZ mapping | E2 local | E2 | Staging | | | YES | | Hosted | YES | | | | | SECURITY | E2_PROVEN |
 | M11-QRS | M11 | service_role retirement | PENDING | E0 | Production | | | YES | | Cutover | | | | | | SECURITY | NOT_STARTED |
@@ -47,7 +47,7 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 - Matrix rows above: 34 gate rows
 - Owner decision IDs: see A14-02 (~35 normalized)
 - Provider gates: ≥12
-- Security: M11F+M11G+M11H+M11I+M11J+M11K+M11L+M11M PROVEN_E2_LOCAL; M11N–P NOT_STARTED; M11E PARTIAL (staging exposure only)
+- Security: M11F–N PROVEN_E2_LOCAL; M11P NOT_STARTED; M11E PARTIAL (staging exposure only); hosted Auth config pending
 
 
 ## Auth decision status (post OD-A11-AUTH-PROVIDER)
@@ -62,10 +62,10 @@ Status values: OPEN · E2_PROVEN · OWNER_REQUIRED · PROVIDER_REQUIRED · SECUR
 | STRONG_AUTHZ | NOT_PROVEN |
 | SECURITY_FOR_STAGING | NOT_PASS |
 
-Next gate: `M11N` durable session / hosted AuthN (after M11M business data-scope RLS close).
+Next gate: `M11P` staging AuthZ→Ops E2E (after M11N hosted session foundation; hosted Auth Dashboard config Owner-required).
 
 
-## M11F–M status
+## M11F–N status
 
 | Key | Status |
 |-----|--------|
@@ -78,9 +78,12 @@ Next gate: `M11N` durable session / hosted AuthN (after M11M business data-scope
 | M11K_TRUSTED_DB_REQUEST_CONTEXT | PROVEN_E2_LOCAL |
 | M11L_DATABASE_RLS_FOUNDATION | PROVEN_E2_LOCAL |
 | M11M_BUSINESS_DATA_SCOPE_RLS | PROVEN_E2_LOCAL |
-| M11N | NEXT |
+| M11N_HOSTED_SESSION_SECURITY | PROVEN_E2_LOCAL |
+| M11P | NEXT |
+| OD_A11_SESSION_POLICY | APPROVED_FOR_M11N_IMPLEMENTATION |
+| HOSTED_AUTH_CONFIGURATION | NOT_YET_PROVEN |
 | OPEN_SECURITY_RISK | M11-OPEN-DB-CONTEXT-FORGERY (OPEN) |
 | OPEN_SECURITY_RISK | M11-OPEN-RUNTIME-DATABASE-IDENTITY-ALIGNMENT (OPEN) |
 | RUNTIME_DATABASE_IDENTITY_ALIGNMENT | EXPLICIT_LATER_GATE |
-| AUTH_IMPLEMENTATION | NOT_STARTED |
+| AUTH_IMPLEMENTATION | PARTIAL_E2_LOCAL |
 | STAGING_SECURITY | NOT_PROVEN |

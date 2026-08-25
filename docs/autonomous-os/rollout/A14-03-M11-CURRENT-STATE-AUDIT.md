@@ -26,9 +26,9 @@ Repository-first. **No invented hosted PASS.**
 | M11K | IMPLEMENTED_E2_LOCAL | Transaction-local DB context + `test:dth:m11k` 14/14; hosted NOT_PROVEN |
 | M11L | IMPLEMENTED_E2_LOCAL | Database RLS foundation + `test:dth:m11l` 21/21; hosted NOT_PROVEN |
 | M11M | IMPLEMENTED_E2_LOCAL | Business data-scope RLS + `test:dth:m11m` 21/21; app LOGIN wiring EXPLICIT_LATER_GATE |
-| M11N | NOT_STARTED | Durable session / hosted AuthN next |
+| M11N | IMPLEMENTED_E2_LOCAL | Hosted session verify + AAL2 + `test:dth:m11n` 19/19; hosted Auth config NOT_YET_PROVEN |
 | M11O | IMPLEMENTED_E2_LOCAL | `security.control_state` / CONTROL_VERSION; hosted NOT_PROVEN |
-| M11P | NOT_FOUND | Staging E2E AuthZ→Ops |
+| M11P | NOT_STARTED | Staging E2E AuthZ→Ops next |
 | M11Q | PENDING | Staging cutover |
 | M11R | PENDING | |
 | M11S | PENDING | service_role retirement before production autonomy |

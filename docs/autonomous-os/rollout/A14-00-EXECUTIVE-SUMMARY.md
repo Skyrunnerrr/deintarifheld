@@ -21,7 +21,7 @@ A13R_RESULT=POST_IMPLEMENTATION_REGRESSION_GATE_CLOSED
 
 ## Truth in one line
 
-E2 local autonomous loop is proven. Staging/Production readiness is **not**. Auth provider **APPROVED = SUPABASE_AUTH**. M11F–M **CLOSED_E2_LOCAL** (open risks: M11-OPEN-DB-CONTEXT-FORGERY; runtime LOGIN wiring later gate). Next hard stop is **M11N** (durable session / hosted AuthN). Staging Auth still NOT_PROVEN.
+E2 local autonomous loop is proven. Staging/Production readiness is **not**. Auth provider **APPROVED = SUPABASE_AUTH**. M11F–N **CLOSED_E2_LOCAL** (M11N hosted Auth config pending; open risks: context forgery + runtime DB identity). Next hard stop is **M11P** (staging AuthZ→Ops) after Owner hosted Auth configuration. Staging Auth still NOT_PROVEN.
 
 ## A14_PHASE
 
