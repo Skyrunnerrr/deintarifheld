@@ -18,7 +18,8 @@
     "test:m11i": "node --test --test-concurrency=1 tests/m11i-operator-role-capability-mapping.test.js",
     "test:m11j": "node --test --test-concurrency=1 tests/m11j-strong-operator-authz.test.js",
     "test:m11k": "node --test --test-concurrency=1 tests/m11k-trusted-db-request-context.test.js",
-    "test:m11l": "node --test --test-concurrency=1 tests/m11l-operator-context-rls.test.js"
+    "test:m11l": "node --test --test-concurrency=1 tests/m11l-operator-context-rls.test.js",
+    "test:m11m": "node --test --test-concurrency=1 tests/m11m-business-data-scope-rls.test.js"
   },
   "dth": {
     "tranche": "P3-F5",
