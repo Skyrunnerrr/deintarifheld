@@ -16,6 +16,9 @@ Global register of approved upstream references and DTH reuse decisions. Update 
 | Next.js auth starter | Full app template | supabase-community starters | OFFICIAL_EXAMPLE | various | MIT | REJECTED | — | Would replace DTH app | 2026-08-25 |
 | Random auth snippets | Session handling | blogs/gists | UNTRUSTED | — | — | REJECTED | — | Source quality hierarchy rule | 2026-08-25 |
 | E2E staging proof | M11P harness | DTH test profile + Supabase staging | CUSTOM_DTH + OFFICIAL | TBD M11P | — | REVIEW_REQUIRED | `test:dth:m11p` (planned) | E4 only; no prod | 2026-08-25 |
+| M11P hosted Auth prereq | Dashboard config checklist | Supabase Auth docs | OFFICIAL_VENDOR | dashboard | Apache-2.0 | OWNER_CONFIGURATION | `M11P-HOSTED-AUTH-CONFIG-CHECKLIST.md` | No hosted readback yet | 2026-08-25 |
+| M11P staging runtime | Migration apply + dth_* wiring | Supabase CLI + existing migrations | REUSE_EXISTING_DTH + OFFICIAL | repo chain | — | REVIEW_REQUIRED | `M11P-STAGING-SECURITY-RUNTIME-PLAN.md` | Staging 001/002 only today | 2026-08-25 |
+| Inactivity timeout 30m | Not native Supabase dashboard | DTH server + short JWT | CUSTOM_DTH + OFFICIAL | H0a constants | — | APPROVED_REFERENCE | Ops BFF session boundary | App-enforced; not provider-only | 2026-08-25 |
 | GitHub Actions | CI security scans | `github/codeql-action` | OFFICIAL_VENDOR | pin in repo | MIT | APPROVED_REFERENCE | `.github/` if extended | Minimal permissions | 2026-08-25 |
 
 ## Review policy
