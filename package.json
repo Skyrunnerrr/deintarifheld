@@ -71,7 +71,8 @@
     "test:dth:m11k": "npm run test:m11k -w @deintarifheld/db",
     "test:dth:m11l": "npm run test:m11l -w @deintarifheld/db",
     "test:dth:m11m": "npm run test:m11m -w @deintarifheld/db",
-    "test:dth:m11n": "npm run test:m11n -w @deintarifheld/ops-api"
+    "test:dth:m11n": "npm run test:m11n -w @deintarifheld/ops-api",
+    "test:dth:m11p-auth-host": "npm run test:m11p-auth-host -w @deintarifheld/ops-api"
   },
   "dependencies": {
     "@deintarifheld/cc": "*",
