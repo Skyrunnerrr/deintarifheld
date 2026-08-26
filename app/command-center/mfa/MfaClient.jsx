@@ -61,6 +61,15 @@ export default function MfaClient() {
     setError('');
     setBusy(true);
     try {
+      const flowRes = await fetch('/api/command-center/auth/flow-state', { credentials: 'include' });
+      if (flowRes.ok) {
+        const flowBody = await flowRes.json();
+        if (flowBody.state === 'INITIAL_PASSWORD_REQUIRED') {
+          window.location.href = '/command-center/set-password/';
+          return;
+        }
+      }
+
       const supabase = createSupabaseBrowserClient();
       const { data: aal, error: aalErr } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aalErr) throw aalErr;
