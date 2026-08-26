@@ -11,9 +11,10 @@
   "scripts": {
     "build": "node -e \"console.log('[@deintarifheld/ops-api] bff build OK')\"",
     "typecheck": "node -e \"process.exit(0)\"",
-    "test": "node --test src/authn.test.js src/auth/provider-token-auth.test.js src/auth/m11n-hosted-session.test.js src/auth/m11p-auth-host.test.js src/kill/kill-switch.test.js src/bff/bff-unit.test.js src/bff/http-read-adapter.test.js",
+    "test": "node --test src/authn.test.js src/auth/provider-token-auth.test.js src/auth/m11n-hosted-session.test.js src/auth/m11p-auth-host.test.js src/auth/m11p-hosted-mfa.test.js src/kill/kill-switch.test.js src/bff/bff-unit.test.js src/bff/http-read-adapter.test.js",
     "test:m11n": "node --test --test-concurrency=1 src/auth/m11n-hosted-session.test.js",
     "test:m11p-auth-host": "node --test --test-concurrency=1 src/auth/m11p-auth-host.test.js",
+    "test:m11p-hosted-mfa": "node --test --test-concurrency=1 src/auth/m11p-hosted-mfa.test.js",
     "dev:http-read": "node src/bff/dev-http-read.mjs"
   },
   "dth": {
