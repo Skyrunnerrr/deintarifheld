@@ -74,7 +74,12 @@
     "test:dth:m11n": "npm run test:m11n -w @deintarifheld/ops-api"
   },
   "dependencies": {
+    "@deintarifheld/cc": "*",
+    "@deintarifheld/db": "*",
+    "@deintarifheld/ops-api": "*",
+    "@deintarifheld/shared": "*",
     "@hookform/resolvers": "^3.10.0",
+    "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.111.0",
     "axios": "^1.13.6",
     "clsx": "^2.1.1",
@@ -82,6 +87,7 @@
     "lucide-react": "^0.577.0",
     "motion-dom": "^12.38.0",
     "next": "^15.5.14",
+    "pg": "^8.22.0",
     "react": "^19",
     "react-dom": "^19",
     "react-hook-form": "^7.71.2",
