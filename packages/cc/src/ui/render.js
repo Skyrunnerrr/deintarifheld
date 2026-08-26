@@ -162,6 +162,97 @@ export function renderShell({
 </html>`;
 }
 
+/**
+ * Hosted staging shell — cookie session transport, no localStorage authority.
+ */
+export function renderHostedShell({
+  activeView,
+  sessionLabel,
+  connectionState = 'pending',
+  connectionText = 'Ops-API: Prüfung…',
+  mainHtml,
+  opsBaseUrl,
+  navItems = [],
+  clientScriptPath = '/command-center/assets/cc-hosted-client.js',
+}) {
+  const nav = navItems.map((item) => {
+    const current = item.id === activeView ? ' aria-current="page"' : '';
+    return `<a href="${item.href}"${current}>${esc(item.label)}</a>`;
+  }).join('\n');
+
+  const titles = {
+    overview: 'Übersicht',
+    inbox: 'Inbox',
+    cases: 'Vorgänge',
+    approvals: 'Freigaben',
+    tasks: 'Aufgaben',
+    workflows: 'Workflows',
+    lifecycle: 'Kunden',
+    controls: 'Steuerung',
+    audit: 'Audit',
+  };
+  const leads = {
+    overview: 'Operative Systemlage — Ausnahmen, Freigaben, Kill-Status. Kein Live-Ticker.',
+    inbox: 'Ausnahmen und Handlungsbedarf über A1–A10 — Projektion, keine zweite Wahrheit.',
+    cases: 'Vorgänge mit Stage-Projektion. Canonical Domain bleibt Autorität.',
+    approvals: 'Konsolidierte Freigaben A8/A9 — revisionsgebunden.',
+    tasks: 'Interne Aufgaben. Aufgabenstatus ändert keine Fachautorität.',
+    workflows: 'Jobs und Dead Letter. Kein Roh-Payload.',
+    lifecycle: 'A10 Lifecycle-Projektion.',
+    controls: 'Dauerhaftes Kill/Takeover. Kein UI-only Toggle.',
+    audit: 'Nur Lesen. Audit ist unveränderlich.',
+  };
+
+  return `<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>${esc(titles[activeView])} · DeinTarifHeld Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>${CSS}</style>
+</head>
+<body>
+  <div class="dth-shell" data-view="${esc(activeView)}" data-mutation-controls="0" data-hosted="true">
+    <aside class="dth-side" aria-label="Hauptnavigation">
+      <p class="dth-brand">Dein<span>Tarif</span>Held</p>
+      <div class="dth-local-badge">Staging · Hosted Operator Control Plane</div>
+      <div class="dth-session" id="dth-session">
+        ${esc(sessionLabel || 'Keine Sitzung')}
+      </div>
+      <nav class="dth-nav" aria-label="Bereiche">
+        ${nav}
+      </nav>
+      <button type="button" class="dth-logout" id="dth-logout">Abmelden</button>
+    </aside>
+    <main class="dth-main" id="dth-main">
+      <div class="dth-topbar">
+        <div>
+          <h1 class="dth-title">${esc(titles[activeView])}</h1>
+          <p class="dth-lead">${esc(leads[activeView])}</p>
+        </div>
+        <div class="dth-conn" id="dth-conn" data-state="${esc(connectionState)}">${esc(connectionText)}</div>
+      </div>
+      <div id="dth-content">
+        ${mainHtml || renderStateBlock('loading', 'Bitte warten…')}
+      </div>
+    </main>
+  </div>
+  <script>
+    window.__DTH_CC__ = {
+      mode: 'hosted',
+      view: ${JSON.stringify(activeView)},
+      opsBaseUrl: ${JSON.stringify(opsBaseUrl)},
+      tokenKey: null
+    };
+  </script>
+  <script type="module" src="${esc(clientScriptPath)}"></script>
+</body>
+</html>`;
+}
+
 export function renderInboxTable(items = []) {
   if (!items.length) {
     return renderStateBlock('empty', 'Derzeit keine eingehenden Anfragen in der lokalen Datenbank.');

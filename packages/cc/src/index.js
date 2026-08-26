@@ -5,6 +5,7 @@ export { CcKillStatusContract, createKillStatusAdapter } from './kill/contracts.
 export { createOpsReadClient, CC_NAV_ITEMS, CcNavItem } from './ui/ops-client.js';
 export {
   renderShell,
+  renderHostedShell,
   renderInboxTable,
   renderCasesView,
   renderTasksView,

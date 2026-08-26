@@ -7,6 +7,8 @@ const staticExport = process.env.STATIC_EXPORT === '1'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   ...(staticExport ? { output: 'export' } : {}),
+  transpilePackages: ['@deintarifheld/cc', '@deintarifheld/shared'],
+  serverExternalPackages: ['pg', '@deintarifheld/db', '@deintarifheld/ops-api'],
   trailingSlash: true,
   images: {
     unoptimized: true,
