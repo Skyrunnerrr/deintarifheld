@@ -73,7 +73,8 @@
     "test:dth:m11m": "npm run test:m11m -w @deintarifheld/db",
     "test:dth:m11n": "npm run test:m11n -w @deintarifheld/ops-api",
     "test:dth:m11p-auth-host": "npm run test:m11p-auth-host -w @deintarifheld/ops-api",
-    "test:dth:m11p-hosted-mfa": "npm run test:m11p-hosted-mfa -w @deintarifheld/ops-api"
+    "test:dth:m11p-hosted-mfa": "npm run test:m11p-hosted-mfa -w @deintarifheld/ops-api",
+    "test:dth:m11p-hosted-invite": "npm run test:m11p-hosted-invite -w @deintarifheld/ops-api"
   },
   "dependencies": {
     "@deintarifheld/cc": "*",

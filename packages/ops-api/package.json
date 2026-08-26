@@ -15,6 +15,7 @@
     "test:m11n": "node --test --test-concurrency=1 src/auth/m11n-hosted-session.test.js",
     "test:m11p-auth-host": "node --test --test-concurrency=1 src/auth/m11p-auth-host.test.js",
     "test:m11p-hosted-mfa": "node --test --test-concurrency=1 src/auth/m11p-hosted-mfa.test.js",
+    "test:m11p-hosted-invite": "node --test --test-concurrency=1 src/auth/m11p-hosted-invite.test.js",
     "dev:http-read": "node src/bff/dev-http-read.mjs"
   },
   "dth": {
