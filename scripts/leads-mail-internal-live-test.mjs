@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildInternalOpsMail, sendLeadEmails } from '../lib/leads/mail.js'
+import { buildInternalOpsMail, parseLeadToAddresses, sendLeadEmails } from '../lib/leads/mail.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const sends = []
@@ -67,6 +67,12 @@ const businessData = {
   telefon: '+4915111111111',
   plz: '10115',
   energieart: 'Strom',
+  verbrauchStrom: '85000',
+  verbrauchGas: '12000',
+  standorte: '2',
+  versorger: 'Stadtwerke Beispiel',
+  vertragslaufzeit: '12 Monate',
+  nachricht: 'Bitte Stromtarif prüfen',
   source_page: 'unternehmen',
 }
 const privateHero = {
@@ -74,6 +80,9 @@ const privateHero = {
   email: 'synth.private.hero@example.invalid',
   phone: '+4915222222222',
   zip: '80331',
+  provider: 'Beispielversorger',
+  usage: '3500',
+  type: 'Strom',
   page_source: 'hero-funnel',
   source_page: '/',
 }
@@ -82,6 +91,9 @@ const privateFunnel = {
   email: 'synth.private.funnel@example.invalid',
   phone: '+4915333333333',
   zip: '20095',
+  provider: 'Anderer Versorger',
+  usage: '2800',
+  type: 'Gas',
   page_source: 'main_funnel',
   source_page: '/',
 }
@@ -181,6 +193,29 @@ async function assertInternalLiveAllChannels() {
   console.log('CUSTOMER_CONFIRMATION_SKIPPED=PASS')
 }
 
+async function assertCommaSeparatedRecipients() {
+  sends.length = 0
+  await withEnv(
+    {
+      LEADS_MAIL_MODE: 'internal_live',
+      RESEND_API_KEY: 're_test_key',
+      LEADS_FROM_EMAIL: 'DeinTarifheld <onboarding@resend.dev>',
+      LEADS_TO_EMAIL: 'office@example.invalid, kontakt@deintarifheld.de',
+    },
+    async () => {
+      const r = await sendLeadEmails({
+        leadRef: 'REF-MULTI',
+        data: businessData,
+        submittedAt: new Date().toISOString(),
+        channel: 'business',
+      })
+      assert.equal(r.ok, true)
+      assert.deepEqual(sends[0].to, ['office@example.invalid', 'kontakt@deintarifheld.de'])
+    },
+  )
+  console.log('COMMA_SEPARATED_RECIPIENTS=PASS')
+}
+
 async function assertIdempotentMailContract() {
   // Mail layer itself is not idempotent; route-level idempotency prevents a second send.
   // Prove one call = one provider send; a second call would send again (caller must gate).
@@ -260,24 +295,47 @@ async function assertFailurePath() {
   console.log('MAIL_FAILURE=PASS')
 }
 
-function assertDataMinimization() {
+function assertInquiryFieldsInOpsMail() {
   const mail = buildInternalOpsMail({
     channel: 'career',
     leadRef: 'REF-MIN',
     data: careerData,
     submittedAt: new Date().toISOString(),
   })
-  assert.ok(mail.adminText.includes('Motivation (gekürzt)'))
-  assert.ok(!mail.adminText.includes('A'.repeat(400)))
+  assert.match(mail.adminText, /Neue Karriere-Bewerbung/)
+  assert.ok(mail.adminText.includes('A'.repeat(400)))
   assert.match(mail.adminText, /Kundenbestätigung: bewusst übersprungen/)
   assert.doesNotMatch(mail.adminText, /honeypot|user-agent|x-forwarded|RESEND_API_KEY/i)
   const biz = buildInternalOpsMail({
     channel: 'business',
     leadRef: 'REF-MIN-B',
-    data: { ...businessData, nachricht: 'secret note should stay out of minimized ops mail' },
+    data: { ...businessData, nachricht: 'Bitte Stromtarif prüfen' },
     submittedAt: new Date().toISOString(),
   })
-  assert.doesNotMatch(biz.adminText, /secret note/)
+  assert.match(biz.subjectAdmin, /Strom-Anfrage/)
+  assert.match(biz.adminText, /Neue Unternehmensanfrage/)
+  assert.match(biz.adminText, /Verbrauch Strom: 85000/)
+  assert.match(biz.adminText, /Verbrauch Gas: 12000/)
+  assert.match(biz.adminText, /Versorger: Stadtwerke Beispiel/)
+  assert.match(biz.adminText, /Bitte Stromtarif prüfen/)
+  assert.match(biz.adminHtml, /Neue Unternehmensanfrage \(Strom\)/)
+  const priv = buildInternalOpsMail({
+    channel: 'private',
+    leadRef: 'REF-MIN-P',
+    data: privateHero,
+    submittedAt: new Date().toISOString(),
+  })
+  assert.match(priv.subjectAdmin, /Strom-Anfrage/)
+  assert.match(priv.adminText, /Neue Privat-Tarifanfrage/)
+  assert.match(priv.adminText, /Anbieter: Beispielversorger/)
+  assert.match(priv.adminText, /Verbrauch: 3500/)
+  assert.match(priv.adminText, /Tarifart: Strom/)
+  assert.deepEqual(parseLeadToAddresses('office@example.invalid, kontakt@deintarifheld.de'), [
+    'office@example.invalid',
+    'kontakt@deintarifheld.de',
+  ])
+  assert.deepEqual(parseLeadToAddresses('  '), [])
+  console.log('INQUIRY_FIELDS_IN_OPS_MAIL=PASS')
   console.log('AUDIT_REDACTION_AND_MINIMIZATION=PASS')
 }
 
@@ -345,9 +403,10 @@ async function main() {
   try {
     await assertModeParsing()
     await assertInternalLiveAllChannels()
+    await assertCommaSeparatedRecipients()
     await assertIdempotentMailContract()
     await assertFailurePath()
-    assertDataMinimization()
+    assertInquiryFieldsInOpsMail()
     assertCutoverGate()
     await assertLiveStillSendsCustomer()
     console.log('INTERNAL_LIVE_TESTS=PASS')
