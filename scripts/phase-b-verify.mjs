@@ -21,6 +21,7 @@ function run(script) {
 
 run('leads:contract')
 run('leads:admin:inbox')
+run('leads:duplicate-status')
 
 const mig = readFileSync(join(root, 'supabase/migrations/002_leads_phase_b.sql'), 'utf8')
 if (/^\s*truncate\b/im.test(mig) || /^\s*drop\s+table\s+public\.leads\b/im.test(mig)) {

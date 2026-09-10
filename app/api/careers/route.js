@@ -19,7 +19,7 @@ import {
   updateCareerMailMeta,
   writeAudit,
 } from '@/lib/leads/supabase'
-import { sendLeadEmails } from '@/lib/leads/mail'
+import { mailFieldsFromStored, sendLeadEmails } from '@/lib/leads/mail'
 import { optionsResponse, withCors } from '@/lib/leads/cors'
 import { leadsLog } from '@/lib/leads/log'
 
@@ -143,9 +143,7 @@ export async function POST(request) {
       idempotent: true,
       leadId: existingByKey.id,
       leadRef: existingByKey.application_ref,
-      mail: true,
-      mailMode: process.env.LEADS_MAIL_MODE || 'mock',
-      mailStatus: 'accepted',
+      ...mailFieldsFromStored(existingByKey),
     })
   }
 
@@ -163,9 +161,7 @@ export async function POST(request) {
       duplicate: true,
       leadId: duplicate.id,
       leadRef: duplicate.application_ref,
-      mail: true,
-      mailMode: process.env.LEADS_MAIL_MODE || 'mock',
-      mailStatus: 'accepted',
+      ...mailFieldsFromStored(duplicate),
     })
   }
 
@@ -200,9 +196,7 @@ export async function POST(request) {
           idempotent: true,
           leadId: raced.id,
           leadRef: raced.application_ref,
-          mail: true,
-          mailMode: process.env.LEADS_MAIL_MODE || 'mock',
-          mailStatus: 'accepted',
+          ...mailFieldsFromStored(raced),
         })
       }
     }

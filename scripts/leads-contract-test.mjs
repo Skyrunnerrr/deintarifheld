@@ -48,6 +48,7 @@ assert.match(mail, /mode !== 'live'|mail-mode-unsupported/)
 assert.match(mail, /buildPrivateMails/)
 assert.match(mail, /buildCareerMails/)
 assert.match(mail, /buildInternalOpsMail/)
+assert.match(mail, /mailFieldsFromStored/)
 assert.match(mail, /parseLeadToAddresses/)
 assert.match(mail, /Verbrauch Strom/)
 assert.match(mail, /Neue Unternehmensanfrage/)
@@ -141,6 +142,9 @@ const adminList = read('app/api/admin/leads/route.js')
 assert.match(adminList, /listOpsInbox/)
 assert.match(adminList, /isAdminAuthorized/)
 assert.doesNotMatch(adminList, /withCors/)
+const adminAuth = read('lib/leads/admin-auth.js')
+assert.doesNotMatch(adminAuth, /process\.env\.CRON_SECRET/)
+assert.match(adminAuth, /LEADS_ADMIN_SECRET/)
 const staticBuild = read('scripts/build-static-production.sh')
 assert.match(staticBuild, /mv app\/api/)
 
@@ -157,6 +161,7 @@ for (const s of [
   'leads:smoke:private',
   'leads:smoke:career',
   'leads:admin:inbox',
+  'leads:duplicate-status',
   'phase-b:verify',
 ]) {
   assert.ok(pkg.scripts[s], `missing script ${s}`)
