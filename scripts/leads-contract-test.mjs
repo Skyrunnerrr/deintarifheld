@@ -48,6 +48,9 @@ assert.match(mail, /mode !== 'live'|mail-mode-unsupported/)
 assert.match(mail, /buildPrivateMails/)
 assert.match(mail, /buildCareerMails/)
 assert.match(mail, /buildInternalOpsMail/)
+assert.match(mail, /parseLeadToAddresses/)
+assert.match(mail, /Verbrauch Strom/)
+assert.match(mail, /Neue Unternehmensanfrage/)
 assert.match(mail, /customerConfirmation: 'skipped'/)
 assert.match(mail, /mailStatus: 'internal_sent'/)
 assert.match(mail, /MAIL_TEMPLATE_IDS/)
@@ -130,6 +133,16 @@ assert.match(apply, /checkdomain_active.:false|dns_automation.:.skipped/)
 const deleteRoute = read('app/api/admin/leads/delete/route.js')
 assert.match(deleteRoute, /channel/)
 assert.match(deleteRoute, /careerUpdated/)
+assert.match(deleteRoute, /isAdminAuthorized/)
+assert.ok(existsSync(join(root, 'app/api/admin/leads/route.js')))
+assert.ok(existsSync(join(root, 'app/api/admin/inbox/route.js')))
+assert.ok(existsSync(join(root, 'lib/leads/admin-auth.js')))
+const adminList = read('app/api/admin/leads/route.js')
+assert.match(adminList, /listOpsInbox/)
+assert.match(adminList, /isAdminAuthorized/)
+assert.doesNotMatch(adminList, /withCors/)
+const staticBuild = read('scripts/build-static-production.sh')
+assert.match(staticBuild, /mv app\/api/)
 
 const pkg = JSON.parse(read('package.json'))
 for (const s of [
@@ -143,6 +156,7 @@ for (const s of [
   'leads:smoke:business',
   'leads:smoke:private',
   'leads:smoke:career',
+  'leads:admin:inbox',
   'phase-b:verify',
 ]) {
   assert.ok(pkg.scripts[s], `missing script ${s}`)
