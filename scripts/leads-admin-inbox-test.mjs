@@ -53,11 +53,14 @@ function assertAuth() {
   delete process.env.LEADS_ADMIN_SECRET
   delete process.env.CRON_SECRET
   assert.equal(isAdminAuthorized(fakeRequest({ authorization: 'Bearer x' })), false)
+  process.env.CRON_SECRET = 'cron-must-not-open-admin'
+  assert.equal(isAdminAuthorized(fakeRequest({ authorization: 'Bearer cron-must-not-open-admin' })), false)
   process.env.LEADS_ADMIN_SECRET = 'ops-secret-test'
   assert.equal(isAdminAuthorized(fakeRequest({ authorization: 'Bearer ops-secret-test' })), true)
   assert.equal(isAdminAuthorized(fakeRequest({ authorization: 'Bearer wrong' })), false)
   assert.equal(isAdminAuthorized(fakeRequest({ 'x-admin-secret': 'ops-secret-test' })), true)
   assert.equal(isAdminAuthorized(fakeRequest({ authorization: 'Bearer ops-secret-test?from=query' })), false)
+  assert.equal(isAdminAuthorized(fakeRequest({ authorization: 'Bearer cron-must-not-open-admin' })), false)
   if (prevAdmin === undefined) delete process.env.LEADS_ADMIN_SECRET
   else process.env.LEADS_ADMIN_SECRET = prevAdmin
   if (prevCron === undefined) delete process.env.CRON_SECRET
@@ -94,6 +97,8 @@ async function assertList() {
 
 function assertHtmlAndRoutes() {
   assert.match(ADMIN_INBOX_HTML, /Anfragen-Eingang/)
+  assert.match(ADMIN_INBOX_HTML, /mail-failed/)
+  assert.match(ADMIN_INBOX_HTML, /Nur Mail fehlgeschlagen/)
   assert.match(ADMIN_INBOX_HTML, /\/api\/admin\/leads\//)
   assert.doesNotMatch(ADMIN_INBOX_HTML, /LEADS_ADMIN_SECRET=/)
   assert.doesNotMatch(ADMIN_INBOX_HTML, /eyJ/)

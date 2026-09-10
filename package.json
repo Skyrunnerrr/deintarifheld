@@ -20,6 +20,7 @@
     "leads:retention:test": "node scripts/leads-retention.mjs",
     "leads:delete": "node scripts/leads-delete-by-email.mjs",
     "leads:admin:inbox": "node scripts/leads-admin-inbox-test.mjs",
+    "leads:duplicate-status": "node scripts/leads-duplicate-status-test.mjs",
     "leads:contract": "node scripts/leads-contract-test.mjs",
     "leads:mail:test": "node scripts/leads-mail-internal-live-test.mjs",
     "leads:mail:internal-live": "node scripts/leads-mail-internal-live-test.mjs",

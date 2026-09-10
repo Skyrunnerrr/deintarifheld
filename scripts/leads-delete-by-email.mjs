@@ -8,14 +8,14 @@
 import 'dotenv/config'
 
 const base = (process.env.LEADS_API_BASE || 'http://127.0.0.1:3000').replace(/\/$/, '')
-const secret = process.env.LEADS_ADMIN_SECRET || process.env.CRON_SECRET
+const secret = process.env.LEADS_ADMIN_SECRET
 const emailArg = process.argv.find((a) => a.startsWith('--email='))
 const email = emailArg ? emailArg.slice('--email='.length) : process.argv[process.argv.indexOf('--email') + 1]
 const channelArg = process.argv.find((a) => a.startsWith('--channel='))
 const channel = channelArg ? channelArg.slice('--channel='.length) : 'all'
 
 if (!secret) {
-  console.error('LEADS_ADMIN_SECRET or CRON_SECRET required')
+  console.error('LEADS_ADMIN_SECRET required')
   process.exit(1)
 }
 if (!email || !email.includes('@')) {
