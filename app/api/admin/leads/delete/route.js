@@ -1,20 +1,14 @@
 import { NextResponse } from 'next/server'
+import { isAdminAuthorized } from '@/lib/leads/admin-auth'
 import { getServiceSupabase, softDeleteByEmail } from '@/lib/leads/supabase'
 
 export const runtime = 'nodejs'
-
-function authorized(request) {
-  const secret = process.env.LEADS_ADMIN_SECRET?.trim() || process.env.CRON_SECRET?.trim()
-  if (!secret) return false
-  const auth = request.headers.get('authorization') || ''
-  return auth === `Bearer ${secret}`
-}
 
 const CHANNELS = new Set(['all', 'business', 'private', 'career'])
 
 /** Automated DSGVO delete-by-email across lead channels (no UI required). */
 export async function POST(request) {
-  if (!authorized(request)) {
+  if (!isAdminAuthorized(request)) {
     return NextResponse.json({ ok: false, code: 'unauthorized' }, { status: 401 })
   }
 
