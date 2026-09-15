@@ -10,14 +10,21 @@ Live Checkdomain `/datenschutz` and `/agb` were **not** redeployed in this pass
 ```
 PUBLIC_LEGAL_ALIGNMENT=PASS
 LEGAL_TEXT_CODE_MISMATCH=NO
+TECHNICAL_FACTUAL_PRIVACY_REVIEW=PASS
 LEGAL_REVIEW_REQUIRED=YES
-TDDDG_NOTE=AGB §6 now names TDDDG (zuvor TTDSG). Legal still reviews published wording.
+EXTERNAL_LEGAL_REVIEW_REQUIRED_FOR_MERGE=NO
+LEGAL_ESCALATION_IF_SPECIFIC_ISSUE=YES
+TDDDG_NOTE=AGB §6 now names TDDDG (zuvor TTDSG).
 LIVE_SITE_LEGAL_TEXT=STALE
 ```
 
 `PUBLIC_LEGAL_ALIGNMENT=PASS` means the **repo** public texts no longer contain the
-previously recorded factual mismatches versus code. It is **not** legal-release
-approval and **not** evidence that the live website already shows the new text.
+previously recorded factual mismatches versus code. It is **not** counsel approval
+and **not** evidence that the live website already shows the new text.
+
+`LEGAL_REVIEW_REQUIRED=YES` means no qualified counsel sign-off is recorded and
+none is invented. It is **optional escalation** if a concrete legal question
+appears. It is **not** a merge blocker (`EXTERNAL_LEGAL_REVIEW_REQUIRED_FOR_MERGE=NO`).
 
 ## Closed factual mismatches (repo vs code)
 

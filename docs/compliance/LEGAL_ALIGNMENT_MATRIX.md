@@ -11,13 +11,18 @@ source of truth for the next authorized static publish.
 LEGAL_ALIGNMENT_MATRIX_READY=YES
 PUBLIC_LEGAL_ALIGNMENT=PASS
 LEGAL_TEXT_CODE_MISMATCH=NO
+TECHNICAL_FACTUAL_PRIVACY_REVIEW=PASS
 LEGAL_REVIEW_REQUIRED=YES
+EXTERNAL_LEGAL_REVIEW_REQUIRED_FOR_MERGE=NO
+LEGAL_ESCALATION_IF_SPECIFIC_ISSUE=YES
 GDPR_PROCESSOR_EVIDENCE=PARTIAL
 LIVE_SITE_LEGAL_TEXT=STALE
 ```
 
 `MATCH` / `MISMATCH` / `UNKNOWN` / `PARTIAL` only. No legal-basis assessment.
-`LEGAL_REVIEW_REQUIRED=YES` remains: no qualified legal-review evidence exists.
+`LEGAL_REVIEW_REQUIRED=YES` remains because no counsel sign-off is recorded and
+none is invented. External counsel is **optional escalation**, not a merge
+blocker. `GDPR_PROCESSOR_EVIDENCE=PARTIAL` is ongoing governance.
 
 | Item | TECH_FLOW_PRESENT | PUBLIC_DISCLOSED | PROCESSOR_EVIDENCE | LEGAL_REVIEW_REQUIRED | Verdict |
 |---|---|---|---|---|---|

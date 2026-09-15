@@ -30,9 +30,9 @@ Kein Rechtsgutachten. Keine Freigabe. Keine Geheimnisse.
 - Missbrauchsschutz: Standard Google reCAPTCHA v3 (nicht Enterprise) auf den Formularen.
 - ProvenExpert: lokales Siegel ohne Netzwerkscript; externes Script nur nach optionaler Auswahl.
 
-**Release-Status.** Technischer Code-Closure und faktische Text/Code-Ausrichtung im Repo: ja. Qualifizierte Rechtsprüfung: **offen**. Processor-/Transfernachweise: **PARTIAL**. Live-Rechtstexte: **veraltet**. Production-E2E: nicht ausgeführt. `PR6_MERGE_READY=NO`. `PRODUCTION_RELEASE_READY=NO`.
+**Release-Status.** Technischer Code-Closure und faktische Text/Code-Ausrichtung im Repo: ja. Externe Anwaltsprüfung: **optional** (kein Merge-Blocker; keine erfundene Freigabe). Processor-/Transfernachweise: **PARTIAL**. Live-Rechtstexte: **veraltet**. Production-E2E: nicht ausgeführt. `PR6_MERGE_READY=YES`. `PRODUCTION_RELEASE_READY=NO`.
 
-**Warum diese Prüfung.** GATE1 (Legal Release Approval) ist der verbleibende rechtliche Blocker vor Veröffentlichung der neuen Texte und vor jedem Release. Die Beratung soll entscheiden, ob die Repo-Texte so veröffentlicht werden dürfen und welche AVV/SCC/TIA-Schritte noch nötig sind.
+**Warum dieses Paket.** Es bleibt ein Eskalationsdokument, falls eine konkrete Rechtsfrage auftritt. Es ist **keine** Freigabe und **kein** Merge-Hindernis.
 
 ---
 
@@ -165,6 +165,6 @@ REVIEW_DATE=
 | `docs/compliance/PROCESSOR_TRANSFER_EVIDENCE.md` | Vendor-Dokumente vs. Account-Evidenz |
 | `docs/compliance/RECAPTCHA_DATA_FLOW.md` | Technischer reCAPTCHA-Fluss |
 | `docs/compliance/COOKIE_CONSENT_TECH.md` | Banner steuert nur ProvenExpert, nicht reCAPTCHA |
-| `docs/deployment/PRODUCTION_READINESS_MASTER_GATE.md` | Release-Gates; GATE1 offen |
+| `docs/deployment/PRODUCTION_READINESS_MASTER_GATE.md` | Release-Gates; Merge bereit, Production-Release nicht |
 
 **Nächster sicherer Schritt:** dieses Paket an qualifizierte Beratung senden. Nicht mergen. Nicht deployen. Kundenmail auslassen.

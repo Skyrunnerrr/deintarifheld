@@ -24,7 +24,7 @@ Scripts exist and were inspected. **No SFTP, no backup apply, no upload** in thi
 
 Upload never wipes the remote tree first. Apply path stages `releases/<timestamp>/`, promotes `_next`/images first, HTML last. Mail gate: `LEADS_MAIL_MODE=mock` blocks `--apply` unless `ALLOW_MOCK_MAIL_CUTOVER=YES`.
 
-## Exact cutover order (ops, after GATE9–GATE10)
+## Exact cutover order (ops, GATE11–GATE12 after GATE9–GATE10)
 
 1. **Backup current site** — `dth-checkdomain.sh backup --apply` (requires `CHECKDOMAIN_SSH_IDENTITY`). Confirm `LATEST` stamp + `MANIFEST.sha256`.
 2. **Build production static** — from **merged `main` SHA** (`LIVE_BUILD_SOURCE_BRANCH=main`). `NEXT_PUBLIC_LEADS_API_ORIGIN=https://deintarifheld-leads-api.vercel.app`. `npm run build:static:production`.

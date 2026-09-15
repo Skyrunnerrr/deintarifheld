@@ -41,4 +41,6 @@ PR6_DEPLOYMENT_SAFE=NO
 ```
 
 Merging PR #6 must **not** be assumed to deploy production (Git is disconnected).
-`PR6_MERGE_READY` still stays **NO** until Legal review and the remaining release gates.
+`PR6_MERGE_READY=YES` for a controlled merge. `PR6_DEPLOYMENT_SAFE=NO` until the
+intentional API deploy and Checkdomain publish. External counsel is not a merge
+blocker.
