@@ -92,6 +92,8 @@ jobs:
         run: npm run forms:privacy-semantics:test
       - name: AGB / privacy checkbox semantics
         run: npm run forms:agb-privacy:test
+      - name: Public legal / code alignment
+        run: npm run legal:public-alignment:test
       - name: Career partner copy
         run: npm run forms:career-partner:test
       - name: Browser API contract

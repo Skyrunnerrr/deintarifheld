@@ -1,14 +1,16 @@
 # Vercel topology — what this repository can prove
 
 ```
-VERCEL_PROJECT_VERIFIED=NO
-VERCEL_PRODUCTION_BRANCH=
-AUTO_PRODUCTION_DEPLOY_ON_MAIN=UNKNOWN
+VERCEL_PROJECT_VERIFIED=PARTIAL
+VERCEL_GIT_CONNECTED=NO
+AUTO_PRODUCTION_DEPLOY_ON_MAIN=NO
 VERCEL_ROLLBACK_READY=UNKNOWN
 PR6_PREVIEW_ONLY=UNKNOWN
 ```
 
-No Vercel dashboard token was used. **Do not treat this file as a confirmed production topology.**
+Human verified 2026-09-15: production Vercel Git is **not** connected and
+`AUTO_PRODUCTION_DEPLOY_ON_MAIN=NO`. No Vercel dashboard token was used in this
+pass. **Do not treat merge as a production cutover.**
 
 ## Facts (evidenced)
 
@@ -30,11 +32,13 @@ No Vercel dashboard token was used. **Do not treat this file as a confirmed prod
 6. Deployment Protection (Vercel auth) on Production vs Preview.
 7. Rollback path (Vercel instant rollback vs redeploy previous SHA).
 
-Until (2)+(3) are written down by a human:
+Human-verified 2026-09-15 for the production API project:
 
 ```
-AUTO_PRODUCTION_DEPLOY_ON_MAIN=UNKNOWN
+VERCEL_GIT_CONNECTED=NO
+AUTO_PRODUCTION_DEPLOY_ON_MAIN=NO
 PR6_DEPLOYMENT_SAFE=NO
 ```
 
-Merging PR #6 must **not** be assumed safe. If auto-deploy on `main` cannot be proven **off** or proven to follow GATE1–GATE7 first, keep `PR6_MERGE_READY=NO`.
+Merging PR #6 must **not** be assumed to deploy production (Git is disconnected).
+`PR6_MERGE_READY` still stays **NO** until Legal review and the remaining release gates.

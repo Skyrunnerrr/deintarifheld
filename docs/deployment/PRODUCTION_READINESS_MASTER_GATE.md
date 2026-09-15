@@ -1,62 +1,71 @@
 # DeinTarifheld — Production Readiness Master Gate
 
-Inspected repository HEAD (this pass): `231321e8e1d7d6d301b016ae7a0ace956716e8ba`  
+Inspected repository after legal/code alignment pass on PR #6.  
 PR: https://github.com/Skyrunnerrr/deintarifheld/pull/6  
-No merge. No production deploy. No production migration. No customer mail. No invented legal copy.
+No merge. No production deploy. No production migration rerun. No customer mail.
 
 ```
 REPO_HEAD_VERIFIED=YES
 CODE_CLOSURE_RECONFIRMED=YES
-CI_RECONFIRMED=PASS
+CI_RECONFIRMED=PENDING_THIS_PASS
 CODE_CLOSURE_READY=YES
 P0_TECH_GATE=PASS
 DSGVO_TECH_GATE=PASS
+PUBLIC_LEGAL_ALIGNMENT=PASS
+LEGAL_TEXT_CODE_MISMATCH=NO
+LEGAL_REVIEW_REQUIRED=YES
+GDPR_PROCESSOR_EVIDENCE=PARTIAL
+LIVE_SITE_LEGAL_TEXT=STALE
 PR6_MERGE_READY=NO
 PRODUCTION_RELEASE_READY=NO
 PRODUCTION_E2E_EXECUTED=NO
+CUSTOMER_MAIL_ENABLED=NO
+VERCEL_GIT_CONNECTED=NO
+AUTO_PRODUCTION_DEPLOY_ON_MAIN=NO
 ```
 
 ## Phase 1 — current state
 
 | Check | Result | Evidence |
 |---|---|---|
-| HEAD | `231321e8e1d7d6d301b016ae7a0ace956716e8ba` | `git rev-parse HEAD` |
-| CI | PASS | GitHub `dth-phase-a-ci / contract` success on this SHA; preview-smoke skipped |
-| Migrations 001–005 | present in tree | `supabase/migrations/` |
 | Mail dual guard | PASS (code) | `customerMailDualGuardOpen` requires `live` **and** `ALLOW_CUSTOMER_MAIL=YES` |
-| Captcha | PASS (code) | server-owned actions; production fail-closed without secret |
+| Captcha | PASS (code) | server-owned actions; production fail-closed without secret; Standard v3 selected (human) |
 | Rate limit | PASS (code) | production defaults to supabase; memory denied unless explicit |
 | Admin / delete | PASS (code) | admin secret only; explicit deletion mode; redacted placeholder rejected |
 | Security headers | PASS (code) | `lib/leads/security-headers.js`; Checkdomain `.htaccess` CSP |
-| Customer mail | NO | default + dual guard |
+| Customer mail | NO | default + dual guard; human-verified `ALLOW_CUSTOMER_MAIL=NO`, `LEADS_MAIL_MODE=internal_live` |
+| Repo legal vs code | PASS | `docs/compliance/LEGAL_ALIGNMENT_MATRIX.md` |
+| Live Checkdomain legal pages | STALE | not redeployed in this pass |
+| Qualified legal review | NO | no counsel sign-off recorded |
+| Processor/transfer evidence | PARTIAL | public templates found; account acceptance UNKNOWN |
 
 ## GO / NO-GO board
 
 | Area | Status | Note |
 |---|---|---|
-| CODE | PASS | Closure SHA; CI green |
-| LEGAL | FAIL | Matrix ready; published gaps remain |
-| SUPABASE | PARTIAL | SQL preflight PASS; execution NOT ready; production schema UNKNOWN |
-| ENV | UNKNOWN | Matrix ready; no dashboard verification |
-| VERCEL | UNKNOWN | API hostname known; project/branch/auto-deploy UNKNOWN |
-| CHECKDOMAIN | PARTIAL | Scripts + sequence PASS; live credentials/backup UNKNOWN |
-| RESEND | UNKNOWN | Code guard PASS; production key/domain UNKNOWN |
-| SECURITY | PASS | Code/CI gates; production env still unverified |
+| CODE | PASS | Closure SHA lineage; legal-page alignment added |
+| LEGAL | FAIL (release) / PASS (repo text vs code) | Public factual mismatches closed in repo. Legal review still required. Live pages stale |
+| SUPABASE | PARTIAL | Human-verified 003/004/005=PASS on project `deintarifheld-phase-a`. Do not rerun. Backup id still required for later cutover |
+| ENV | PARTIAL | Named production slots human-verified PRESENT 2026-09-15 (values never printed). Other optional slots remain UNKNOWN |
+| VERCEL | PARTIAL | API hostname known. Human-verified `VERCEL_GIT_CONNECTED=NO`, `AUTO_PRODUCTION_DEPLOY_ON_MAIN=NO` |
+| CHECKDOMAIN | PARTIAL | Scripts + sequence PASS; live legal text stale until authorized static publish |
+| RESEND | PARTIAL | Code guard PASS; domain human-verified; customer mail remains OFF |
+| SECURITY | PASS | Code/CI gates |
 | DSGVO TECH | PASS | Delete/retention/placeholder/audit hashing in code |
 | AI ACT | PASS / PARTIAL | Guardrails PASS; Art.4 register PARTIAL; `TRAINING=UNKNOWN` |
-| DEPLOYMENT | FAIL | Auto-deploy UNKNOWN → not safe to treat merge as cutover |
+| DEPLOYMENT | FAIL | Merge still not a cutover; live legal publish + E2E + legal approval remain |
 | E2E | FAIL | Runbook ready; **not** executed; not authorized |
-| ROLLBACK | PARTIAL | Checkdomain script + mail-mode mock documented; Vercel rollback UNKNOWN; no live backup taken |
+| ROLLBACK | PARTIAL | Checkdomain script + mail-mode mock documented; no live backup taken in this pass |
 
 ## Decision
 
-`PR6_MERGE_READY` stays **NO**: production env not verified, Vercel auto-deploy UNKNOWN (merge could deploy uncontrollably), legal release gate FAIL, migrations not backed up/applied, E2E not run.
+`PR6_MERGE_READY` stays **NO**: qualified legal review is still required, live legal pages are stale, processor account evidence is incomplete, production E2E is not authorized, and this pass must not be treated as release approval.
 
 `PRODUCTION_RELEASE_READY=NO`.
 
 ## NEXT_REQUIRED_ACTION
 
-GATE1 Legal Release Approval **and** a human Vercel/Supabase confirmation of: production project + production git branch + auto-deploy-on-main **on or off** + env presence (names only) + Supabase backup id. Until those exist, do not merge and do not apply 003–005.
+GATE1 qualified Legal Release Approval of the now-aligned repo texts, then authorized Checkdomain publish of `/datenschutz` and `/agb`, then remaining cutover gates (backup id, API deploy of merged SHA, separately authorized E2E). Do not merge from this pass.
 
 ## Artifact index
 
@@ -75,29 +84,30 @@ GATE1 Legal Release Approval **and** a human Vercel/Supabase confirmation of: pr
 ## Final report
 
 ```
-HEAD_SHA=231321e8e1d7d6d301b016ae7a0ace956716e8ba
 CODE_CLOSURE_READY=YES
 LEGAL_ALIGNMENT_MATRIX_READY=YES
-PUBLIC_LEGAL_ALIGNMENT=FAIL
+PUBLIC_LEGAL_ALIGNMENT=PASS
+LEGAL_TEXT_CODE_MISMATCH=NO
 LEGAL_REVIEW_REQUIRED=YES
 PROCESSOR_INVENTORY_READY=YES
 GDPR_PROCESSOR_EVIDENCE=PARTIAL
 MIGRATION_PREFLIGHT=PASS
-MIGRATION_EXECUTION_READY=NO
+MIGRATION_003=PASS
+MIGRATION_004=PASS
+MIGRATION_005=PASS
+MIGRATION_RERUN=NO
 PRODUCTION_ENV_MATRIX_READY=YES
-PRODUCTION_ENV_VERIFIED=NO
-VERCEL_PROJECT_VERIFIED=NO
-AUTO_PRODUCTION_DEPLOY_ON_MAIN=UNKNOWN
+PRODUCTION_ENV_VERIFIED=PARTIAL
+VERCEL_GIT_CONNECTED=NO
+AUTO_PRODUCTION_DEPLOY_ON_MAIN=NO
 CHECKDOMAIN_PREFLIGHT=PASS
-CHECKDOMAIN_BACKUP_READY=YES
-CHECKDOMAIN_ROLLBACK_READY=YES
-RESEND_CONFIG_READY=UNKNOWN
+RESEND_DOMAIN_VERIFIED=YES
 INTERNAL_MAIL_FLOW_READY=YES
 CUSTOMER_MAIL_ENABLED=NO
 PRODUCTION_E2E_RUNBOOK_READY=YES
 PRODUCTION_E2E_EXECUTED=NO
-ROLLBACK_PLAN_READY=YES
+LIVE_SITE_LEGAL_TEXT=STALE
 PRODUCTION_RELEASE_READY=NO
 PR6_MERGE_READY=NO
-NEXT_REQUIRED_ACTION=GATE1_LEGAL_RELEASE_AND_HUMAN_VERIFY_VERCEL_AUTODEPLOY_AND_ENV_AND_SUPABASE_BACKUP
+NEXT_REQUIRED_ACTION=GATE1_QUALIFIED_LEGAL_REVIEW_THEN_AUTHORIZED_CHECKDOMAIN_LEGAL_PUBLISH
 ```

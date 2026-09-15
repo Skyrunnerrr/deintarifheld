@@ -35,6 +35,7 @@
     "forms:privacy-semantics:test": "node scripts/form-privacy-semantics-test.mjs",
     "forms:career-partner:test": "node scripts/career-partner-copy-test.mjs",
     "forms:agb-privacy:test": "node scripts/agb-privacy-consistency-test.mjs",
+    "legal:public-alignment:test": "node scripts/legal-public-alignment-test.mjs",
     "phase-b:verify": "node scripts/phase-b-verify.mjs",
     "checkdomain:status": "bash scripts/deploy/checkdomain/dth-checkdomain.sh status",
     "checkdomain:plan": "bash scripts/deploy/checkdomain/dth-checkdomain.sh plan",

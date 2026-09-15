@@ -6,7 +6,7 @@ CAPTCHA_PROVIDER_CONSISTENT=YES
 LEGAL_REVIEW_REQUIRED=YES
 ```
 
-This is a **technical** description of what the software does. It is **not** a privacy policy, legal basis, or transfer assessment. Public `/datenschutz` text must be aligned by Legal — not invented here.
+This is a **technical** description of what the software does. It is **not** a privacy policy, legal basis, or transfer assessment. Repo `/datenschutz` §9.4 now discloses this flow. Qualified legal review remains required.
 
 ## Chosen production variant
 

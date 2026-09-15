@@ -71,6 +71,6 @@ Binding ticket: GitHub Issue #5. Legal copy for F-14 / F-15 / F-16 is **not** in
 - No new CRM.
 - No invented legal/privacy copy.
 - Soft-delete is **not** a legal hold. `legal_hold` is an explicit column, default false, never auto-set. Default erase/retention is redaction/minimisation. Delete audits use HMAC email, not plaintext.
-- LEGAL_REVIEW_REQUIRED: F-14, F-15, F-16 (and F-10 before `live` customer mail). Public legal texts were not rewritten. `PUBLIC_LEGAL_ALIGNMENT=FAIL` until published `/datenschutz` names reCAPTCHA and ProvenExpert. AGB §5 still promises customer confirmation while `CUSTOMER_MAIL_ENABLED=NO` (`LEGAL_TEXT_CODE_MISMATCH=YES`).
+- LEGAL_REVIEW_REQUIRED: F-14, F-15, F-16 (and F-10 before `live` customer mail). **Historical note (pre-alignment):** public texts were not rewritten in the earlier readiness pass. **2026-09-15:** repo `/datenschutz` and AGB were aligned to implemented behavior (`PUBLIC_LEGAL_ALIGNMENT=PASS`, `LEGAL_TEXT_CODE_MISMATCH=NO`). Qualified legal review is still required. Live Checkdomain pages were not republished (`LIVE_SITE_LEGAL_TEXT=STALE`).
 - AI Act: no customer AI, no lead scoring, no career AI selection. Internal professional Cursor/cloud-agent use is recorded (`docs/compliance/AI_LITERACY_REGISTER.md`). `TRAINING=UNKNOWN`.
-- Deploy: apply/verify `003`/`004`/`005` before production API, then Checkdomain, then separately authorized E2E. `AUTO_PRODUCTION_DEPLOY_ON_MAIN=UNKNOWN` → `PR6_DEPLOYMENT_SAFE=NO`.
+- Deploy: `003`/`004`/`005` independently verified PASS (do not rerun). Human-verified `VERCEL_GIT_CONNECTED=NO`, `AUTO_PRODUCTION_DEPLOY_ON_MAIN=NO`. `PR6_DEPLOYMENT_SAFE=NO` remains: merge is still not a cutover; Checkdomain legal publish and E2E stay separately authorized.

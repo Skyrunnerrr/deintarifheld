@@ -202,10 +202,10 @@ export default function AGBPage() {
             Zweck der Bearbeitung seiner Anfrage kontaktiert.
           </p>
           <p style={{ marginBottom: '0.75rem' }}>
-            (2) Der Nutzer erhält nach Absendung eines Formulars eine automatische
-            Eingangsbestätigung per E-Mail. Diese Bestätigung enthält eine Auftragsnummer,
-            eine Zusammenfassung der übermittelten Daten sowie Informationen über die
-            nächsten Schritte.
+            (2) Nach dem Absenden wird die Anfrage technisch entgegengenommen und intern
+            weiterverarbeitet. Es besteht kein vertraglicher Anspruch auf eine automatische
+            Eingangsbestätigung per E-Mail. Eine Kontaktaufnahme zur Bearbeitung der Anfrage
+            kann über die vom Nutzer angegebenen Kontaktdaten erfolgen.
           </p>
           <p style={{ margin: 0 }}>
             (3) Die Kommunikation erfolgt in der Regel per E-Mail an die vom Nutzer
@@ -219,7 +219,8 @@ export default function AGBPage() {
           <p style={{ marginBottom: '0.75rem' }}>
             (1) Der Anbieter verarbeitet personenbezogene Daten des Nutzers ausschließlich
             im Einklang mit den geltenden datenschutzrechtlichen Bestimmungen, insbesondere
-            der DSGVO, dem BDSG und dem TTDSG.
+            der DSGVO, dem BDSG und dem TDDDG (Telekommunikation-Digitale-Dienste-Datenschutz-Gesetz;
+            zuvor TTDSG).
           </p>
           <p style={{ marginBottom: '0.75rem' }}>
             (2) Vor Absenden eines Formulars ist die Kenntnisnahme der Datenschutzerklärung

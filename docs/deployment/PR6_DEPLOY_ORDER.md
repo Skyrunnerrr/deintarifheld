@@ -1,16 +1,22 @@
 # PR #6 / production release sequence (binding)
 
 ```
-AUTO_PRODUCTION_DEPLOY_ON_MAIN=UNKNOWN
+VERCEL_GIT_CONNECTED=NO
+AUTO_PRODUCTION_DEPLOY_ON_MAIN=NO
 PR6_DEPLOYMENT_SAFE=NO
 PRODUCTION_E2E_READY=NO
 PR6_MERGE_READY=NO
 PRODUCTION_RELEASE_READY=NO
+PUBLIC_LEGAL_ALIGNMENT=PASS
+LEGAL_REVIEW_REQUIRED=YES
 ```
 
 Merging this PR is **not** a production cutover.
 
-Whether `main` auto-deploys Vercel production and/or Checkdomain is **UNKNOWN** from this repository alone (`docs/deployment/VERCEL_TOPOLOGY.md`). Therefore `PR6_DEPLOYMENT_SAFE=NO`.
+Human verified 2026-09-15: production Vercel Git is disconnected and
+`AUTO_PRODUCTION_DEPLOY_ON_MAIN=NO` (`docs/deployment/VERCEL_TOPOLOGY.md`).
+Checkdomain static publish is still a separate authorized step. Therefore
+`PR6_DEPLOYMENT_SAFE=NO`.
 
 ## Binding gate order
 

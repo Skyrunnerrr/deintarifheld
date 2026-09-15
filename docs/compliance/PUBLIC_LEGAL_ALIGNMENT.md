@@ -1,36 +1,45 @@
-# Public legal alignment — facts for Legal (not published copy)
+# Public legal alignment — facts for Legal (not a legal opinion)
 
-This file does **not** invent privacy-policy or AGB wording. Public `/datenschutz` and `/agb` were **not** rewritten in this readiness pass.
+Repo public pages `app/datenschutz/page.js` and `app/agb/page.js` were aligned to
+implemented production behavior on 2026-09-15. This file is not a substitute for
+qualified legal review.
 
-Live fetch 2026-09-15: `https://www.deintarifheld.de/datenschutz` already names Checkdomain / Vercel / Supabase / Resend / TELESON and “keine automatische Bestätigung”. That does **not** make alignment PASS.
+Live Checkdomain `/datenschutz` and `/agb` were **not** redeployed in this pass
+(`LIVE_SITE_LEGAL_TEXT=STALE`).
 
 ```
-PUBLIC_LEGAL_ALIGNMENT=FAIL
-LEGAL_TEXT_CODE_MISMATCH=YES
+PUBLIC_LEGAL_ALIGNMENT=PASS
+LEGAL_TEXT_CODE_MISMATCH=NO
 LEGAL_REVIEW_REQUIRED=YES
-TDDDG_NOTE=published AGB still says TTDSG; current federal short name is TDDDG. Factual note only.
+TDDDG_NOTE=AGB §6 now names TDDDG (zuvor TTDSG). Legal still reviews published wording.
+LIVE_SITE_LEGAL_TEXT=STALE
 ```
 
-`PUBLIC_LEGAL_ALIGNMENT=FAIL` until Legal reviews the remaining mismatches in `docs/compliance/LEGAL_ALIGNMENT_MATRIX.md`. A draft in `docs/legal/` is not publication.
+`PUBLIC_LEGAL_ALIGNMENT=PASS` means the **repo** public texts no longer contain the
+previously recorded factual mismatches versus code. It is **not** legal-release
+approval and **not** evidence that the live website already shows the new text.
 
-## Missing from published `/datenschutz` (do not invent replacement copy here)
+## Closed factual mismatches (repo vs code)
 
-| Real flow | In published `/datenschutz`? | Technical evidence |
+| Real flow | In repo `/datenschutz`? | Technical evidence |
 |---|---|---|
-| Google reCAPTCHA on forms (script + classic siteverify; IP / token / action / hostname / score may be involved) | NO | `docs/compliance/RECAPTCHA_DATA_FLOW.md` |
-| ProvenExpert network script after optional consent; local badge otherwise | NO | `lib/consent/third-party.js`, `components/ui/ProSealWidget.js` |
+| Google reCAPTCHA on forms (script + classic siteverify; Standard v3; not Enterprise) | YES (9.4) | `docs/compliance/RECAPTCHA_DATA_FLOW.md`, `lib/leads/captcha.js`, `lib/security.js` |
+| ProvenExpert network script after optional consent; local badge otherwise | YES (9.5) | `lib/consent/third-party.js`, `components/ui/ProSealWidget.js` |
+| `localStorage th_consent` / `sessionStorage dth_pe_withdraw_reload` | YES (12) | `CookieBanner.jsx`, `provenexpert-runtime.js` |
+| Retention redacts/minimises; `legal_hold` skipped; not legal anonymisation | YES (13) | `app/api/cron/retention/route.js`, `lib/leads/retention-privacy.js` |
+| Post-redaction lookup by original email not available | YES (15) | `lib/leads/admin-erase.js`, `docs/compliance/DELETION_RETENTION_MODES.md` |
 
-## Code vs published AGB
+## AGB vs code
 
-| Published claim | Code / ops truth |
-|---|---|
-| AGB § 5 (2): automatic customer confirmation email with order number and data summary | `CUSTOMER_MAIL_ENABLED=NO`. Customer confirmation stays off. Do not enable mail to close this gap. |
-| AGB § 6 (1): “TTDSG” | Factual: the federal short name is now TDDDG. Legal must decide published wording. |
+| Claim | Code / ops truth | Repo AGB |
+|---|---|---|
+| Automatic customer confirmation email with order number and data summary | `CUSTOMER_MAIL_ENABLED=NO`. Dual guard closed. Do not enable mail. | §5(2): no contractual promise of automatic confirmation; contact may follow via supplied contact data |
+| Statutory short name for cookie/telemedia law | Factual federal short name is TDDDG | §6(1): TDDDG (zuvor TTDSG) |
 
 ```
-LEGAL_TEXT_CODE_MISMATCH=YES
+LEGAL_TEXT_CODE_MISMATCH=NO
 ```
 
 ## What software may say on public non-legal pages
 
-Neutral facts only, e.g. `SSL-verschlüsselt`, `Datenschutzinformationen verfügbar`. Absolute marketing claims (`DSGVO-konform`, `Keine Weitergabe an Dritte`, `100% DSGVO`) are forbidden on public non-legal surfaces.
+Neutral facts only, e.g. `SSL-verschlüsselt`, `Datenschutzinformationen verfügbar`. Absolute marketing claims (`DSGVO-konform`, `Keine Weitergabe an Dritte`, `100% DSGVO`) remain forbidden on public non-legal surfaces.

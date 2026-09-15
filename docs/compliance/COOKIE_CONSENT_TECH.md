@@ -7,7 +7,7 @@ PROVENEXPERT_WITHDRAWAL=PASS
 LEGAL_REVIEW_REQUIRED=YES
 ```
 
-Public `/datenschutz` and `/agb` were **not** rewritten. Legal copy alignment is LEGAL_REVIEW_REQUIRED.
+Repo `/datenschutz` now discloses `th_consent`, the PE reload flag, reCAPTCHA, and optional ProvenExpert. Live Checkdomain pages were not republished in this pass. Legal review remains required.
 
 ## What the banner actually controls
 

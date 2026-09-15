@@ -155,7 +155,7 @@ export default function DatenschutzPage() {
         >
           Diese Hinweise beschreiben den Datenfluss nach dem öffentlichen Website-Release, in dem
           die Formulare an unsere Anfrage-API angebunden sind. Ältere Datenbestände aus früheren
-          Verfahren werden gesondert behandelt (siehe Abschnitt 15).
+          Verfahren werden gesondert behandelt (siehe Abschnitt 16).
         </p>
 
         <LegalSection id="verantwortlicher" title="1. Verantwortlicher und Kontakt">
@@ -395,6 +395,42 @@ export default function DatenschutzPage() {
               erforderlichen Anfrageangaben in datensparsamem Umfang.
             </p>
           </SubSection>
+          <SubSection title="9.4 Google reCAPTCHA">
+            <p style={{ marginBottom: '0.75rem' }}>
+              Auf den privaten Tarifformularen, den Unternehmensformularen und dem
+              Partnerformular laden wir zum Schutz vor Missbrauch und automatisierten
+              Eingaben <Highlight>Google reCAPTCHA</Highlight> (Standard, derzeit v3).
+              Enterprise-reCAPTCHA wird nicht eingesetzt. Das Laden erfolgt, sobald das
+              jeweilige Formular angezeigt wird, und ist nicht von der Auswahl im
+              Einwilligungsbanner abhängig.
+            </p>
+            <p style={{ marginBottom: '0.75rem' }}>
+              Der Browser lädt ein Script von Google (unter anderem www.google.com,
+              www.gstatic.com, www.recaptcha.net). Es wird ein Token erzeugt und mit der
+              Formularanfrage an unsere API übermittelt. Unsere API prüft das Token über
+              Googles klassische siteverify-Schnittstelle. Dabei können insbesondere Token,
+              optionale Anfrage-IP, Action-Name, Hostname und Score beteiligt sein.
+            </p>
+            <p style={{ margin: 0 }}>
+              Wir treffen hier keine Aussage zu Speicherdauern, Auftragsverarbeitungsverträgen
+              oder Drittlandgarantien auf Seiten von Google. Die rechtliche Einordnung bleibt
+              Gegenstand der Datenschutzprüfung.
+            </p>
+          </SubSection>
+          <SubSection title="9.5 ProvenExpert">
+            <p style={{ marginBottom: '0.75rem' }}>
+              Ohne optionale Auswahl zeigen wir ein <Highlight>lokales</Highlight> ProvenExpert-Siegel
+              ohne Laden des externen ProvenExpert-Scripts.
+            </p>
+            <p style={{ margin: 0 }}>
+              Nur wenn Sie im Banner die optionale Kategorie ProvenExpert auswählen, wird das
+              Netzwerkscript von s.provenexpert.net geladen und kann ein Widget im Browser
+              aufbauen. Widerruf dieser Auswahl speichern wir, entfernen Script und
+              ProvenExpert-DOM und führen einmalig einen kontrollierten Seiten-Reload aus.
+              Weitere Aussagen zum Verhalten von ProvenExpert auf deren Servern treffen wir
+              hier nicht.
+            </p>
+          </SubSection>
         </LegalSection>
 
         <LegalSection id="keine-bestaetigung" title="10. Keine automatische Bestätigung an Absender">
@@ -412,18 +448,37 @@ export default function DatenschutzPage() {
             Ereignisse erfasst, beispielsweise zur Annahme einer Anfrage oder zur internen
             Benachrichtigung. Solche Einträge können Kennungen der Anfrage und technische
             Statusinformationen enthalten. Zusätzlich können Plattformprotokolle der eingesetzten
-            Betriebsdienstleister anfallen.
+            Betriebsdienstleister anfallen. Zum Missbrauchsschutz der Formulare gehört auch
+            reCAPTCHA (siehe Abschnitt 9.4).
           </p>
           <p style={{ margin: 0 }}>
             <Highlight>Rechtsgrundlage:</Highlight> Art. 6 Abs. 1 lit. f DSGVO.
           </p>
         </LegalSection>
 
-        <LegalSection id="speicherung" title="12. Speicherfristen und Löschung">
+        <LegalSection id="browser-speicher" title="12. Lokaler Browser-Speicher">
           <p style={{ marginBottom: '0.75rem' }}>
-            Für die in Supabase gespeicherten Anfragen sind derzeit folgende technische
-            Speichereinstellungen vorgesehen (betriebliche Konfiguration, keine gesetzliche
-            Vorgabe):
+            Zusätzlich zu möglichen Cookies oder Speichern, die Drittanbieter-Scripts selbst
+            setzen können, verwendet diese Website eigenen Browser-Speicher. Das sind keine
+            HTTP-Cookies unseres Angebots:
+          </p>
+          <BulletList
+            items={[
+              'localStorage-Schlüssel th_consent: speichert Ihre Banner-Auswahl (essential / provenexpert) und einen Zeitstempel. Es gibt keine programmierte Ablaufzeit; der Eintrag bleibt, bis Sie die Auswahl ändern oder den Speicher löschen.',
+              'sessionStorage-Schlüssel dth_pe_withdraw_reload: verhindert nach dem Widerruf von ProvenExpert eine Reload-Schleife und gilt für die Browser-Sitzung.',
+            ]}
+          />
+          <p style={{ marginTop: '0.75rem', margin: 0 }}>
+            Die Banner-Auswahl steuert nur das optionale ProvenExpert-Script. reCAPTCHA auf
+            Formularen wird davon nicht abgeschaltet.
+          </p>
+        </LegalSection>
+
+        <LegalSection id="speicherung" title="13. Speicherfristen und Minimierung">
+          <p style={{ marginBottom: '0.75rem' }}>
+            Für die in Supabase gespeicherten Anfragen gelten derzeit folgende betriebliche
+            Standardfristen (Konfiguration, keine gesetzliche Vorgabe; abweichende gesetzte
+            Betriebswerte ersetzen die Zahlen):
           </p>
           <BulletList
             items={[
@@ -432,20 +487,24 @@ export default function DatenschutzPage() {
             ]}
           />
           <p style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
-            Nach Ablauf dieser technischen Fristen werden betroffene Datensätze automatisiert als
-            gelöscht gekennzeichnet und stehen dem normalen Betrieb nicht mehr als aktive Anfragen
-            zur Verfügung. Zusätzlich können Datensätze auf Anfrage anhand der E-Mail-Adresse und
-            des Kanals entfernt werden.
+            Nach Ablauf dieser Fristen werden betroffene Datensätze automatisch
+            redigiert/minimiert: die E-Mail-Adresse wird durch einen gemeinsamen Platzhalter
+            ersetzt, Identitäts-, Kontakt- und Nachrichtenfelder im Payload werden entfernt.
+            Bei Unternehmensanfragen kann der Firmenname verbleiben. Die Zeile kann technisch
+            weiter existieren. Datensätze mit gesetztem legal_hold werden von dieser
+            automatischen Minimierung nicht erfasst. Diese Redaktion ist keine rechtliche
+            Anonymisierung.
           </p>
           <p style={{ margin: 0 }}>
-            Technische Protokolldaten können länger oder getrennt von den Anfragedatensätzen
-            vorgehalten werden, soweit dies für Nachvollziehbarkeit, Sicherheit oder gesetzliche
-            Pflichten erforderlich ist. Eine Garantie der sofortigen physischen Löschung
+            Zusätzlich kann auf Anfrage ein Löschvorgang anhand der ursprünglichen
+            E-Mail-Adresse und des Kanals durchgeführt werden, solange die Adresse noch nicht
+            redigiert wurde. Technische Protokolle und Sicherungskopien können länger oder
+            getrennt vorgehalten werden. Eine Garantie der sofortigen physischen Löschung
             sämtlicher Kopien einschließlich Backups wird nicht gegeben.
           </p>
         </LegalSection>
 
-        <LegalSection id="dienstleister" title="13. Eingesetzte Dienstleister und internationale Verarbeitung">
+        <LegalSection id="dienstleister" title="14. Eingesetzte Dienstleister und internationale Verarbeitung">
           <p style={{ marginBottom: '0.5rem' }}>
             Im Zusammenhang mit dem beschriebenen Ablauf können insbesondere folgende
             Dienstleister eingesetzt werden:
@@ -456,6 +515,8 @@ export default function DatenschutzPage() {
               'Vercel – Betrieb der Formular-API',
               'Supabase – Datenbankspeicherung',
               'Resend – interne E-Mail-Benachrichtigung',
+              'Google – reCAPTCHA zur Missbrauchsabwehr der Formulare (siehe Abschnitt 9.4)',
+              'ProvenExpert – optionales Netzwerkscript nur nach Auswahl; sonst nur lokales Siegel (siehe Abschnitt 9.5)',
               'TELESON Vertriebs GmbH – soweit für die Tarifvermittlung im Handelsvertreterverhältnis erforderlich',
               'jeweilige Energieversorger – nur wenn ein Lieferverhältnis vermittelt oder angebahnt wird',
             ]}
@@ -480,7 +541,7 @@ export default function DatenschutzPage() {
 
         <LegalSection
           id="rechte"
-          title="14. Auskunft, Berichtigung, Löschung und weitere Betroffenenrechte"
+          title="15. Auskunft, Berichtigung, Löschung und weitere Betroffenenrechte"
         >
           <p style={{ marginBottom: '0.5rem' }}>
             Sie haben nach Maßgabe der gesetzlichen Vorschriften insbesondere folgende Rechte:
@@ -498,9 +559,15 @@ export default function DatenschutzPage() {
             ]}
           />
           <p style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
-            Zur Ausübung Ihrer Rechte wenden Sie sich bitte an{' '}
-            <ObfuscatedEmail style={{ color: '#8E97A8', textDecoration: 'none' }} />. Wir
-            bearbeiten Ihr Anliegen unverzüglich, spätestens innerhalb der gesetzlichen Fristen.
+            Zur Ausübung Ihrer Rechte wenden Sie sich bitte über den Kontaktkanal{' '}
+            <ObfuscatedEmail style={{ color: '#8E97A8', textDecoration: 'none' }} />. Zur
+            Identifizierung können vorhandene Identifizierungsangaben erforderlich sein. Nach
+            einer Redaktion/Minimierung ist eine Zuordnung früherer Datensätze über die
+            ursprüngliche E-Mail-Adresse technisch nicht mehr möglich, weil diese durch einen
+            gemeinsamen Platzhalter ersetzt wurde. Das ändert nichts an den gesetzlichen
+            Betroffenenrechten, sondern nur an der technischen Auffindbarkeit über die alte
+            Adresse. Wir bearbeiten Ihr Anliegen unverzüglich, spätestens innerhalb der
+            gesetzlichen Fristen.
           </p>
           <SubSection title="Zuständige Aufsichtsbehörde">
             <p
@@ -529,7 +596,7 @@ export default function DatenschutzPage() {
           </SubSection>
         </LegalSection>
 
-        <LegalSection id="altbestaende" title="15. Alte Google Apps Script- und Google Sheets-Datenbestände">
+        <LegalSection id="altbestaende" title="16. Alte Google Apps Script- und Google Sheets-Datenbestände">
           <p style={{ marginBottom: '0.75rem' }}>
             Vor dem Umstellungspunkt dieses Website-Releases wurden Anfragen teilweise über Google
             Apps Script und Google Sheets entgegengenommen und gespeichert. Diese Altbestände
@@ -543,7 +610,7 @@ export default function DatenschutzPage() {
           </p>
         </LegalSection>
 
-        <LegalSection id="aenderungen" title="16. Änderungen dieser Datenschutzhinweise">
+        <LegalSection id="aenderungen" title="17. Änderungen dieser Datenschutzhinweise">
           <p style={{ margin: 0 }}>
             Wir passen diese Hinweise an, wenn sich der technische Ablauf, eingesetzte
             Dienstleister oder rechtliche Anforderungen ändern. Es gilt die jeweils auf{' '}
