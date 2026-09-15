@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
 import { enforceAdminAccess } from '@/lib/leads/admin-guard'
 import { getServiceSupabase, processLeadDeletion } from '@/lib/leads/supabase'
-import { resolveDeletionMode } from '@/lib/leads/deletion-mode'
+import { evaluateAdminEraseInput } from '@/lib/leads/admin-erase'
 import { applySecurityHeaders } from '@/lib/leads/security-headers'
 
 export const runtime = 'nodejs'
-
-const CHANNELS = new Set(['all', 'business', 'private', 'career'])
 
 function json(body, status = 200, extraHeaders) {
   const response = NextResponse.json(body, {
@@ -20,6 +18,7 @@ function json(body, status = 200, extraHeaders) {
 /**
  * Admin erase-by-email. Mode is required.
  * Not a legal DSGVO decision: Legal/Ops must choose soft | redact | physical.
+ * Shared redacted placeholder is rejected (redacted-placeholder-not-allowed).
  */
 export async function POST(request) {
   const gate = await enforceAdminAccess(request)
@@ -34,20 +33,14 @@ export async function POST(request) {
     return json({ ok: false, code: 'invalid-payload' }, 400)
   }
 
-  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
-  if (!email || !email.includes('@')) {
-    return json({ ok: false, code: 'invalid-email' }, 400)
-  }
-
-  const channel = typeof body.channel === 'string' ? body.channel.trim().toLowerCase() : 'all'
-  if (!CHANNELS.has(channel)) {
-    return json({ ok: false, code: 'invalid-channel' }, 400)
-  }
-
-  const resolved = resolveDeletionMode(body.mode)
-  if (!resolved.ok) {
-    // deletion-mode-required | invalid-deletion-mode — no implied privacy mode
-    return json({ ok: false, code: resolved.code }, 400)
+  const input = evaluateAdminEraseInput({
+    email: body.email,
+    mode: body.mode,
+    channel: body.channel,
+  })
+  if (!input.ok) {
+    // deletion-mode-required | invalid-deletion-mode | redacted-placeholder-not-allowed
+    return json({ ok: false, code: input.code }, input.status)
   }
 
   const supabase = getServiceSupabase()
@@ -55,16 +48,22 @@ export async function POST(request) {
     return json({ ok: false, code: 'storage-not-configured' }, 500)
   }
 
-  const result = await processLeadDeletion(supabase, email, { channel, mode: resolved.mode })
+  const result = await processLeadDeletion(supabase, input.email, {
+    channel: input.channel,
+    mode: input.mode,
+  })
   if (result.error) {
+    if (result.code === 'redacted-placeholder-not-allowed' || result.code === 'deletion-mode-required') {
+      return json({ ok: false, code: result.code }, 400)
+    }
     return json({ ok: false, code: 'delete-failed' }, 500)
   }
 
   return json({
     ok: true,
-    channel,
+    channel: input.channel,
     mode: result.mode,
-    legacyAlias: resolved.legacyAlias || false,
+    legacyAlias: input.legacyAlias || false,
     updated: result.updated,
     careerUpdated: result.careerUpdated,
     ids: result.ids,

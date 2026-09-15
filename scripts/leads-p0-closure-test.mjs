@@ -18,14 +18,19 @@ import {
   PII_REDACTION_COLUMN,
   PII_STATES,
   PII_STATE_NAMING,
+  REDACTED_EMAIL,
   classifyPiiState,
   isAlreadyRedacted,
   isEraseEligible,
   isHistoricCleanupEligible,
   isLegalHold,
+  isPhysicalEmailEligible,
   isPhysicalEligible,
+  isRedactedPlaceholderEmail,
   isRetentionEligible,
 } from '../lib/leads/deletion-state.js'
+import { evaluateAdminEraseInput } from '../lib/leads/admin-erase.js'
+import { evaluateNpmAuditCi } from '../lib/audit/npm-audit-gate.js'
 import {
   HISTORIC_CLEANUP_EXECUTION_READY,
   assertNoPiiInSummary,
@@ -302,8 +307,13 @@ async function assertDeleteStateMachine() {
   assert.equal(isEraseEligible({ status: 'deleted', anonymized_at: null, legal_hold: false }), true)
   assert.equal(isEraseEligible({ status: 'deleted', anonymized_at: '2026-01-01', legal_hold: false }), false)
   assert.equal(isEraseEligible({ status: 'new', legal_hold: true }), false)
-  assert.equal(isPhysicalEligible({ status: 'deleted', anonymized_at: 'x', legal_hold: false }), true)
+  assert.equal(isPhysicalEmailEligible({ status: 'deleted', anonymized_at: 'x', legal_hold: false }), false)
+  assert.equal(isPhysicalEligible({ status: 'deleted', anonymized_at: 'x', legal_hold: false }), false)
   assert.equal(isPhysicalEligible({ legal_hold: true }), false)
+  assert.equal(isPhysicalEmailEligible({ status: 'new', anonymized_at: null, legal_hold: false }), true)
+  assert.equal(isPhysicalEmailEligible({ status: 'deleted', anonymized_at: null, legal_hold: false }), true)
+  assert.equal(isRedactedPlaceholderEmail(REDACTED_EMAIL), true)
+  assert.equal(isRedactedPlaceholderEmail('person@example.invalid'), false)
   assert.equal(isRetentionEligible({ status: 'deleted', anonymized_at: null, legal_hold: true }), false)
 
   const old = new Date(Date.now() - 200 * 86400000).toISOString()
@@ -434,6 +444,75 @@ async function assertDeleteStateMachine() {
   assert.equal(r7.updated, 0)
   assert.equal(hold.leads[0].payload.nachricht, 'held')
 
+  for (const mode of ['physical', 'redact', 'soft']) {
+    const blocked = evaluateAdminEraseInput({ email: REDACTED_EMAIL, mode, channel: 'all' })
+    assert.equal(blocked.ok, false)
+    assert.equal(blocked.status, 400)
+    assert.equal(blocked.code, 'redacted-placeholder-not-allowed')
+    const viaProcess = await processLeadDeletion(makeClient({
+      leads: [{
+        id: `ph-${mode}`,
+        email: REDACTED_EMAIL,
+        page_source: 'unternehmen',
+        status: 'deleted',
+        anonymized_at: '2026-01-01T00:00:00.000Z',
+        legal_hold: false,
+        payload: {},
+      }],
+    }), REDACTED_EMAIL, { channel: 'all', mode })
+    assert.equal(viaProcess.code, 'redacted-placeholder-not-allowed')
+    assert.equal(viaProcess.updated, 0)
+  }
+
+  const mass = makeClient({
+    leads: [
+      {
+        id: 'red-1',
+        lead_ref: 'B2B-RED-1',
+        email: REDACTED_EMAIL,
+        page_source: 'unternehmen',
+        status: 'deleted',
+        anonymized_at: '2026-01-01T00:00:00.000Z',
+        legal_hold: false,
+        payload: { type: 'strom' },
+      },
+      {
+        id: 'red-2',
+        lead_ref: 'B2B-RED-2',
+        email: REDACTED_EMAIL,
+        page_source: 'unternehmen',
+        status: 'deleted',
+        anonymized_at: '2026-01-02T00:00:00.000Z',
+        legal_hold: false,
+        payload: { type: 'gas' },
+      },
+    ],
+  })
+  const massPhysical = await processLeadDeletion(mass, REDACTED_EMAIL, { channel: 'business', mode: 'physical' })
+  assert.equal(massPhysical.code, 'redacted-placeholder-not-allowed')
+  assert.equal(mass.leads.length, 2)
+  assert.equal(mass.leads[0].id, 'red-1')
+  assert.equal(mass.leads[1].id, 'red-2')
+
+  const leftoverRedacted = makeClient({
+    leads: [{
+      id: 'ar-phys',
+      email: 'person@example.invalid',
+      page_source: 'unternehmen',
+      status: 'deleted',
+      anonymized_at: '2026-01-01T00:00:00.000Z',
+      legal_hold: false,
+      payload: { type: 'strom' },
+    }],
+  })
+  const leftoverPhys = await processLeadDeletion(leftoverRedacted, 'person@example.invalid', {
+    channel: 'business',
+    mode: 'physical',
+  })
+  assert.equal(leftoverPhys.updated, 0)
+  assert.equal(leftoverRedacted.leads.length, 1)
+  assert.equal(leftoverRedacted.leads[0].id, 'ar-phys')
+
   const retentionClient = makeClient({
     leads: [
       {
@@ -530,11 +609,22 @@ async function assertDeleteStateMachine() {
   assert.doesNotMatch(deleteRoute, /Automated DSGVO/)
   assert.doesNotMatch(deleteRoute, /legal anonymisation/)
   assert.match(deleteRoute, /deletion-mode-required/)
-  assert.match(read('docs/compliance/DELETION_RETENTION_MODES.md'), /Not legal anonymisation/)
+  assert.match(deleteRoute, /redacted-placeholder-not-allowed/)
+  assert.match(read('scripts/leads-delete-by-email.mjs'), /redacted-placeholder-not-allowed/)
+  const deletionDoc = read('docs/compliance/DELETION_RETENTION_MODES.md')
+  assert.match(deletionDoc, /Not legal anonymisation/)
+  assert.match(deletionDoc, /POST_REDACTION_EMAIL_LOOKUP=NOT_AVAILABLE/)
+  assert.match(deletionDoc, /REDACTED_PHYSICAL_ERASURE_REQUIRES_UNIQUE_REF=YES/)
+  assert.match(deletionDoc, /subject_key_hmac/)
   console.log('DELETE_STATE_MACHINE=PASS')
   console.log('DELETION_MODE_EXPLICIT=PASS')
   console.log('DSGVO_DELETE_SEMANTICS=PASS')
   console.log('LEGAL_HOLD_SEPARATION=PASS')
+  console.log('REDACTED_PLACEHOLDER_INPUT_BLOCKED=PASS')
+  console.log('PHYSICAL_EMAIL_DELETE_REDACTED_BLOCKED=PASS')
+  console.log('MASS_DELETE_FOOTGUN_CLOSED=PASS')
+  console.log('POST_REDACTION_EMAIL_LOOKUP=NOT_AVAILABLE')
+  console.log('REDACTED_PHYSICAL_ERASURE_REQUIRES_UNIQUE_REF=YES')
   console.log('HISTORIC_CLEANUP_DISCOVERY=PASS')
   console.log('HISTORIC_CLEANUP_EXECUTION=NO')
   console.log('HISTORIC_CLEANUP_APPLIED=NO')
@@ -587,10 +677,129 @@ function assertNpmRegister() {
   const ci = read('scripts/npm-audit-ci.mjs')
   assert.match(ci, /id AND package AND severity/)
   assert.match(ci, /process\.exit\(1\)/)
+  assert.match(ci, /NPM_AUDIT_AVAILABLE/)
+  assert.doesNotMatch(ci, /['"]audit['"],\s*['"]fix['"]/)
+  assert.doesNotMatch(ci, /audit --fix/)
+
+  const allowlistedReport = {
+    metadata: { vulnerabilities: { high: 1, critical: 0 } },
+    vulnerabilities: {
+      [sample.package]: {
+        severity: sample.severity,
+        via: [{ url: sample.url, severity: sample.severity, source: sample.id }],
+      },
+    },
+  }
+  const pass = evaluateNpmAuditCi({
+    spawnResult: { error: null, stdout: JSON.stringify(allowlistedReport) },
+    allowlist: allow,
+    today: '2026-09-15',
+    packageJson: '{"dependencies":{"next":"15.5.24"}}',
+  })
+  assert.equal(pass.ok, true)
+  assert.equal(pass.available, true)
+
+  const unknownHigh = evaluateNpmAuditCi({
+    spawnResult: {
+      error: null,
+      stdout: JSON.stringify({
+        metadata: { vulnerabilities: { high: 1, critical: 0 } },
+        vulnerabilities: {
+          'evil-pkg': {
+            severity: 'high',
+            via: [{ url: 'https://github.com/advisories/GHSA-xxxx-yyyy-zzzz', severity: 'high', source: 'GHSA-xxxx-yyyy-zzzz' }],
+          },
+        },
+      }),
+    },
+    allowlist: allow,
+    today: '2026-09-15',
+    packageJson: '{"dependencies":{"next":"15.5.24"}}',
+  })
+  assert.equal(unknownHigh.ok, false)
+
+  const expired = evaluateNpmAuditCi({
+    spawnResult: { error: null, stdout: JSON.stringify(allowlistedReport) },
+    allowlist: allow,
+    today: '2027-01-01',
+    packageJson: '{"dependencies":{"next":"15.5.24"}}',
+  })
+  assert.equal(expired.ok, false)
+
+  const pkgMismatchGate = evaluateNpmAuditCi({
+    spawnResult: {
+      error: null,
+      stdout: JSON.stringify({
+        metadata: { vulnerabilities: { high: 1, critical: 0 } },
+        vulnerabilities: {
+          'other-package': {
+            severity: sample.severity,
+            via: [{ url: sample.url, severity: sample.severity, source: sample.id }],
+          },
+        },
+      }),
+    },
+    allowlist: allow,
+    today: '2026-09-15',
+    packageJson: '{"dependencies":{"next":"15.5.24"}}',
+  })
+  assert.equal(pkgMismatchGate.ok, false)
+
+  const sevMismatchGate = evaluateNpmAuditCi({
+    spawnResult: {
+      error: null,
+      stdout: JSON.stringify({
+        metadata: { vulnerabilities: { high: 0, critical: 1 } },
+        vulnerabilities: {
+          [sample.package]: {
+            severity: 'critical',
+            via: [{ url: sample.url, severity: 'critical', source: sample.id }],
+          },
+        },
+      }),
+    },
+    allowlist: allow,
+    today: '2026-09-15',
+    packageJson: '{"dependencies":{"next":"15.5.24"}}',
+  })
+  assert.equal(sevMismatchGate.ok, false)
+
+  const errorObject = evaluateNpmAuditCi({
+    spawnResult: { error: null, stdout: JSON.stringify({ error: { code: 'ENOAUDIT', summary: 'boom' } }) },
+    allowlist: allow,
+    today: '2026-09-15',
+    packageJson: '{"dependencies":{"next":"15.5.24"}}',
+  })
+  assert.equal(errorObject.ok, false)
+  assert.equal(errorObject.available, false)
+  assert.equal(errorObject.code, 'audit_error_object')
+
+  const emptyReport = evaluateNpmAuditCi({
+    spawnResult: { error: null, stdout: '{}' },
+    allowlist: allow,
+    today: '2026-09-15',
+    packageJson: '{"dependencies":{"next":"15.5.24"}}',
+  })
+  assert.equal(emptyReport.ok, false)
+  assert.equal(emptyReport.available, false)
+
+  const spawnFail = evaluateNpmAuditCi({
+    spawnResult: { error: new Error('spawn npm ENOENT'), stdout: '' },
+    allowlist: allow,
+    today: '2026-09-15',
+    packageJson: '{"dependencies":{"next":"15.5.24"}}',
+  })
+  assert.equal(spawnFail.ok, false)
+  assert.equal(spawnFail.available, false)
+  assert.equal(spawnFail.code, 'spawn_error')
+
   console.log('NPM_ADVISORY_REGISTER=PASS')
   console.log('NPM_ALLOWLIST_ID_MATCH=PASS')
   console.log('NPM_ALLOWLIST_PACKAGE_MATCH=PASS')
   console.log('NPM_ALLOWLIST_SEVERITY_MATCH=PASS')
+  console.log('NPM_AUDIT_FAIL_CLOSED=PASS')
+  console.log('NPM_AUDIT_ERROR_OBJECT_TEST=PASS')
+  console.log('NPM_AUDIT_EMPTY_REPORT_TEST=PASS')
 }
 
 function assertStagingRateLimitGuard() {
@@ -600,13 +809,31 @@ function assertStagingRateLimitGuard() {
   const missing = evaluateStagingRateLimitTarget({
     allowTest: true,
     expectedRef: '',
+    productionProjectRef: 'prod-ref',
     supabaseUrl: 'https://abcd1234.supabase.co',
   })
   assert.equal(missing.ok, false)
   assert.equal(missing.reason, 'missing_expected_ref')
+  const missingProd = evaluateStagingRateLimitTarget({
+    allowTest: true,
+    expectedRef: 'staging-ref',
+    productionProjectRef: '',
+    supabaseUrl: 'https://staging-ref.supabase.co',
+  })
+  assert.equal(missingProd.ok, false)
+  assert.equal(missingProd.reason, 'missing_production_ref')
+  const identical = evaluateStagingRateLimitTarget({
+    allowTest: true,
+    expectedRef: 'same-ref',
+    productionProjectRef: 'same-ref',
+    supabaseUrl: 'https://same-ref.supabase.co',
+  })
+  assert.equal(identical.ok, false)
+  assert.equal(identical.reason, 'staging_production_refs_identical')
   const mismatch = evaluateStagingRateLimitTarget({
     allowTest: true,
     expectedRef: 'staging-ref',
+    productionProjectRef: 'prod-ref',
     supabaseUrl: 'https://other-ref.supabase.co',
   })
   assert.equal(mismatch.ok, false)
@@ -614,13 +841,14 @@ function assertStagingRateLimitGuard() {
   const prodRt = evaluateStagingRateLimitTarget({
     allowTest: true,
     expectedRef: 'staging-ref',
+    productionProjectRef: 'prod-ref',
     supabaseUrl: 'https://staging-ref.supabase.co',
     productionRuntime: true,
   })
   assert.equal(prodRt.ok, false)
   const prodProj = evaluateStagingRateLimitTarget({
     allowTest: true,
-    expectedRef: 'prod-ref',
+    expectedRef: 'staging-ref',
     supabaseUrl: 'https://prod-ref.supabase.co',
     productionProjectRef: 'prod-ref',
   })
@@ -629,9 +857,13 @@ function assertStagingRateLimitGuard() {
   const ok = evaluateStagingRateLimitTarget({
     allowTest: true,
     expectedRef: 'staging-ref',
+    productionProjectRef: 'prod-ref',
     supabaseUrl: 'https://staging-ref.supabase.co',
   })
   assert.equal(ok.ok, true)
+  console.log('STAGING_REF_REQUIRED=PASS')
+  console.log('PRODUCTION_REF_REQUIRED=PASS')
+  console.log('STAGING_PRODUCTION_REF_DIFFERENT=PASS')
   console.log('STAGING_RATE_LIMIT_TARGET_GUARD=PASS')
   console.log('RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN')
 }

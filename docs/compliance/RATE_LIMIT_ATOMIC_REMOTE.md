@@ -21,11 +21,14 @@ Script: `scripts/rate-limit-atomic-remote.mjs`
 ```
 ALLOW_STAGING_RATE_LIMIT_TEST=YES \
 EXPECTED_STAGING_SUPABASE_PROJECT_REF=<staging-ref> \
+PRODUCTION_SUPABASE_PROJECT_REF=<production-ref> \
 NEXT_PUBLIC_SUPABASE_URL=https://<staging-ref>.supabase.co \
 node scripts/rate-limit-atomic-remote.mjs
 ```
 
-Without `ALLOW_STAGING_RATE_LIMIT_TEST=YES` the script prints `RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN` and exits 0. Missing expected ref, ref mismatch, production runtime, or production project ref → FAIL. No remote write in CI.
+Without `ALLOW_STAGING_RATE_LIMIT_TEST=YES` the script prints `RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN` and exits 0.
+
+When the allow flag is `YES`, both `EXPECTED_STAGING_SUPABASE_PROJECT_REF` and `PRODUCTION_SUPABASE_PROJECT_REF` are required, they must differ, the parsed live URL ref must equal the expected staging ref, and it must not equal the production ref. Missing staging ref, missing production ref, identical refs, actual=production, or staging mismatch → FAIL. No remote write in CI.
 
 Prerequisites: a **staging** Supabase project with `003` + `004` + `005` applied. No production writes.
 
