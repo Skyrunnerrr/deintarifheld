@@ -87,9 +87,10 @@ function assertAdminIsolation() {
   assert.doesNotMatch(auth, /process\.env\.CRON_SECRET/)
   const adminList = read('app/api/admin/leads/route.js')
   assert.doesNotMatch(adminList, /withCors/)
-  assert.match(adminList, /isAdminAuthorized/)
+  assert.match(adminList, /enforceAdminAccess|isAdminAuthorized/)
   const cron = read('app/api/cron/retention/route.js')
-  assert.match(cron, /CRON_SECRET/)
+  assert.match(cron, /isCronAuthorized/)
+  assert.doesNotMatch(cron, /LEADS_ADMIN_SECRET/)
   if (prevAdmin === undefined) delete process.env.LEADS_ADMIN_SECRET
   else process.env.LEADS_ADMIN_SECRET = prevAdmin
   if (prevCron === undefined) delete process.env.CRON_SECRET
@@ -105,6 +106,7 @@ function assertInboxFailedVisible() {
   assert.match(ADMIN_INBOX_HTML, /unknown/)
   assert.doesNotMatch(ADMIN_INBOX_HTML, /LEADS_ADMIN_SECRET=/)
   assert.doesNotMatch(ADMIN_INBOX_HTML, /\?secret=/)
+  assert.doesNotMatch(ADMIN_INBOX_HTML, /sessionStorage/)
   console.log('INBOX_FAILED_VISIBLE=PASS')
 }
 

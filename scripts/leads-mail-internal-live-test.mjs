@@ -378,6 +378,7 @@ async function assertLiveStillSendsCustomer() {
   await withEnv(
     {
       LEADS_MAIL_MODE: 'live',
+      ALLOW_CUSTOMER_MAIL: 'YES',
       RESEND_API_KEY: 're_test_key',
       LEADS_FROM_EMAIL: 'DeinTarifheld <onboarding@resend.dev>',
       LEADS_TO_EMAIL: 'ops-account@example.invalid',
@@ -399,6 +400,32 @@ async function assertLiveStillSendsCustomer() {
   console.log('LIVE_MODE_BACK_COMPAT=PASS')
 }
 
+async function assertLiveDualGuardBlocksCustomer() {
+  sends.length = 0
+  await withEnv(
+    {
+      LEADS_MAIL_MODE: 'live',
+      ALLOW_CUSTOMER_MAIL: 'NO',
+      RESEND_API_KEY: 're_test_key',
+      LEADS_FROM_EMAIL: 'DeinTarifheld <onboarding@resend.dev>',
+      LEADS_TO_EMAIL: 'ops-account@example.invalid',
+    },
+    async () => {
+      const r = await sendLeadEmails({
+        leadRef: 'REF-LIVE-BLOCK',
+        data: businessData,
+        submittedAt: new Date().toISOString(),
+        channel: 'business',
+      })
+      assert.equal(r.ok, true)
+      assert.equal(r.customerConfirmation, 'blocked')
+      assert.equal(sends.length, 1)
+      assert.notEqual(sends[0].to?.[0], businessData.email)
+    },
+  )
+  console.log('LIVE_DUAL_GUARD_BLOCKS_CUSTOMER=PASS')
+}
+
 async function main() {
   try {
     await assertModeParsing()
@@ -409,6 +436,7 @@ async function main() {
     assertInquiryFieldsInOpsMail()
     assertCutoverGate()
     await assertLiveStillSendsCustomer()
+    await assertLiveDualGuardBlocksCustomer()
     console.log('INTERNAL_LIVE_TESTS=PASS')
     console.log('CUSTOMER_CONFIRMATION_SEND_COUNT=0')
   } finally {
