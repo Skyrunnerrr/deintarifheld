@@ -1,6 +1,8 @@
 # Public legal alignment — facts for Legal (not published copy)
 
-This file does **not** invent privacy-policy or AGB wording. Public `/datenschutz` and `/agb` were **not** rewritten in PR #6.
+This file does **not** invent privacy-policy or AGB wording. Public `/datenschutz` and `/agb` were **not** rewritten in this readiness pass.
+
+Live fetch 2026-09-15: `https://www.deintarifheld.de/datenschutz` already names Checkdomain / Vercel / Supabase / Resend / TELESON and “keine automatische Bestätigung”. That does **not** make alignment PASS.
 
 ```
 PUBLIC_LEGAL_ALIGNMENT=FAIL
@@ -9,7 +11,7 @@ LEGAL_REVIEW_REQUIRED=YES
 TDDDG_NOTE=published AGB still says TTDSG; current federal short name is TDDDG. Factual note only.
 ```
 
-`PUBLIC_LEGAL_ALIGNMENT=FAIL` until the **published** `/datenschutz` text describes the real third-party flows below. A draft in `docs/legal/` is not publication.
+`PUBLIC_LEGAL_ALIGNMENT=FAIL` until Legal reviews the remaining mismatches in `docs/compliance/LEGAL_ALIGNMENT_MATRIX.md`. A draft in `docs/legal/` is not publication.
 
 ## Missing from published `/datenschutz` (do not invent replacement copy here)
 

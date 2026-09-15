@@ -1,93 +1,80 @@
-# Production E2E runbook (next step after P0)
+# Production E2E runbook (do not execute from PR #6)
 
-STATUS=NOT_AUTHORIZED_FROM_PR6  
-PRODUCTION_E2E_READY=NO  
-LIVE_LEAD_SUBMITTED=NO  
-This document describes the next real end-to-end test. It does **not** authorize submitting a live lead from CI or from this PR.
+```
+PRODUCTION_E2E_RUNBOOK_READY=YES
+PRODUCTION_E2E_EXECUTED=NO
+PRODUCTION_E2E_READY=NO
+STATUS=NOT_AUTHORIZED_FROM_PR6
+LIVE_LEAD_SUBMITTED=NO
+```
 
-## Path under test
+E2E = full path from public form to internal processing. This document does **not** authorize a live submit.
 
-Checkdomain public site (`https://www.deintarifheld.de`)  
-→ private / business / career lead form  
-→ `POST https://deintarifheld-leads-api.vercel.app/api/leads/` or `/api/careers/`  
-→ server validation (origin, captcha, body cap, timing, rate limit)  
-→ Supabase `leads` / `career_applications`  
-→ internal Resend mail (`LEADS_MAIL_MODE=internal_live`)  
-→ `kontakt@deintarifheld.de` (and any extra `LEADS_TO_EMAIL` ops addresses)  
-→ Ops Inbox `https://deintarifheld-leads-api.vercel.app/api/admin/inbox/`  
-→ stored `mail_status` / `mail_mode` truth
+## Test dataset (when a human later authorizes)
 
-Customer confirmation must stay off.
+Use a uniquely marked TEST identity, for example:
 
-## Env checks before the test (values never printed)
+- email: an **internal** mailbox you control, local-part containing `dth-e2e-<date>-<sha7>`
+- name / message: `DTH_E2E_TEST <SHA> do-not-process`
+- never a real customer address
+- never `*@example.invalid` if Resend must deliver internally
 
-Confirm on Vercel (production), do not paste secrets into tickets, chat, or CI logs:
+Career/partner flow: **only if explicitly approved** in the same ops order. Default: private, then business.
 
-| Name | Required value | Notes |
-|---|---|---|
-| `VERCEL_ENV` | `production` (platform) | Enables fail-closed controls |
-| `LEADS_MAIL_MODE` | `internal_live` | Not `live` |
-| `ALLOW_CUSTOMER_MAIL` | unset or `NO` | Dual guard |
-| `RESEND_API_KEY` | set | Never print |
-| `LEADS_FROM_EMAIL` | verified sender | |
-| `LEADS_TO_EMAIL` | includes `kontakt@deintarifheld.de` | |
-| `NEXT_PUBLIC_SUPABASE_URL` or `SUPABASE_URL` | set | |
-| `SUPABASE_SERVICE_ROLE_KEY` | set | Never print |
-| `RECAPTCHA_SECRET_KEY` | set | Production fail-closed without it |
-| `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` and/or `NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY` | Standard v2/v3 only | Enterprise site key is not supported |
-| `LEADS_ADMIN_SECRET` | ≥ 32 chars | Never print; inbox cookie only |
-| `CRON_SECRET` | ≥ 32 chars, different from admin | Never print |
-| `LEADS_RATE_LIMIT_SALT` | unpredictable, not the old default | |
-| `LEADS_RATE_LIMIT_PROVIDER` | `supabase` (default in production) | Apply `003` + `004` + `005` (`consume_rate_limit` INVOKER) first |
-| `AUDIT_EMAIL_HASH_SALT` | unpredictable, not the rate-limit salt | Delete-audit HMAC only |
-| `LEADS_ALLOWED_ORIGINS` | public site origins only | localhost ignored in production |
-| `LEADS_ALLOW_SMOKE_BYPASS` | unset / `NO` | Must stay off in production |
-| `NEXT_PUBLIC_LEADS_API_ORIGIN` | `https://deintarifheld-leads-api.vercel.app` | Static Checkdomain build |
+## Preconditions (values never printed)
 
-Do **not** print: admin/cron/smoke/recaptcha secrets, service role, Resend key, session cookies.
+See `docs/deployment/PRODUCTION_ENV_MATRIX.md` and `docs/deployment/PR6_DEPLOY_ORDER.md`.
+Migrations 003–005 applied and verified. Checkdomain static built from the **merged** SHA. `ALLOW_CUSTOMER_MAIL=NO`. No smoke-bypass.
 
-## How to run (ops, not CI)
+## Controlled sequence (private first)
 
-1. Confirm Checkdomain HTML is built from the merged SHA that contains this P0 (`npm run build:static:production` after merge).
-2. Confirm Vercel production has the env table above.
-3. Confirm migrations `003_leads_rate_limits.sql`, `004_consume_rate_limit.sql`, and `005_legal_hold_and_rate_limit_invoker.sql` are applied (additive). Do not run destructive SQL. Order: DB → env verify → Production API → Checkdomain static → controlled E2E (`docs/deployment/PR6_DEPLOY_ORDER.md`).
-4. Open the public form in a normal browser (not curl). Complete captcha.
-5. Use a **synthetic** address that you control (`*@example.invalid` is wrong for a real Resend inbox; use an internal mailbox that is not a customer).
-6. Submit once.
-7. Expect: 2xx JSON with `ok: true`, `mailMode` not required on public GET; POST may show `mailMode: internal_live`, `customerConfirmation: skipped`.
-8. Confirm row in Supabase (ops only).
-9. Confirm one internal mail at `kontakt@deintarifheld.de`.
-10. Open ops inbox with the admin secret (password form → HttpOnly cookie). Confirm the same lead and mail status.
-11. Confirm no mail was sent to the form email.
+1. Open Checkdomain production site `https://www.deintarifheld.de`.
+2. Complete the **private** test inquiry with the TEST dataset.
+3. Complete captcha (v2 checkbox and/or v3 execute as shown). Do not use curl.
+4. Confirm API JSON: `ok: true`; `customerConfirmation` is `skipped` / not sent.
+5. Confirm Supabase row (ops): TEST email, `page_source` private, payload present.
+6. Confirm `lead_ref` returned and stored.
+7. Confirm **one** internal Resend mail at the ops address (`LEADS_TO_EMAIL`).
+8. Confirm `mail_status` is truthful (`internal_sent` or `failed` — never invented success).
+9. Confirm the same row in ops inbox after admin auth (`/api/admin/inbox/`).
+10. Confirm an audit event for accept / internal mail (no plaintext customer email in delete-audit style fields).
+11. Confirm **no** mail at the form (customer) address.
+12. Clean up **only** via the approved test procedure: admin erase-by-email with explicit mode chosen by Legal/Ops (`soft` \| `redact` \| `physical`) on the **original unique TEST email**. Never use `REDACTED_EMAIL`. Record the mode.
 
-Do not use `scripts/leads-smoke*.mjs` against production unless `ALLOW_PRODUCTION_SMOKE=YES` is set **by a human for that shell only**. CI must never set it.
+Then repeat 1–12 for the **business** form if the same order includes it.
 
-## PASS
+## PASS definition
 
-- Browser POST from `https://www.deintarifheld.de` accepted.
-- Captcha verified server-side (invalid token → 403, no row).
-- Supabase row created with truthful `mail_status` (`internal_sent` or `failed`).
-- Exactly one internal ops mail; customer confirmation count = 0.
-- Inbox shows the lead only after auth.
-- Public GET `/api/leads/` has no `mailModeDefault`.
+| Gate | Required |
+|---|---|
+| FRONTEND_SUBMIT | PASS |
+| API_ACCEPT | PASS |
+| SUPABASE_INSERT | PASS |
+| INTERNAL_MAIL | PASS |
+| MAIL_STATUS_TRUE | PASS |
+| OPS_INBOX | PASS |
+| AUDIT_EVENT | PASS |
+| CUSTOMER_MAIL_SENT | NO |
+| NO_DUPLICATE | PASS (single submit → one row / one ops mail) |
+| NO_SECURITY_REGRESSION | PASS (unauth inbox hidden; captcha still required; no secret leakage) |
 
-## FAIL
+## FAIL examples
 
-- 403 `request-blocked` from the real site (origin allowlist wrong).
-- 403 `captcha-*` with a completed widget (secret/site-key mismatch).
-- 429 immediately (rate-limit backend missing or salt unset).
-- 500 `storage-not-configured`.
-- Customer received a confirmation.
-- Inbox HTML visible without login.
-- GET health leaks mail mode or env names.
+- 403 `request-blocked` from the real site (origin allowlist)
+- 403 `captcha-*` after a completed widget
+- 429 from missing rate-limit backend
+- 500 `storage-not-configured`
+- Customer received confirmation
+- Inbox HTML without login
+- GET health leaks mail mode
 
-## Rollback
+## Rollback (if the authorized test misbehaves)
 
-1. Set `LEADS_MAIL_MODE=mock` on Vercel (stops provider mail; intake can remain up).
-2. If intake is abusive: remove `RECAPTCHA_SECRET_KEY` is **wrong** (production then fail-closes). Instead disable the Vercel deployment or set an emergency allowlist miss.
-3. Static site: redeploy previous Checkdomain release via existing rollback script (`dth-checkdomain.sh rollback`).
-4. Do not drop Supabase tables. Do not run `npm audit fix` as rollback.
+1. Set `LEADS_MAIL_MODE=mock` on the Production API (stops provider mail).
+2. Do **not** remove `RECAPTCHA_SECRET_KEY` (production fail-closes intake).
+3. Checkdomain: `dth-checkdomain.sh rollback --apply` to last backup.
+4. Do not drop Supabase tables. Do not run `npm audit fix`.
 
 ## Secrets that must never be printed
 
-`RECAPTCHA_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `LEADS_ADMIN_SECRET`, `CRON_SECRET`, `LEADS_INTAKE_SMOKE_SECRET`, `LEADS_RATE_LIMIT_SALT`, inbox session cookie `dth_admin`.
+`RECAPTCHA_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `LEADS_ADMIN_SECRET`, `CRON_SECRET`, `LEADS_INTAKE_SMOKE_SECRET`, `LEADS_RATE_LIMIT_SALT`, `AUDIT_EMAIL_HASH_SALT`, inbox cookie `dth_admin`.
