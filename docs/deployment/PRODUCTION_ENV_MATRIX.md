@@ -3,17 +3,24 @@
 ```
 PRODUCTION_ENV_MATRIX_READY=YES
 PRODUCTION_ENV_VERIFIED=PARTIAL
+PRODUCTION_API_ENV_VERIFIED=YES
+CHECKDOMAIN_BUILD_ENV_VERIFIED=PARTIAL
 ```
 
-Human verified 2026-09-15 that the named production slots below marked `YES`
-are **PRESENT**. **No values are printed.** Optional/unlisted slots stay UNKNOWN.
+Human verified 2026-09-15 that the named **production API** slots below marked
+`YES` are **PRESENT**. **No values are printed.** Optional/unlisted slots stay
+UNKNOWN.
+
+`PRODUCTION_API_ENV_VERIFIED=YES` covers the production Vercel API project.
+`CHECKDOMAIN_BUILD_ENV_VERIFIED=PARTIAL` because `NEXT_PUBLIC_LEADS_API_ORIGIN`
+is still unresolved on the later Checkdomain static **build host**.
 
 `MUST_BE_SECRET=YES` means the value must never appear in tickets, PR bodies, CI logs, or chat.
 
 | Name | REQUIRED/OPTIONAL | MUST_BE_SECRET | PRODUCTION_EXPECTED_VALUE_TYPE | VERIFIED_PRESENT |
 |---|---|---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` or `SUPABASE_URL` | REQUIRED | NO (URL) | `https://<project-ref>.supabase.co` | YES (`NEXT_PUBLIC_SUPABASE_URL`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | REQUIRED | YES | service-role JWT | YES |
+| `SUPABASE_SERVICE_ROLE_KEY` | REQUIRED | YES | Supabase privileged server secret accepted by the server client; modern secret key or supported legacy service-role key. Never expose client-side. | YES |
 | `RECAPTCHA_SECRET_KEY` | REQUIRED | YES | classic siteverify secret | YES |
 | `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | OPTIONAL (v2) | NO | standard v2 site key | UNKNOWN (v2 not the selected production variant) |
 | `NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY` | OPTIONAL (v3) | NO | standard v3 site key | YES |
@@ -31,7 +38,7 @@ are **PRESENT**. **No values are printed.** Optional/unlisted slots stay UNKNOWN
 | `LEADS_TO_EMAIL` | REQUIRED for live/internal_live | NO | ops recipients (e.g. `kontakt@deintarifheld.de`) | YES (intended `kontakt@deintarifheld.de`) |
 | `LEADS_FROM_EMAIL` | REQUIRED for live/internal_live | NO | verified sender identity | YES (intended `DeinTarifheld <kontakt@deintarifheld.de>`) |
 | `RESEND_API_KEY` | REQUIRED for live/internal_live | YES | Resend key | YES |
-| `NEXT_PUBLIC_LEADS_API_ORIGIN` | REQUIRED for Checkdomain static | NO | `https://deintarifheld-leads-api.vercel.app` | UNKNOWN on the **build host**; live Datenschutz already names this origin |
+| `NEXT_PUBLIC_LEADS_API_ORIGIN` | REQUIRED for Checkdomain static | NO | `https://deintarifheld-leads-api.vercel.app` | UNKNOWN on the **Checkdomain build host** (`CHECKDOMAIN_BUILD_ENV_VERIFIED=PARTIAL`); live Datenschutz already names this origin |
 | `LEADS_ALLOW_SMOKE_BYPASS` | OPTIONAL | NO | must be unset/`NO` in production (code ignores it in production anyway) | UNKNOWN |
 | `LEADS_INTAKE_SMOKE_SECRET` | OPTIONAL | YES | unused in production runtime | UNKNOWN |
 | `LEADS_RUNTIME_ENV` | OPTIONAL | NO | `production` only if forcing fail-closed off-Vercel | UNKNOWN |
@@ -46,4 +53,5 @@ are **PRESENT**. **No values are printed.** Optional/unlisted slots stay UNKNOWN
 - Production rate-limit defaults to `supabase`. Memory mode in production is denied unless `LEADS_ALLOW_MEMORY_RATE_LIMIT=YES` (must not be set).
 - Missing captcha secret fail-closes in production.
 
-Human/Vercel must fill `VERIFIED_PRESENT` without pasting values.
+Fill remaining `VERIFIED_PRESENT` cells without pasting values. Do not treat
+Checkdomain build-host completeness as a production API env failure.

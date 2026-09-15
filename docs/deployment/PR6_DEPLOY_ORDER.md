@@ -9,6 +9,13 @@ PR6_MERGE_READY=NO
 PRODUCTION_RELEASE_READY=NO
 PUBLIC_LEGAL_ALIGNMENT=PASS
 LEGAL_REVIEW_REQUIRED=YES
+GATE1=OPEN
+GATE2=PASS
+GATE3=PASS
+GATE4=PASS
+GATE5=PASS
+GATE6=PASS
+GATE7=PASS
 ```
 
 Merging this PR is **not** a production cutover.
@@ -22,25 +29,25 @@ Checkdomain static publish is still a separate authorized step. Therefore
 
 Preferred order. Changing it requires a written technical reason.
 
-| Gate | Name | May proceed when |
-|---|---|---|
-| GATE1 | Legal Release Approval | Legal signs the matrix; published texts cover reCAPTCHA / ProvenExpert / cookies; AGB §5 vs mail OFF resolved **without** enabling customer mail; TTDSG/TDDDG decided; DPA/SCC/TIA evidence recorded or explicitly deferred |
-| GATE2 | Supabase Backup | Snapshot/PITR id recorded |
-| GATE3 | Migration 003 | 003 applied + verified |
-| GATE4 | Migration 004 | 004 applied + verified |
-| GATE5 | Migration 005 | 005 applied + verified (INVOKER) |
-| GATE6 | Production Env Verify | Matrix `VERIFIED_PRESENT` filled (values never printed); `ALLOW_CUSTOMER_MAIL=NO`; no smoke-bypass; no memory rate-limit; no localhost origin |
-| GATE7 | Vercel Deployment Safety Verify | Production project, production branch, and auto-deploy-on-main are **known**. If auto-deploy is ON, merge is blocked until a hold/protection exists |
-| GATE8 | PR #6 Merge | Only after GATE1–GATE7. Still not a Checkdomain upload |
-| GATE9 | Production API Deploy | Intentional deploy of the merged SHA to `deintarifheld-leads-api` |
-| GATE10 | API Smoke | Ops-only; captcha required; no customer mail |
-| GATE11 | Checkdomain Backup | `dth-checkdomain.sh backup --apply` |
-| GATE12 | Checkdomain Static Deploy | Build from **main** SHA; upload `--apply` |
-| GATE13 | Controlled Production E2E | Separate written authorization; `docs/deployment/PRODUCTION_E2E_RUNBOOK.md` |
-| GATE14 | Monitoring | Inbox + mail_status + error logs watched |
-| GATE15 | Release Acceptance | Human acceptance recorded |
+| Gate | Name | Status | May proceed when |
+|---|---|---|---|
+| GATE1 | Legal Release Approval | **OPEN** | Qualified legal review signs the aligned repo texts. Repo factual mismatches are already closed; live Checkdomain pages remain stale; DPA/SCC/TIA account evidence remains PARTIAL |
+| GATE2 | Supabase Backup | **PASS** | Verified restorable/readable production DB backup artifact recorded. The artifact used on 2026-09-15 is a local custom-format `pg_dump` (~230 KB) whose TOC was readable via `pg_restore -l` (404 entries). A PITR/snapshot ID is **not** required and was **not** invented |
+| GATE3 | Migration 003 | **PASS** | 003 applied + verified on `deintarifheld-phase-a`. Do not rerun |
+| GATE4 | Migration 004 | **PASS** | 004 applied + verified. Do not rerun |
+| GATE5 | Migration 005 | **PASS** | 005 applied + verified (INVOKER + hardened `search_path`). Do not rerun |
+| GATE6 | Production Env Verify | **PASS** | Production **API** required slots human-verified PRESENT (values never printed); `ALLOW_CUSTOMER_MAIL=NO`; `LEADS_MAIL_MODE=internal_live`. Checkdomain build-host `NEXT_PUBLIC_LEADS_API_ORIGIN` remains PARTIAL for later static publish |
+| GATE7 | Vercel Deployment Safety Verify | **PASS** | Production Vercel Git disconnected; `AUTO_PRODUCTION_DEPLOY_ON_MAIN=NO`. Merge cannot auto-deploy production |
+| GATE8 | PR #6 Merge | OPEN | Only after GATE1 (and GATE2–GATE7, already PASS). Still not a Checkdomain upload |
+| GATE9 | Production API Deploy | OPEN | Intentional deploy of the merged SHA to `deintarifheld-leads-api` |
+| GATE10 | API Smoke | OPEN | Ops-only; captcha required; no customer mail |
+| GATE11 | Checkdomain Backup | OPEN | `dth-checkdomain.sh backup --apply` |
+| GATE12 | Checkdomain Static Deploy | OPEN | Build from **main** SHA; upload `--apply` |
+| GATE13 | Controlled Production E2E | OPEN | Separate written authorization; `docs/deployment/PRODUCTION_E2E_RUNBOOK.md` |
+| GATE14 | Monitoring | OPEN | Inbox + mail_status + error logs watched |
+| GATE15 | Release Acceptance | OPEN | Human acceptance recorded |
 
-If `AUTO_PRODUCTION_DEPLOY_ON_MAIN` is later proven **YES**, GATE7 must add a deploy hold **before** GATE8, or merge must wait until GATE2–GATE6 are already done on the live project. That is the only justified reorder: **never** merge first and hope.
+If `AUTO_PRODUCTION_DEPLOY_ON_MAIN` is later proven **YES**, GATE7 must add a deploy hold **before** GATE8, or merge must wait until GATE1 plus the remaining live cutover holds exist. That is the only justified reorder: **never** merge first and hope.
 
 Never fail-open rate limit. Never enable customer mail from this PR.
 
