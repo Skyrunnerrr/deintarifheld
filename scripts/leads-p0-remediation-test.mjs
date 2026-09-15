@@ -8,7 +8,12 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHmac } from 'node:crypto'
 import {
+  CAPTCHA_ACTION_HERO,
   CAPTCHA_PRODUCTION_VARIANT,
+  CONFIGURED_V3_ACTIONS,
+  GOOGLE_V3_ACTION_RE,
+  assertConfiguredV3ActionsValid,
+  isValidGoogleV3Action,
   resolveExpectedCaptchaAction,
 } from '../lib/leads/captcha-action.js'
 import { verifyCaptchaToken } from '../lib/leads/captcha.js'
@@ -81,9 +86,17 @@ async function assertServerOwnedActionBinding() {
   const career = resolveExpectedCaptchaAction({ endpoint: 'careers', pageSource: 'anything' })
   assert.equal(career.expectedAction, 'career')
   const hero = resolveExpectedCaptchaAction({ endpoint: 'leads', pageSource: 'hero-funnel' })
-  assert.equal(hero.expectedAction, 'hero-funnel')
+  assert.equal(hero.expectedAction, 'hero_funnel')
+  assert.equal(hero.expectedAction, CAPTCHA_ACTION_HERO)
+  assert.ok(isValidGoogleV3Action(hero.expectedAction))
+  assert.equal(isValidGoogleV3Action('hero-funnel'), false)
+  assert.ok(GOOGLE_V3_ACTION_RE.test('hero_funnel'))
+  assert.equal(GOOGLE_V3_ACTION_RE.test('hero-funnel'), false)
+  assert.deepEqual(assertConfiguredV3ActionsValid(), { ok: true, invalid: [] })
+  assert.ok(CONFIGURED_V3_ACTIONS.every((a) => isValidGoogleV3Action(a)))
   const privat = resolveExpectedCaptchaAction({ endpoint: 'leads', pageSource: 'privat' })
-  assert.ok(privat.allowedActions.includes('hero-funnel'))
+  assert.ok(privat.allowedActions.includes('hero_funnel'))
+  assert.ok(!privat.allowedActions.includes('hero-funnel'))
   assert.ok(privat.allowedActions.includes('main_funnel'))
   const wrongEp = resolveExpectedCaptchaAction({ endpoint: 'leads', pageSource: 'career' })
   assert.equal(wrongEp.ok, false)
@@ -123,7 +136,7 @@ async function assertServerOwnedActionBinding() {
       assert.equal(careerVsBiz.ok, false, 'career vs business')
 
       const privateVsCareer = await verifyCaptchaToken(TOKEN, {
-        expectedAction: 'hero-funnel',
+        expectedAction: 'hero_funnel',
         fetchImpl: siteverifyFetch({
           success: true,
           hostname: 'www.deintarifheld.de',
@@ -269,14 +282,27 @@ async function assertAtomicRateLimit() {
   })
   setRateLimitSupabaseForTests(null)
 
-  const sql = read('supabase/migrations/004_consume_rate_limit.sql')
-  assert.match(sql, /consume_rate_limit/)
-  assert.match(sql, /security definer/i)
-  assert.match(sql, /revoke all on function public\.consume_rate_limit/i)
-  assert.match(sql, /grant execute on function public\.consume_rate_limit[^;]+to service_role/i)
-  assert.doesNotMatch(sql, /^\s*drop\s+table\s+public\.leads/im)
-  assert.doesNotMatch(sql, /^\s*truncate\b/im)
+  const sql004 = read('supabase/migrations/004_consume_rate_limit.sql')
+  assert.match(sql004, /consume_rate_limit/)
+  assert.match(sql004, /revoke all on function public\.consume_rate_limit/i)
+  assert.match(sql004, /grant execute on function public\.consume_rate_limit[^;]+to service_role/i)
+  assert.doesNotMatch(sql004, /^\s*drop\s+table\s+public\.leads/im)
+  assert.doesNotMatch(sql004, /^\s*truncate\b/im)
+
+  const sql005 = read('supabase/migrations/005_legal_hold_and_rate_limit_invoker.sql')
+  assert.match(sql005, /security invoker/i)
+  assert.match(sql005, /search_path\s*=\s*pg_catalog,\s*public,\s*pg_temp/i)
+  assert.match(sql005, /revoke all on function public\.consume_rate_limit/i)
+  assert.match(sql005, /grant execute on function public\.consume_rate_limit[^;]+to service_role/i)
+  assert.match(sql005, /legal_hold/)
+  assert.doesNotMatch(sql005, /security definer/i)
+  assert.doesNotMatch(sql005, /set search_path\s*=\s*public\s*$/im)
+  assert.doesNotMatch(sql005, /^\s*drop\s+table\s+public\.leads/im)
+  assert.doesNotMatch(sql005, /^\s*truncate\b/im)
   console.log('P0_RATE_LIMIT_ATOMIC=PASS')
+  console.log('RATE_LIMIT_ATOMIC_CODE=PASS')
+  console.log('RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN')
+  console.log('RPC_PRIVILEGE_HARDENING=PASS')
 }
 
 function assertProvenExpertConsent() {
@@ -287,6 +313,8 @@ function assertProvenExpertConsent() {
 
   const widget = read('components/ui/ProSealWidget.js')
   assert.match(widget, /shouldLoadProvenExpertScript/)
+  assert.match(widget, /planProvenExpertWithdrawal/)
+  assert.match(widget, /stripProvenExpertDom/)
   assert.match(widget, /loadExternal/)
   const banner = read('components/ui/CookieBanner.jsx')
   assert.doesNotMatch(banner, /keine Daten ohne deine Zustimmung/)
@@ -443,16 +471,23 @@ async function assertDeletionPrivacy() {
 
 function assertAiAndHealthArtifacts() {
   const guard = read('docs/compliance/AI_ACT_GUARDRAILS.md')
+  assert.match(guard, /CUSTOMER_FACING_AI=NO/)
+  assert.match(guard, /INTERNAL_AI_USE=YES/)
   assert.match(guard, /CURRENT_CUSTOMER_AI=NO/)
   assert.match(guard, /CURRENT_AI_LEAD_SCORING=NO/)
   assert.match(guard, /CURRENT_AUTOMATED_LEGAL_DECISIONS=NO/)
   assert.match(guard, /CAREER_AI_SELECTION_ALLOWED=NO/)
-  assert.match(guard, /ARTICLE50_FUTURE_AI_GATE=DOCUMENTED/)
+  assert.match(guard, /ARTICLE50_FUTURE_AI_GATE=PASS/)
+  assert.match(guard, /Cursor Cloud Agent/)
   const lit = read('docs/compliance/AI_LITERACY_REGISTER.md')
-  assert.match(lit, /ARTICLE4_AI_LITERACY_REGISTER=TEMPLATE/)
+  assert.match(lit, /ARTICLE4_AI_LITERACY_REGISTER=PARTIAL/)
+  assert.match(lit, /INTERNAL_AI_USE=YES/)
+  assert.match(lit, /TRAINING=UNKNOWN/)
   assert.match(lit, /operators/)
   assert.match(lit, /training/)
   assert.match(lit, /does \*\*not\*\* claim automatic legal compliance/)
+  assert.match(lit, /Cursor Cloud Agent/)
+  assert.doesNotMatch(lit, /ARTICLE4_AI_LITERACY_REGISTER=TEMPLATE/)
 
   const careerRoute = read('app/api/careers/route.js')
   assert.doesNotMatch(careerRoute, /openai|anthropic|llm|embeddings|ai.score|rankCandidate/i)

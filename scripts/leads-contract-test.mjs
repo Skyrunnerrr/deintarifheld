@@ -15,6 +15,7 @@ assert.ok(existsSync(join(root, 'supabase/migrations/001_leads_phase_a.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/002_leads_phase_b.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/003_leads_rate_limits.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/004_consume_rate_limit.sql')))
+assert.ok(existsSync(join(root, 'supabase/migrations/005_legal_hold_and_rate_limit_invoker.sql')))
 assert.ok(existsSync(join(root, 'app/api/leads/route.js')))
 assert.ok(existsSync(join(root, 'app/api/careers/route.js')))
 assert.ok(existsSync(join(root, 'lib/leads/mail.js')))
@@ -86,6 +87,11 @@ const migration004 = read('supabase/migrations/004_consume_rate_limit.sql')
 assert.match(migration004, /consume_rate_limit/)
 assert.match(migration004, /service_role/)
 assert.doesNotMatch(migration004, /^\s*drop\s+table\s+public\.leads\b/im)
+const migration005 = read('supabase/migrations/005_legal_hold_and_rate_limit_invoker.sql')
+assert.match(migration005, /security invoker/i)
+assert.match(migration005, /legal_hold/)
+assert.match(migration005, /pg_catalog,\s*public,\s*pg_temp/)
+assert.doesNotMatch(migration005, /^\s*drop\s+table\s+public\.leads\b/im)
 
 const intake = read('app/api/leads/route.js')
 assert.match(intake, /enforcePublicIntake/)
@@ -199,6 +205,7 @@ for (const s of [
   'leads:duplicate-status',
   'leads:p0:security',
   'leads:p0:remediation',
+  'leads:p0:closure',
   'deps:audit',
   'phase-b:verify',
 ]) {

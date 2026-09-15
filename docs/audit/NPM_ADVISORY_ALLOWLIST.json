@@ -1,0 +1,168 @@
+{
+  "reviewed_at": "2026-09-15",
+  "expires_at": "2026-12-15",
+  "policy": {
+    "unknown_critical": "CI_FAIL",
+    "unknown_high": "CI_FAIL",
+    "npm_audit_fix": "FORBIDDEN",
+    "next_16": "FORBIDDEN"
+  },
+  "advisories": [
+    {
+      "id": "GHSA-3jxr-9vmj-r5cp",
+      "cve": "",
+      "url": "https://github.com/advisories/GHSA-3jxr-9vmj-r5cp",
+      "package": "brace-expansion",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "ESLint / typescript-estree toolchain. Not imported by app/api or lib/leads.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    },
+    {
+      "id": "GHSA-mh99-v99m-4gvg",
+      "cve": "",
+      "url": "https://github.com/advisories/GHSA-mh99-v99m-4gvg",
+      "package": "brace-expansion",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "Dev/CI toolchain only.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    },
+    {
+      "id": "GHSA-rgw5-rvv9-x895",
+      "cve": "CVE-2026-14257",
+      "url": "https://github.com/advisories/GHSA-rgw5-rvv9-x895",
+      "package": "brace-expansion",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "Dev/CI toolchain only.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    },
+    {
+      "id": "GHSA-52cp-r559-cp3m",
+      "cve": "",
+      "url": "https://github.com/advisories/GHSA-52cp-r559-cp3m",
+      "package": "js-yaml",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "No runtime YAML parse of request bodies.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    },
+    {
+      "id": "GHSA-5p4m-2wfm-xmqj",
+      "cve": "CVE-2026-59870",
+      "url": "https://github.com/advisories/GHSA-5p4m-2wfm-xmqj",
+      "package": "js-yaml",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "Dev/CI toolchain only.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    },
+    {
+      "id": "GHSA-2883-xcg3-v3hh",
+      "cve": "",
+      "url": "https://github.com/advisories/GHSA-2883-xcg3-v3hh",
+      "package": "js-yaml",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "Dev/CI toolchain only.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    },
+    {
+      "id": "GHSA-28wg-ghj8-5hjv",
+      "cve": "",
+      "url": "https://github.com/advisories/GHSA-28wg-ghj8-5hjv",
+      "package": "nanoid",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "DTH does not pass attacker-controlled sizes into nanoid.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    },
+    {
+      "id": "GHSA-2v37-7h3g-55p8",
+      "cve": "",
+      "url": "https://github.com/advisories/GHSA-2v37-7h3g-55p8",
+      "package": "nanoid",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "No custom generator with attacker-controlled size.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    },
+    {
+      "id": "GHSA-xwg4-73v4-xw9w",
+      "cve": "",
+      "url": "https://github.com/advisories/GHSA-xwg4-73v4-xw9w",
+      "package": "nanoid",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "Transitive; no custom generator.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    },
+    {
+      "id": "GHSA-6g55-p6wh-862q",
+      "cve": "",
+      "url": "https://github.com/advisories/GHSA-6g55-p6wh-862q",
+      "package": "postcss",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "Build-time CSS toolchain. Public site is static export; Vercel Lead API has no user CSS pipeline.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    },
+    {
+      "id": "GHSA-r28c-9q8g-f849",
+      "cve": "",
+      "url": "https://github.com/advisories/GHSA-r28c-9q8g-f849",
+      "package": "postcss",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "Build-time source map path. Not an intake RCE/PII path.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    },
+    {
+      "id": "GHSA-f88m-g3jw-g9cj",
+      "cve": "CVE-2026-33327",
+      "url": "https://github.com/advisories/GHSA-f88m-g3jw-g9cj",
+      "package": "sharp",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "images.unoptimized=true; optimizer not in production path.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    },
+    {
+      "id": "GHSA-rgj7-g3m4-5g8c",
+      "cve": "",
+      "url": "https://github.com/advisories/GHSA-rgj7-g3m4-5g8c",
+      "package": "sharp",
+      "severity": "high",
+      "production_reachable": false,
+      "reason": "images.unoptimized=true; optimizer not in production path.",
+      "owner": "Ops",
+      "reviewed_at": "2026-09-15",
+      "expires_at": "2026-12-15"
+    }
+  ]
+}

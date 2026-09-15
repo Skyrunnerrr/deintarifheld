@@ -8,6 +8,13 @@ import {
   PROVENEXPERT_SCRIPT_URL,
   shouldLoadProvenExpertScript,
 } from '@/lib/consent/third-party'
+import {
+  hasProvenExpertDestroyApi,
+  planProvenExpertWithdrawal,
+  readWithdrawalReloadFlag,
+  stripProvenExpertDom,
+  writeWithdrawalReloadFlag,
+} from '@/lib/consent/provenexpert-runtime'
 
 /** DTH-04: Preview route — no fixed ProSeal overlay (private + /unternehmen unchanged). */
 function isBusinessPreviewRoute(pathname) {
@@ -25,6 +32,7 @@ function readProvenExpertConsent() {
 export function ProSealWidget() {
   const pathname = usePathname()
   const wrapperRef = useRef(null)
+  const prevAllowedRef = useRef(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
   const [loadExternal, setLoadExternal] = useState(false)
@@ -80,13 +88,42 @@ export function ProSealWidget() {
   }, [disabled, isMobile])
 
   useEffect(() => {
-    if (disabled || !loadExternal) return undefined
+    if (disabled) return undefined
+
+    const plan = planProvenExpertWithdrawal({
+      previousAllowed: prevAllowedRef.current,
+      nextAllowed: loadExternal,
+      destroyApiAvailable: hasProvenExpertDestroyApi(window),
+      alreadyReloaded: readWithdrawalReloadFlag(window.sessionStorage),
+    })
+
+    if (plan.stripDom) {
+      stripProvenExpertDom(document)
+    }
+
+    if (plan.reload) {
+      writeWithdrawalReloadFlag(window.sessionStorage, true)
+      window.location.reload()
+      return undefined
+    }
+
+    if (loadExternal) {
+      writeWithdrawalReloadFlag(window.sessionStorage, false)
+    }
+
+    prevAllowedRef.current = loadExternal
+
+    if (!plan.loadScript) return undefined
 
     const script = document.createElement('script')
     script.src = PROVENEXPERT_SCRIPT_URL
     script.setAttribute('data-dth-provenexpert', '1')
 
     script.onload = () => {
+      if (!shouldLoadProvenExpertScript(window.localStorage.getItem(CONSENT_STORAGE_KEY))) {
+        stripProvenExpertDom(document)
+        return
+      }
       if (window.provenExpert?.proSeal) {
         window.provenExpert.proSeal({
           widgetId: '7d208aee-20e0-4753-b215-0e4d90ba848f',
@@ -108,6 +145,10 @@ export function ProSealWidget() {
     document.head.appendChild(script)
 
     const interval = setInterval(() => {
+      if (!shouldLoadProvenExpertScript(window.localStorage.getItem(CONSENT_STORAGE_KEY))) {
+        stripProvenExpertDom(document)
+        return
+      }
       const seal = document.querySelector('.pe-pro-seal')
       if (!seal || !wrapperRef.current) return
 
@@ -126,6 +167,7 @@ export function ProSealWidget() {
     return () => {
       clearInterval(interval)
       script.remove()
+      stripProvenExpertDom(document)
     }
   }, [disabled, loadExternal])
 

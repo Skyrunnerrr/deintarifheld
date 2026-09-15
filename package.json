@@ -26,6 +26,7 @@
     "leads:mail:internal-live": "node scripts/leads-mail-internal-live-test.mjs",
     "leads:p0:security": "node scripts/leads-p0-security-test.mjs",
     "leads:p0:remediation": "node scripts/leads-p0-remediation-test.mjs",
+    "leads:p0:closure": "node scripts/leads-p0-closure-test.mjs",
     "deps:audit": "node scripts/npm-audit-ci.mjs",
     "browser-api:test": "node scripts/browser-api-contract-test.mjs",
     "forms:intercept:test": "node scripts/form-request-intercept-test.mjs",

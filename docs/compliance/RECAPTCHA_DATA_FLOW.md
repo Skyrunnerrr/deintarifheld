@@ -34,13 +34,15 @@ Browser (form)
 
 Expected action is derived only from server context:
 
-| Context | page_source / endpoint | Server expected action |
+| Context | page_source / endpoint | Google v3 action (no hyphens) |
 |---|---|---|
 | business | `unternehmen` or empty on `/api/leads/` | `unternehmen` |
-| private | `hero-funnel` | `hero-funnel` |
+| private | `hero-funnel` | `hero_funnel` |
 | private | `main_funnel` | `main_funnel` |
-| private | `privat` | allowlist `hero-funnel` \| `main_funnel` (no form action named privat) |
+| private | `privat` | allowlist `hero_funnel` \| `main_funnel` (no form action named privat) |
 | career | `/api/careers/` | `career` |
+
+Google v3 actions must match `/^[A-Za-z0-9/_]+$/`. `page_source=hero-funnel` is unchanged.
 
 ## Possible data involved (technical)
 

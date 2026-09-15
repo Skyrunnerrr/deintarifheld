@@ -11,7 +11,7 @@ Binding ticket: GitHub Issue #5. Legal copy for F-14 / F-15 / F-16 is **not** in
 
 - Production variant: **Standard reCAPTCHA v2/v3 + classic siteverify only**.
 - Enterprise frontend path is disabled. `NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY` is not production-supported.
-- Server derives expected action from endpoint + known `page_source` (`unternehmen` / `career` / `hero-funnel` / `main_funnel`). Client `_recaptchaAction` is telemetry only.
+- Server derives expected action from endpoint + known `page_source`. Google v3 action for the hero form is `hero_funnel` (no hyphen). `page_source` stays `hero-funnel`. Client `_recaptchaAction` is telemetry only.
 - v3: missing or mismatched `data.action` → reject. Score + hostname are enforced.
 - Production without `RECAPTCHA_SECRET_KEY` fail-closes (`captcha-not-configured`).
 - LEGAL_REVIEW_REQUIRED for Google as processor / third country remains open (see `docs/compliance/RECAPTCHA_DATA_FLOW.md`).
@@ -30,10 +30,10 @@ Binding ticket: GitHub Issue #5. Legal copy for F-14 / F-15 / F-16 is **not** in
 ## Rate limit (F-04)
 
 - Provider: `memory` (local/CI) or `supabase` (production default).
-- Consume is atomic: memory increment+check has no await in the critical section; Postgres `consume_rate_limit(...)` is one SECURITY DEFINER RPC (service_role only).
+- Consume is atomic: memory increment+check has no await in the critical section; Postgres `consume_rate_limit(...)` is one SECURITY INVOKER RPC after `005` (service_role EXECUTE only; `search_path=pg_catalog, public, pg_temp`). Remote parallel proof stays UNKNOWN until a staging test (`docs/compliance/RATE_LIMIT_ATOMIC_REMOTE.md`).
 - Production memory use requires explicit `LEADS_ALLOW_MEMORY_RATE_LIMIT=YES`.
 - Supabase errors fail-closed in production, memory-fallback otherwise.
-- Required production env: `LEADS_RATE_LIMIT_SALT`, Supabase URL + service role, migrations `003` + `004`.
+- Required production env: `LEADS_RATE_LIMIT_SALT`, Supabase URL + service role, migrations `003` + `004` + `005`. Never fail-open in production.
 - No new SaaS. No committed secrets.
 
 ## Admin / cron (F-01 / F-02)
@@ -62,7 +62,7 @@ Binding ticket: GitHub Issue #5. Legal copy for F-14 / F-15 / F-16 is **not** in
 
 - Remove unused `axios`.
 - Next.js 15.5.14 → 15.5.24 (same minor, August 2026 security release).
-- `npm audit` is report-only in CI. No `npm audit fix`.
+- `npm audit` uses an assessed GHSA allowlist. Unknown new High/Critical fail CI. No `npm audit fix`. No Next 16.
 
 ## Out of scope (unchanged)
 
@@ -70,6 +70,7 @@ Binding ticket: GitHub Issue #5. Legal copy for F-14 / F-15 / F-16 is **not** in
 - No autonomous customer communication.
 - No new CRM.
 - No invented legal/privacy copy.
-- Soft-delete is legal-hold only. Default erase/retention is anonymisation. Delete audits use HMAC email, not plaintext.
-- LEGAL_REVIEW_REQUIRED: F-14, F-15, F-16 (and F-10 before `live` customer mail). Public legal texts were not rewritten.
-- AI Act: no customer AI, no lead scoring, no career AI selection (`docs/compliance/AI_ACT_GUARDRAILS.md`).
+- Soft-delete is **not** a legal hold. `legal_hold` is an explicit column, default false, never auto-set. Default erase/retention is redaction/minimisation. Delete audits use HMAC email, not plaintext.
+- LEGAL_REVIEW_REQUIRED: F-14, F-15, F-16 (and F-10 before `live` customer mail). Public legal texts were not rewritten. `PUBLIC_LEGAL_ALIGNMENT=FAIL` until published `/datenschutz` names reCAPTCHA and ProvenExpert. AGB §5 still promises customer confirmation while `CUSTOMER_MAIL_ENABLED=NO` (`LEGAL_TEXT_CODE_MISMATCH=YES`).
+- AI Act: no customer AI, no lead scoring, no career AI selection. Internal professional Cursor/cloud-agent use is recorded (`docs/compliance/AI_LITERACY_REGISTER.md`). `TRAINING=UNKNOWN`.
+- Deploy: apply/verify `003`/`004`/`005` before production API, then Checkdomain, then separately authorized E2E. `AUTO_PRODUCTION_DEPLOY_ON_MAIN=UNKNOWN` → `PR6_DEPLOYMENT_SAFE=NO`.

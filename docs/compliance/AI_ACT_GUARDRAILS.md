@@ -1,23 +1,45 @@
 # EU AI Act guardrails — DeinTarifheld
 
-Technical classification of **current** production behaviour. This file does **not** constitute legal advice or an AI Act conformity assessment.
+Technical classification of **current** behaviour. This file does **not** constitute legal advice or an AI Act conformity assessment.
 
 ```
+CUSTOMER_FACING_AI=NO
+INTERNAL_AI_USE=YES
 CURRENT_CUSTOMER_AI=NO
 CURRENT_AI_LEAD_SCORING=NO
 CURRENT_AUTOMATED_LEGAL_DECISIONS=NO
 CAREER_AI_SELECTION_ALLOWED=NO
-ARTICLE50_FUTURE_AI_GATE=DOCUMENTED
+ARTICLE50_FUTURE_AI_GATE=PASS
 LEGAL_REVIEW_REQUIRED=YES
 ```
 
-## Current state (evidence)
+`INTERNAL_AI_USE=YES` records professional development / audit / automation use (Cursor Cloud Agent). It is **not** customer-facing AI.
+
+## Customer-facing (evidence)
 
 - Public forms collect structured fields and send them to `/api/leads/` or `/api/careers/`.
 - Server validation is deterministic (schema, honeypot, timing, captcha, rate limit).
 - No model is invoked to analyse, filter, rank, score, accept, or reject leads or career/partner requests.
 - No customer-facing chatbot, recommender, or automated legal/eligibility decision exists on the site.
 - Therefore the site must **not** show fake “AI disclosure” copy. Article 50 transparency is a **future** gate, not a current UI claim.
+
+`ARTICLE50_FUTURE_AI_GATE=PASS` means the future-gate stop-line is documented and no customer-facing AI is enabled. It is not an Article 50 conformity certificate.
+
+## Internal professional use (factual)
+
+See `docs/compliance/AI_LITERACY_REGISTER.md`.
+
+| Field | Value |
+|---|---|
+| system | Cursor Cloud Agent (this repository’s professional setup) |
+| version | UNKNOWN (product version not pinned in-repo) |
+| purpose | Code change, test, and documentation work on this repository |
+| operator | Repository owner / agent operator recorded in the literacy register |
+| risks | Incorrect code or docs if accepted without human review |
+| human control | Human review of PR #6 required; no autonomous production deploy from this file |
+| literacy | TRAINING=UNKNOWN |
+
+Do **not** record “none” for internal AI while this professional agent setup is used.
 
 ## Career / partner path (binding)
 

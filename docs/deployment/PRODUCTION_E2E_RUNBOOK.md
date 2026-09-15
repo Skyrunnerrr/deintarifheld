@@ -38,7 +38,7 @@ Confirm on Vercel (production), do not paste secrets into tickets, chat, or CI l
 | `LEADS_ADMIN_SECRET` | ≥ 32 chars | Never print; inbox cookie only |
 | `CRON_SECRET` | ≥ 32 chars, different from admin | Never print |
 | `LEADS_RATE_LIMIT_SALT` | unpredictable, not the old default | |
-| `LEADS_RATE_LIMIT_PROVIDER` | `supabase` (default in production) | Apply `003` + `004` (`consume_rate_limit`) first |
+| `LEADS_RATE_LIMIT_PROVIDER` | `supabase` (default in production) | Apply `003` + `004` + `005` (`consume_rate_limit` INVOKER) first |
 | `AUDIT_EMAIL_HASH_SALT` | unpredictable, not the rate-limit salt | Delete-audit HMAC only |
 | `LEADS_ALLOWED_ORIGINS` | public site origins only | localhost ignored in production |
 | `LEADS_ALLOW_SMOKE_BYPASS` | unset / `NO` | Must stay off in production |
@@ -50,7 +50,7 @@ Do **not** print: admin/cron/smoke/recaptcha secrets, service role, Resend key, 
 
 1. Confirm Checkdomain HTML is built from the merged SHA that contains this P0 (`npm run build:static:production` after merge).
 2. Confirm Vercel production has the env table above.
-3. Confirm migration `003_leads_rate_limits.sql` is applied (additive). Do not run destructive SQL.
+3. Confirm migrations `003_leads_rate_limits.sql`, `004_consume_rate_limit.sql`, and `005_legal_hold_and_rate_limit_invoker.sql` are applied (additive). Do not run destructive SQL. Order: DB → env verify → Production API → Checkdomain static → controlled E2E (`docs/deployment/PR6_DEPLOY_ORDER.md`).
 4. Open the public form in a normal browser (not curl). Complete captcha.
 5. Use a **synthetic** address that you control (`*@example.invalid` is wrong for a real Resend inbox; use an internal mailbox that is not a customer).
 6. Submit once.

@@ -2,7 +2,8 @@
 
 ```
 COOKIE_TECH_TRUTHFUL=PASS
-PROVENEXPERT_CONSENT_TECH=PASS
+PROVENEXPERT_INITIAL_CONSENT=PASS
+PROVENEXPERT_WITHDRAWAL=PASS
 LEGAL_REVIEW_REQUIRED=YES
 ```
 
@@ -24,6 +25,18 @@ The banner does **not** claim “keine Daten ohne Zustimmung an Dritte”, becau
 ## Essential-only
 
 `{ essential: true, provenexpert: false }` → `shouldLoadProvenExpertScript` is false → **zero** ProvenExpert network script injection.
+
+## Withdrawal (`provenexpert` true → false)
+
+`script.remove()` alone is not enough after the widget has run. Runtime plan (`lib/consent/provenexpert-runtime.js`):
+
+- do not load the network script again
+- strip `.pe-pro-seal` / provider DOM and PE scripts
+- no further PE requests
+- show the local badge
+- ProvenExpert has no documented destroy API in this codebase → persist the withdrawn consent, strip DOM, then a **single** controlled full-page reload (`sessionStorage` flag `dth_pe_withdraw_reload`)
+
+Covered transition: `false → true → false`.
 
 ## Residual (legal, not invented here)
 
