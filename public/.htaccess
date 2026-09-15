@@ -22,11 +22,14 @@ RewriteRule ^(.*)$ $1.html [L]
 
 # Sicherheits-Header
 <IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "DENY"
   Header set X-XSS-Protection "1; mode=block"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
-  Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+  # CSP: self + reCAPTCHA + ProvenExpert + Vercel Lead API. No Google Fonts in this build.
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://s.provenexpert.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.gstatic.com https://www.google.com https://www.provenexpert.com https://s.provenexpert.net; font-src 'self' data:; connect-src 'self' https://deintarifheld-leads-api.vercel.app https://www.google.com https://www.recaptcha.net https://s.provenexpert.net; frame-src https://www.google.com https://www.recaptcha.net; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
 </IfModule>
 
 # Caching fuer statische Assets

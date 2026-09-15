@@ -26,6 +26,18 @@ if (!/Kenntnisnahme der Datenschutzerklärung/.test(text)) {
 if (!/stellt keine\s+datenschutzrechtliche Einwilligung dar/.test(text)) {
   FAIL.push('AGB must clarify checkbox is not consent')
 }
+if (!/kein vertraglicher Anspruch auf eine automatische\s+Eingangsbestätigung/.test(text)) {
+  FAIL.push('AGB must not promise automatic customer confirmation mail')
+}
+if (/Auftragsnummer/.test(text)) {
+  FAIL.push('AGB must not promise an order number in customer mail')
+}
+if (!/TDDDG/.test(text)) {
+  FAIL.push('AGB missing current statutory short name TDDDG')
+}
+if (/TTDSG/.test(text) && !/zuvor TTDSG/.test(text)) {
+  FAIL.push('AGB TTDSG must only appear as the prior short name')
+}
 
 if (FAIL.length) {
   console.error('AGB_CONSISTENCY=FAIL')

@@ -1,3 +1,10 @@
+# SUPERSEDED — do not publish this draft
+
+This file is a historical publish candidate. The current repo source of truth is
+`app/datenschutz/page.js` after the 2026-09-15 legal/code alignment pass.
+Do not copy the older retention wording (“als gelöscht gekennzeichnet”) from
+this draft.
+
 # Datenschutzerklärung
 
 Der Schutz Ihrer personenbezogenen Daten ist uns wichtig. Nachfolgend informieren wir Sie darüber, welche personenbezogenen Daten wir im Zusammenhang mit der Website www.deintarifheld.de verarbeiten, zu welchen Zwecken dies geschieht und welche Rechte Sie haben.

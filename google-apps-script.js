@@ -953,7 +953,7 @@ function testDoPost() {
     postData: {
       contents: JSON.stringify({
         name: 'Test Nutzer',
-        email: 'wunderland50@gmail.com',
+        email: 'ops-fixture@example.invalid',
         phone: '+49 89 123456',
         motivation: 'Testlauf v4.0',
         gdpr: true,

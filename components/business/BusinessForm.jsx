@@ -19,6 +19,7 @@ import {
   isTooFast,
 } from '@/lib/security'
 import { BUSINESS_FORM, BUSINESS_TRIGGERS } from '@/lib/business-content'
+import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 
 function IconArrow() {
@@ -58,6 +59,8 @@ function BusinessFormular() {
   const [rateLimitMsg, setRateLimitMsg] = useState('')
   const [honeypot, setHoneypot] = useState('')
   const [honeypot2, setHoneypot2] = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState('')
+  const [recaptchaError, setRecaptchaError] = useState('')
   const [validationErrors, setValidationErrors] = useState({})
   const [form, setForm] = useState({
     energieart: '',
@@ -115,6 +118,12 @@ function BusinessFormular() {
     }
     setDsgvoError(false)
 
+    if (!recaptchaToken) {
+      setRecaptchaError('Bitte bestätigen Sie das Captcha.')
+      return
+    }
+    setRecaptchaError('')
+
     if (isBot(honeypot, honeypot2)) {
       setDone(true)
       return
@@ -142,6 +151,8 @@ function BusinessFormular() {
         source_page: typeof window !== 'undefined' ? window.location.pathname : '/unternehmen-neu/',
         timestamp: new Date().toISOString(),
         _formLoadedAt: getFormTiming('b2b-form')._formLoadedAt,
+        _recaptchaToken: recaptchaToken,
+        _recaptchaAction: 'unternehmen',
         [HONEYPOT_FIELD]: honeypot,
         [HONEYPOT_FIELD_2]: honeypot2,
       })
@@ -559,12 +570,17 @@ function BusinessFormular() {
               </p>
             )}
 
+            <RecaptchaBox onToken={setRecaptchaToken} theme="light" action="unternehmen" />
+            {recaptchaError && (
+              <p role="alert" className="font-body text-[#EF4444] text-xs">{recaptchaError}</p>
+            )}
+
             <div className="flex items-center gap-2 text-text-tertiary">
               <svg width="13" height="14" viewBox="0 0 13 14" fill="none" aria-hidden="true">
                 <rect x="1.5" y="6" width="10" height="7.5" rx="2" stroke="currentColor" strokeWidth="1.3" />
                 <path d="M4 6V4.5a2.5 2.5 0 015 0V6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
               </svg>
-              <span className="font-body text-xs">SSL-verschlüsselt & DSGVO-konform</span>
+              <span className="font-body text-xs">SSL-verschlüsselt</span>
             </div>
 
             {rateLimitMsg && (

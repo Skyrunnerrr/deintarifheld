@@ -1,5 +1,7 @@
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
+import { nextConfigApiHeaders, nextConfigInboxHeaders } from './lib/leads/security-headers.js'
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const staticExport = process.env.STATIC_EXPORT === '1'
@@ -10,6 +12,23 @@ const nextConfig = {
   trailingSlash: true,
   images: {
     unoptimized: true,
+  },
+  async headers() {
+    if (staticExport) return []
+    return [
+      {
+        source: '/api/:path*',
+        headers: nextConfigApiHeaders(),
+      },
+      {
+        source: '/api/admin/inbox',
+        headers: nextConfigInboxHeaders(),
+      },
+      {
+        source: '/api/admin/inbox/',
+        headers: nextConfigInboxHeaders(),
+      },
+    ]
   },
   webpack: (config) => {
     // motion-utils ESM files are iCloud-evicted; redirect to working CJS build

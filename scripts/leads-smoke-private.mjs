@@ -4,8 +4,10 @@
  * LEADS_SMOKE_BASE_URL default http://127.0.0.1:3000
  */
 import { randomUUID } from 'node:crypto'
+import { refuseProductionTarget } from './lib/refuse-production-smoke.mjs'
 
 const base = (process.env.LEADS_SMOKE_BASE_URL || 'http://127.0.0.1:3000').replace(/\/$/, '')
+refuseProductionTarget(base)
 const email = process.env.CONTROLLED_TEST_EMAIL || `private-smoke-${Date.now()}@example.invalid`
 
 const payload = {

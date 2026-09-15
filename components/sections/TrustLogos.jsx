@@ -23,7 +23,7 @@ const BADGES = [
         <path d="M12.5 9V7.5a2.5 2.5 0 0 0-5 0V9" stroke="#D4FF3E" strokeWidth="1.3" strokeLinecap="round" />
       </svg>
     ),
-    label: 'DSGVO-Konform',
+    label: 'Datenschutzinformationen verfügbar',
   },
   {
     icon: (

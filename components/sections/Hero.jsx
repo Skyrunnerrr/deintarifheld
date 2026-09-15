@@ -221,7 +221,7 @@ export function Hero() {
         firstName: rest.firstName,
         gdpr: true,
         _recaptchaToken: recaptchaToken,
-        _recaptchaAction: 'hero-funnel',
+        _recaptchaAction: 'hero_funnel',
         page_source: 'hero-funnel',
         lead_type: 'private_energy',
         brand_theme: 'privat',
@@ -566,7 +566,7 @@ export function Hero() {
                       <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{errors.gdpr}</p>
                     )}
                     <div style={{ marginTop: 10 }}>
-                      <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="hero-funnel" />
+                      <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="hero_funnel" />
                     </div>
                     {recaptchaError && (
                       <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{recaptchaError}</p>
@@ -642,7 +642,7 @@ export function Hero() {
             className="hero-trust-row"
             style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center' }}
           >
-            {['Kostenlos', 'Unverbindlich', 'Deutschlandweit', 'DSGVO-konform'].map(label => (
+            {['Kostenlos', 'Unverbindlich', 'Deutschlandweit', 'SSL-verschlüsselt'].map(label => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <IconCheck />
                 <span style={{

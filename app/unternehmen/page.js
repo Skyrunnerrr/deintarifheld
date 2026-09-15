@@ -504,7 +504,7 @@ function B2BFormular() {
                 <rect x="1.5" y="6" width="10" height="7.5" rx="2" stroke="currentColor" strokeWidth="1.3" />
                 <path d="M4 6V4.5a2.5 2.5 0 015 0V6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
               </svg>
-              <span className="font-body text-xs">SSL-verschlüsselt & DSGVO-konform</span>
+              <span className="font-body text-xs">SSL-verschlüsselt</span>
             </div>
 
             {rateLimitMsg && (
@@ -1227,7 +1227,7 @@ export default function UnternehmenPage() {
                 'Analyse vollständig kostenlos',
                 'Persönlicher Ansprechpartner innerhalb 24h',
                 'Keine Unterschrift, kein Risiko',
-                'DSGVO-konform & SSL-verschlüsselt',
+                'SSL-verschlüsselt',
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-energy flex-shrink-0" aria-hidden="true" />

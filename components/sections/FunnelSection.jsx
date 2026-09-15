@@ -135,7 +135,7 @@ function Step1({ onNext }) {
         </Button>
 
         <p className="text-text-tertiary text-xs text-center font-body">
-          🔒 DSGVO-konform · Keine Weitergabe an Dritte
+          🔒 SSL-verschlüsselt · Daten nur zur Bearbeitung deiner Anfrage
         </p>
       </div>
     </form>

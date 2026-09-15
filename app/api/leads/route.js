@@ -1,14 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createHash, randomUUID } from 'crypto'
-import {
-  checkRateLimit,
-  clientIp,
-  hasJsonContentType,
-  hashClientKey,
-  isBlockedOrigin,
-  isTooFastSubmit,
-  recordRateLimit,
-} from '@/lib/leads/abuse-guard'
+import { consumeRateLimit } from '@/lib/leads/abuse-guard'
+import { enforcePublicIntake, isBotLikeSubmit } from '@/lib/leads/intake-guard'
 import { validateUnternehmenPayload } from '@/lib/leads/validate-unternehmen'
 import { isPrivatePageSource, validatePrivatePayload } from '@/lib/leads/validate-private'
 import {
@@ -23,10 +16,9 @@ import {
 import { mailFieldsFromStored, sendLeadEmails } from '@/lib/leads/mail'
 import { optionsResponse, withCors } from '@/lib/leads/cors'
 import { leadsLog } from '@/lib/leads/log'
+import { publicLeadsHealth } from '@/lib/leads/public-health'
 
 export const runtime = 'nodejs'
-
-const MAX_BODY_BYTES = 12_288
 
 function requestId(request) {
   return request.headers.get('x-request-id')?.trim() || randomUUID()
@@ -45,10 +37,6 @@ function json(request, body, status = 200, headers) {
 
 function errorResponse(request, code, status, headers) {
   return json(request, { ok: false, code }, status, headers)
-}
-
-function rateLimitKey(request) {
-  return hashClientKey(clientIp(request), request.headers.get('user-agent') || 'unknown')
 }
 
 function buildIdempotencyKey(request, data) {
@@ -94,54 +82,23 @@ export async function OPTIONS(request) {
 }
 
 export async function GET(request) {
-  return json(request, {
-    ok: true,
-    service: 'dth-leads',
-    phase: 'B',
-    supported: ['unternehmen', 'privat', 'hero-funnel', 'main_funnel'],
-    careerEndpoint: '/api/careers',
-    mailModeDefault: process.env.LEADS_MAIL_MODE || 'mock',
-  })
+  return json(request, publicLeadsHealth())
 }
 
 export async function POST(request) {
-  if (!hasJsonContentType(request)) {
-    return errorResponse(request, 'invalid-content-type', 400)
+  const intake = await enforcePublicIntake(request, { endpoint: 'leads' })
+  if (!intake.ok) {
+    return errorResponse(request, intake.code, intake.status, intake.headers)
   }
-
-  if (isBlockedOrigin(request)) {
-    return errorResponse(request, 'request-blocked', 403)
-  }
-
-  const rlKey = rateLimitKey(request)
-  const submitLimit = checkRateLimit(rlKey, 'submit')
-  if (!submitLimit.allowed) {
-    return errorResponse(request, 'too-many-requests', 429, {
-      'Retry-After': String(submitLimit.retryAfter ?? 60),
-    })
-  }
-
-  const contentLength = Number(request.headers.get('content-length') ?? 0)
-  if (contentLength > MAX_BODY_BYTES) {
-    recordRateLimit(rlKey, 'error')
-    return errorResponse(request, 'invalid-message', 400)
-  }
-
-  let raw
-  try {
-    raw = await request.json()
-  } catch {
-    recordRateLimit(rlKey, 'error')
-    return errorResponse(request, 'invalid-payload', 400)
-  }
+  const { raw, rlKey } = intake
 
   const { channel, validated } = resolveValidator(raw)
   if (!validated.ok) {
-    recordRateLimit(rlKey, 'error')
-    return errorResponse(request, validated.code, validated.code === 'use-careers-endpoint' ? 400 : 400)
+    await consumeRateLimit(rlKey, 'error')
+    return errorResponse(request, validated.code, 400)
   }
 
-  if (validated.honeypotFilled || isTooFastSubmit(validated.data._formLoadedAt)) {
+  if (isBotLikeSubmit(validated)) {
     return json(request, { ok: true, bot: true })
   }
 
@@ -184,8 +141,6 @@ export async function POST(request) {
       ...mailFieldsFromStored(duplicate),
     })
   }
-
-  recordRateLimit(rlKey, 'submit')
 
   const leadRef = makeLeadRef(pageSource)
   const submittedAt = new Date().toISOString()

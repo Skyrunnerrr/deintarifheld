@@ -42,8 +42,8 @@ const TRUST_ITEMS = [
         <path d="M9.5 7V5.5a1.5 1.5 0 0 0-3 0V7" stroke="#D4FF3E" strokeWidth="1.2" strokeLinecap="round" />
       </svg>
     ),
-    label: 'DSGVO-konform',
-    sub: 'SSL-verschlüsselt',
+    label: 'SSL-verschlüsselt',
+    sub: 'Datenschutzinformationen verfügbar',
   },
 ]
 

@@ -1,26 +1,25 @@
 import { NextResponse } from 'next/server'
+import { isCronAuthorized } from '@/lib/leads/cron-auth'
 import { getServiceSupabase, runRetention } from '@/lib/leads/supabase'
 import { leadsLog } from '@/lib/leads/log'
+import { applySecurityHeaders } from '@/lib/leads/security-headers'
 
 export const runtime = 'nodejs'
 
-function authorized(request) {
-  const secret = process.env.CRON_SECRET?.trim()
-  if (!secret) return false
-  const auth = request.headers.get('authorization') || ''
-  if (auth === `Bearer ${secret}`) return true
-  const header = request.headers.get('x-cron-secret') || ''
-  return header === secret
+function json(body, status = 200) {
+  const response = NextResponse.json(body, { status })
+  applySecurityHeaders(response.headers)
+  return response
 }
 
 async function handle(request) {
-  if (!authorized(request)) {
-    return NextResponse.json({ ok: false, code: 'unauthorized' }, { status: 401 })
+  if (!isCronAuthorized(request)) {
+    return json({ ok: false, code: 'unauthorized' }, 401)
   }
 
   const supabase = getServiceSupabase()
   if (!supabase) {
-    return NextResponse.json({ ok: false, code: 'storage-not-configured' }, { status: 500 })
+    return json({ ok: false, code: 'storage-not-configured' }, 500)
   }
 
   const result = await runRetention(supabase, {
@@ -31,7 +30,7 @@ async function handle(request) {
 
   if (result.error) {
     leadsLog('error', 'retention.failed', { code: 'retention-failed' })
-    return NextResponse.json({ ok: false, code: 'retention-failed' }, { status: 500 })
+    return json({ ok: false, code: 'retention-failed' }, 500)
   }
 
   leadsLog('info', 'retention.completed', {
@@ -41,7 +40,7 @@ async function handle(request) {
     normalDeleted: result.normal,
   })
 
-  return NextResponse.json({
+  return json({
     ok: true,
     businessDeleted: result.business,
     privateDeleted: result.private,

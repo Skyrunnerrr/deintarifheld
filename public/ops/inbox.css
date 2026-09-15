@@ -1,0 +1,24 @@
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f8; color: #152033; }
+.wrap { max-width: 920px; margin: 0 auto; padding: 28px 16px 64px; }
+h1 { font-size: 22px; margin: 0 0 6px; }
+.sub { color: #5b6578; margin: 0 0 20px; line-height: 1.45; }
+.bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 0 0 20px; }
+[hidden] { display: none !important; }
+button, select { font: inherit; }
+button { padding: 10px 14px; border: 0; border-radius: 8px; background: #0a5adb; color: #fff; cursor: pointer; }
+button.secondary { background: #e8edf3; color: #152033; }
+.err { background: #fff1f0; border: 1px solid #f5c2c0; color: #8a1f1b; padding: 10px 12px; border-radius: 8px; margin: 0 0 16px; }
+.card { background: #fff; border: 1px solid #d7dce3; border-radius: 12px; padding: 16px 18px; margin: 0 0 12px; }
+.card.mail-failed { border-color: #c0392b; background: #fff6f5; }
+.card h2 { font-size: 16px; margin: 0 0 8px; }
+.meta { color: #5b6578; font-size: 13px; margin: 0 0 12px; }
+.mail-failed .meta, .badge-failed { color: #8a1f1b; font-weight: 700; }
+label.filter { font-size: 14px; color: #152033; display: inline-flex; align-items: center; gap: 6px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; vertical-align: top; padding: 5px 10px 5px 0; font-size: 14px; }
+th { color: #5b6578; font-weight: 600; width: 180px; }
+.empty { color: #5b6578; padding: 24px 0; }
+.inline-form { margin: 0; }
+.counts { margin: 0; }
