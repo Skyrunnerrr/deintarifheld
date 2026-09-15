@@ -412,8 +412,8 @@ export default function DatenschutzPage() {
               optionale Anfrage-IP, Action-Name, Hostname und Score beteiligt sein.
             </p>
             <p style={{ margin: 0 }}>
-              Wir treffen hier keine Aussage zu Speicherdauern, Auftragsverarbeitungsverträgen
-              oder Drittlandgarantien auf Seiten von Google.
+              Weitere Informationen zur Datenverarbeitung durch Google im Zusammenhang mit
+              reCAPTCHA finden Sie in den Datenschutzhinweisen von Google.
             </p>
           </SubSection>
           <SubSection title="9.5 ProvenExpert">
@@ -530,8 +530,6 @@ export default function DatenschutzPage() {
             Übermittlung maßgeblich sind, teilen wir auf Anfrage mit; eine Kopie der uns
             vorliegenden Regelungen können Sie unter{' '}
             <ObfuscatedEmail style={{ color: '#8E97A8', textDecoration: 'none' }} /> anfordern.
-            Ein abgeschlossener Nachweis aller Drittlandtransfers oder aller
-            Auftragsverarbeitungsverträge wird hier nicht behauptet.
           </p>
           <p style={{ margin: 0 }}>
             Die Angabe der primären EU-Datenbankregion bei Supabase bedeutet weiterhin nicht, dass
