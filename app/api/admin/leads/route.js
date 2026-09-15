@@ -1,23 +1,28 @@
 import { NextResponse } from 'next/server'
-import { isAdminAuthorized } from '@/lib/leads/admin-auth'
+import { enforceAdminAccess } from '@/lib/leads/admin-guard'
 import { getServiceSupabase, listOpsInbox } from '@/lib/leads/supabase'
+import { applySecurityHeaders } from '@/lib/leads/security-headers'
 
 export const runtime = 'nodejs'
 
-function noStore(body, status = 200) {
-  return NextResponse.json(body, {
+function noStore(body, status = 200, extraHeaders) {
+  const response = NextResponse.json(body, {
     status,
     headers: {
       'cache-control': 'no-store',
       'x-robots-tag': 'noindex, nofollow, noarchive',
+      ...(extraHeaders || {}),
     },
   })
+  applySecurityHeaders(response.headers)
+  return response
 }
 
 /** Authorized ops list — full submitted payloads. Not CORS-public. */
 export async function GET(request) {
-  if (!isAdminAuthorized(request)) {
-    return noStore({ ok: false, code: 'unauthorized' }, 401)
+  const gate = await enforceAdminAccess(request)
+  if (!gate.ok) {
+    return noStore({ ok: false, code: gate.code }, gate.status, gate.headers)
   }
 
   const supabase = getServiceSupabase()
