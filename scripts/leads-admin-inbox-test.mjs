@@ -102,10 +102,12 @@ async function assertList() {
 
 function assertHtmlAndRoutes() {
   assert.match(ADMIN_INBOX_HTML, /Anfragen-Eingang/)
-  assert.match(ADMIN_INBOX_HTML, /mail-failed/)
   assert.match(ADMIN_INBOX_HTML, /Nur Mail fehlgeschlagen/)
-  assert.match(ADMIN_INBOX_HTML, /\/api\/admin\/leads\//)
-  assert.match(ADMIN_INBOX_HTML, /credentials: 'same-origin'/)
+  assert.match(ADMIN_INBOX_HTML, /\/ops\/inbox\.js/)
+  const inboxJs = readFileSync(join(root, 'public/ops/inbox.js'), 'utf8')
+  assert.match(inboxJs, /mail-failed/)
+  assert.match(inboxJs, /\/api\/admin\/leads\//)
+  assert.match(inboxJs, /credentials: 'same-origin'/)
   assert.doesNotMatch(ADMIN_INBOX_HTML, /sessionStorage/)
   assert.doesNotMatch(ADMIN_INBOX_HTML, /localStorage/)
   assert.doesNotMatch(ADMIN_INBOX_HTML, /LEADS_ADMIN_SECRET=/)

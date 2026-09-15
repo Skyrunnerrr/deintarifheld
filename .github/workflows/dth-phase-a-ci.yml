@@ -17,6 +17,7 @@ on:
       - 'docs/legal/**'
       - 'docs/audit/**'
       - 'docs/deployment/**'
+      - 'docs/compliance/**'
       - 'package.json'
       - 'package-lock.json'
       - 'vercel.json'
@@ -47,14 +48,15 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm run build:static
-      - name: Migration present (001 + 002 + 003)
+      - name: Migration present (001 + 002 + 003 + 004)
         run: |
           test -f supabase/migrations/001_leads_phase_a.sql
           test -f supabase/migrations/002_leads_phase_b.sql
           test -f supabase/migrations/003_leads_rate_limits.sql
+          test -f supabase/migrations/004_consume_rate_limit.sql
       - name: Migration lint (additive / non-destructive)
         run: |
-          if grep -Eiq '^\s*truncate\b|^\s*drop[[:space:]]+table[[:space:]]+public\.leads\b' supabase/migrations/002_leads_phase_b.sql supabase/migrations/003_leads_rate_limits.sql; then
+          if grep -Eiq '^\s*truncate\b|^\s*drop[[:space:]]+table[[:space:]]+public\.leads\b' supabase/migrations/002_leads_phase_b.sql supabase/migrations/003_leads_rate_limits.sql supabase/migrations/004_consume_rate_limit.sql; then
             echo "MIGRATION_LINT=FAIL"
             exit 1
           fi
@@ -77,6 +79,8 @@ jobs:
         run: npm run leads:mail:internal-live
       - name: P0 server enforcement + admin + headers + mail guards
         run: npm run leads:p0:security
+      - name: P0 remediation (captcha binding, atomic RL, DSGVO/AI)
+        run: npm run leads:p0:remediation
       - name: Form privacy semantics
         run: npm run forms:privacy-semantics:test
       - name: AGB / privacy checkbox semantics

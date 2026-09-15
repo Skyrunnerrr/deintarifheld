@@ -2,10 +2,24 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import {
+  CONSENT_CHANGED_EVENT,
+  CONSENT_STORAGE_KEY,
+  PROVENEXPERT_SCRIPT_URL,
+  shouldLoadProvenExpertScript,
+} from '@/lib/consent/third-party'
 
 /** DTH-04: Preview route — no fixed ProSeal overlay (private + /unternehmen unchanged). */
 function isBusinessPreviewRoute(pathname) {
   return pathname === '/unternehmen-neu' || pathname?.startsWith('/unternehmen-neu/')
+}
+
+function readProvenExpertConsent() {
+  try {
+    return shouldLoadProvenExpertScript(window.localStorage.getItem(CONSENT_STORAGE_KEY))
+  } catch {
+    return false
+  }
 }
 
 export function ProSealWidget() {
@@ -13,7 +27,21 @@ export function ProSealWidget() {
   const wrapperRef = useRef(null)
   const [isMobile, setIsMobile] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
+  const [loadExternal, setLoadExternal] = useState(false)
   const disabled = isBusinessPreviewRoute(pathname)
+
+  useEffect(() => {
+    if (disabled) return undefined
+
+    const syncConsent = () => setLoadExternal(readProvenExpertConsent())
+    syncConsent()
+    window.addEventListener(CONSENT_CHANGED_EVENT, syncConsent)
+    window.addEventListener('storage', syncConsent)
+    return () => {
+      window.removeEventListener(CONSENT_CHANGED_EVENT, syncConsent)
+      window.removeEventListener('storage', syncConsent)
+    }
+  }, [disabled])
 
   useEffect(() => {
     if (disabled) return undefined
@@ -52,10 +80,11 @@ export function ProSealWidget() {
   }, [disabled, isMobile])
 
   useEffect(() => {
-    if (disabled) return undefined
+    if (disabled || !loadExternal) return undefined
 
     const script = document.createElement('script')
-    script.src = 'https://s.provenexpert.net/seals/proseal-v2.js'
+    script.src = PROVENEXPERT_SCRIPT_URL
+    script.setAttribute('data-dth-provenexpert', '1')
 
     script.onload = () => {
       if (window.provenExpert?.proSeal) {
@@ -78,19 +107,14 @@ export function ProSealWidget() {
 
     document.head.appendChild(script)
 
-    // Strategy: Let ProSeal render normally, then kidnap its DOM element
-    // into our own fixed container. Keep forcing position:relative so
-    // ProSeal's Svelte re-renders can't escape our container.
     const interval = setInterval(() => {
       const seal = document.querySelector('.pe-pro-seal')
       if (!seal || !wrapperRef.current) return
 
-      // Move into our container if not already there
       if (seal.parentElement !== wrapperRef.current) {
         wrapperRef.current.appendChild(seal)
       }
 
-      // Kill ProSeal's own fixed positioning — we handle it
       seal.style.setProperty('position', 'relative', 'important')
       seal.style.setProperty('right', 'auto', 'important')
       seal.style.setProperty('left', 'auto', 'important')
@@ -103,11 +127,10 @@ export function ProSealWidget() {
       clearInterval(interval)
       script.remove()
     }
-  }, [disabled])
+  }, [disabled, loadExternal])
 
   if (disabled) return null
 
-  // OUR container — WE control the position. ProSeal lives inside this.
   const wrapperStyle = isMobile
     ? {
         position: 'fixed',
@@ -129,9 +152,25 @@ export function ProSealWidget() {
       }
 
   return (
-    <div
-      ref={wrapperRef}
-      style={wrapperStyle}
-    />
+    <div ref={wrapperRef} style={wrapperStyle} data-dth-pe-external={loadExternal ? '1' : '0'}>
+      {!loadExternal && (
+        <a
+          href="/datenschutz"
+          aria-label="Bewertungssiegel (lokal, ohne externes Script)"
+          style={{
+            display: 'inline-block',
+            background: '#444444',
+            color: '#FFFFFF',
+            fontSize: 11,
+            lineHeight: 1.3,
+            padding: '8px 10px',
+            textDecoration: 'none',
+            maxWidth: 120,
+          }}
+        >
+          ProvenExpert
+        </a>
+      )}
+    </div>
   )
 }

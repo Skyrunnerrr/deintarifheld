@@ -1,6 +1,7 @@
 # Production E2E runbook (next step after P0)
 
-STATUS=READY_FOR_CONTROLLED_OPS_RUN  
+STATUS=NOT_AUTHORIZED_FROM_PR6  
+PRODUCTION_E2E_READY=NO  
 LIVE_LEAD_SUBMITTED=NO  
 This document describes the next real end-to-end test. It does **not** authorize submitting a live lead from CI or from this PR.
 
@@ -33,11 +34,12 @@ Confirm on Vercel (production), do not paste secrets into tickets, chat, or CI l
 | `NEXT_PUBLIC_SUPABASE_URL` or `SUPABASE_URL` | set | |
 | `SUPABASE_SERVICE_ROLE_KEY` | set | Never print |
 | `RECAPTCHA_SECRET_KEY` | set | Production fail-closed without it |
-| `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` or public/enterprise site key | set on static build | |
+| `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` and/or `NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY` | Standard v2/v3 only | Enterprise site key is not supported |
 | `LEADS_ADMIN_SECRET` | ≥ 32 chars | Never print; inbox cookie only |
 | `CRON_SECRET` | ≥ 32 chars, different from admin | Never print |
 | `LEADS_RATE_LIMIT_SALT` | unpredictable, not the old default | |
-| `LEADS_RATE_LIMIT_PROVIDER` | `supabase` (default in production) | Apply `003_leads_rate_limits.sql` first |
+| `LEADS_RATE_LIMIT_PROVIDER` | `supabase` (default in production) | Apply `003` + `004` (`consume_rate_limit`) first |
+| `AUDIT_EMAIL_HASH_SALT` | unpredictable, not the rate-limit salt | Delete-audit HMAC only |
 | `LEADS_ALLOWED_ORIGINS` | public site origins only | localhost ignored in production |
 | `LEADS_ALLOW_SMOKE_BYPASS` | unset / `NO` | Must stay off in production |
 | `NEXT_PUBLIC_LEADS_API_ORIGIN` | `https://deintarifheld-leads-api.vercel.app` | Static Checkdomain build |

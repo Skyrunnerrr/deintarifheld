@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { enforceAdminAccess } from '@/lib/leads/admin-guard'
-import { getServiceSupabase, softDeleteByEmail } from '@/lib/leads/supabase'
+import { getServiceSupabase, processLeadDeletion } from '@/lib/leads/supabase'
+import { isDeletionMode } from '@/lib/leads/retention-privacy'
 import { applySecurityHeaders } from '@/lib/leads/security-headers'
 
 export const runtime = 'nodejs'
@@ -45,7 +46,8 @@ export async function POST(request) {
     return json({ ok: false, code: 'storage-not-configured' }, 500)
   }
 
-  const result = await softDeleteByEmail(supabase, email, { channel })
+  const mode = typeof body.mode === 'string' && isDeletionMode(body.mode) ? body.mode : 'anonymise'
+  const result = await processLeadDeletion(supabase, email, { channel, mode })
   if (result.error) {
     return json({ ok: false, code: 'delete-failed' }, 500)
   }
@@ -53,6 +55,7 @@ export async function POST(request) {
   return json({
     ok: true,
     channel,
+    mode: result.mode,
     updated: result.updated,
     careerUpdated: result.careerUpdated,
     ids: result.ids,

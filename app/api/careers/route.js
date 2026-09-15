@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createHash, randomUUID } from 'crypto'
-import { recordRateLimit } from '@/lib/leads/abuse-guard'
+import { consumeRateLimit } from '@/lib/leads/abuse-guard'
 import { enforcePublicIntake, isBotLikeSubmit } from '@/lib/leads/intake-guard'
 import { validateCareerPayload } from '@/lib/leads/validate-career'
 import {
@@ -71,7 +71,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const intake = await enforcePublicIntake(request)
+  const intake = await enforcePublicIntake(request, { endpoint: 'careers' })
   if (!intake.ok) {
     return errorResponse(request, intake.code, intake.status, intake.headers)
   }
@@ -79,7 +79,7 @@ export async function POST(request) {
 
   const validated = validateCareerPayload(raw)
   if (!validated.ok) {
-    await recordRateLimit(rlKey, 'error')
+    await consumeRateLimit(rlKey, 'error')
     return errorResponse(request, validated.code, 400)
   }
 
@@ -122,8 +122,6 @@ export async function POST(request) {
       ...mailFieldsFromStored(duplicate),
     })
   }
-
-  await recordRateLimit(rlKey, 'submit')
 
   const leadRef = makeLeadRef('career')
   const submittedAt = new Date().toISOString()

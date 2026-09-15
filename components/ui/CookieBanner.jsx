@@ -1,17 +1,19 @@
-// Restored after APFS sparse-file corruption
 'use client'
 
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import {
+  CONSENT_CHANGED_EVENT,
+  CONSENT_STORAGE_KEY,
+  acceptOptionalProvenExpertConsent,
+  essentialOnlyConsent,
+} from '@/lib/consent/third-party'
 
-const STORAGE_KEY = 'th_consent'
-
-// Externe Scripts (Analytics, ProvenExpert etc.) NUR nach expliziter Zustimmung laden
-function loadExternalScripts() {
-  // Platzhalter – hier externe <script>-Tags dynamisch einfügen, z.B.:
-  // const s = document.createElement('script'); s.src = '...'; s.defer = true; document.head.appendChild(s)
+function persistConsent(value) {
+  localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(value))
+  window.dispatchEvent(new CustomEvent(CONSENT_CHANGED_EVENT))
 }
 
 export function CookieBanner() {
@@ -25,23 +27,20 @@ export function CookieBanner() {
   const accentText   = isB2B ? '#ffffff' : isKarriere ? '#ffffff' : '#090B0F'
 
   useEffect(() => {
-    // Banner nur zeigen wenn noch keine Entscheidung getroffen wurde
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(CONSENT_STORAGE_KEY)
     if (!stored) setVisible(true)
   }, [])
 
   function acceptAll() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ essential: true, analytics: true, timestamp: Date.now() }))
-    loadExternalScripts()
+    persistConsent(acceptOptionalProvenExpertConsent())
     setVisible(false)
   }
 
   function acceptEssential() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ essential: true, analytics: false, timestamp: Date.now() }))
+    persistConsent(essentialOnlyConsent())
     setVisible(false)
   }
 
-  // Globale Funktion damit der Footer-Link den Banner wieder öffnen kann
   useEffect(() => {
     window.__openCookieBanner = () => setVisible(true)
     return () => { delete window.__openCookieBanner }
@@ -92,7 +91,6 @@ export function CookieBanner() {
                 .cookie-btn-details { margin-left: auto !important; margin-top: 0 !important; }
               }
             `}</style>
-          {/* Header */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 20 }}>🍪</span>
@@ -102,11 +100,9 @@ export function CookieBanner() {
             </div>
           </div>
 
-          {/* Text */}
           <p style={{ fontSize: 13, color: '#8E97A8', lineHeight: 1.65, marginBottom: 16 }}>
-            Wir verwenden ausschließlich technisch notwendige Cookies, die für den Betrieb der Website erforderlich sind.
-            Optionale Analyse-Cookies helfen uns, die Website zu verbessern. Es werden{' '}
-            <strong style={{ color: '#D9DEE4' }}>keine Daten ohne deine Zustimmung</strong> an Dritte übermittelt.{' '}
+            Wir speichern deine Auswahl lokal. Formulare können Google reCAPTCHA laden, sobald ein Formular angezeigt wird — unabhängig von dieser Auswahl.
+            Das optionale ProvenExpert-Siegel lädt nur nach deiner Auswahl ein externes Script.{' '}
             <Link
               href="/datenschutz"
               style={{ color: accentColor, textDecoration: 'underline', textUnderlineOffset: 3 }}
@@ -115,7 +111,6 @@ export function CookieBanner() {
             </Link>
           </p>
 
-          {/* Details Toggle */}
           <AnimatePresence>
             {showDetails && (
               <motion.div
@@ -128,14 +123,13 @@ export function CookieBanner() {
                   background: '#141920', borderRadius: 12, padding: '14px 16px',
                   display: 'flex', flexDirection: 'column', gap: 10,
                 }}>
-                  {/* Notwendige Cookies */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                     <div>
                       <p style={{ fontSize: 13, fontWeight: 700, color: '#F2F4F8', margin: '0 0 2px' }}>
-                        Technisch notwendig
+                        Essenziell
                       </p>
                       <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>
-                        Cookie-Einstellungen, Session — immer aktiv
+                        Cookie-Auswahl, Session — immer aktiv
                       </p>
                     </div>
                     <span style={{
@@ -149,14 +143,13 @@ export function CookieBanner() {
 
                   <div style={{ height: 1, background: '#1A1F28' }} />
 
-                  {/* Analyse-Cookies */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                     <div>
                       <p style={{ fontSize: 13, fontWeight: 700, color: '#F2F4F8', margin: '0 0 2px' }}>
-                        Analyse (optional)
+                        ProvenExpert-Siegel (optional)
                       </p>
                       <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>
-                        Anonyme Nutzungsstatistiken zur Verbesserung der Website
+                        Lädt das externe ProvenExpert-Widget. Ohne diese Auswahl bleibt ein lokales Siegel ohne Netzwerkscript.
                       </p>
                     </div>
                     <span style={{
@@ -172,7 +165,6 @@ export function CookieBanner() {
             )}
           </AnimatePresence>
 
-          {/* Buttons */}
           <div className="cookie-btn-row" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'stretch' }}>
             <button
               onClick={acceptAll}

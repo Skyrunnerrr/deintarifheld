@@ -14,6 +14,7 @@ const read = (p) => readFileSync(join(root, p), 'utf8')
 assert.ok(existsSync(join(root, 'supabase/migrations/001_leads_phase_a.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/002_leads_phase_b.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/003_leads_rate_limits.sql')))
+assert.ok(existsSync(join(root, 'supabase/migrations/004_consume_rate_limit.sql')))
 assert.ok(existsSync(join(root, 'app/api/leads/route.js')))
 assert.ok(existsSync(join(root, 'app/api/careers/route.js')))
 assert.ok(existsSync(join(root, 'lib/leads/mail.js')))
@@ -77,6 +78,14 @@ const captcha = read('lib/leads/captcha.js')
 assert.match(captcha, /siteverify/)
 assert.match(captcha, /RECAPTCHA_SECRET_KEY/)
 assert.match(captcha, /captcha-not-configured|captchaRequired/)
+const captchaAction = read('lib/leads/captcha-action.js')
+assert.match(captchaAction, /standard_v2_v3_siteverify/)
+assert.match(captchaAction, /resolveExpectedCaptchaAction/)
+assert.doesNotMatch(read('components/ui/RecaptchaBox.jsx'), /enterprise\.js/)
+const migration004 = read('supabase/migrations/004_consume_rate_limit.sql')
+assert.match(migration004, /consume_rate_limit/)
+assert.match(migration004, /service_role/)
+assert.doesNotMatch(migration004, /^\s*drop\s+table\s+public\.leads\b/im)
 
 const intake = read('app/api/leads/route.js')
 assert.match(intake, /enforcePublicIntake/)
@@ -189,6 +198,7 @@ for (const s of [
   'leads:admin:inbox',
   'leads:duplicate-status',
   'leads:p0:security',
+  'leads:p0:remediation',
   'deps:audit',
   'phase-b:verify',
 ]) {

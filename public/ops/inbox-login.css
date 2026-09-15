@@ -1,0 +1,10 @@
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f8; color: #152033; }
+.wrap { max-width: 420px; margin: 0 auto; padding: 48px 16px; }
+h1 { font-size: 22px; margin: 0 0 8px; }
+.sub { color: #5b6578; margin: 0 0 20px; line-height: 1.45; }
+input, button { font: inherit; }
+input[type=password] { width: 100%; padding: 10px 12px; border: 1px solid #c5ccd6; border-radius: 8px; margin: 0 0 12px; }
+button { padding: 10px 14px; border: 0; border-radius: 8px; background: #0a5adb; color: #fff; cursor: pointer; }
+.err { background: #fff1f0; border: 1px solid #f5c2c0; color: #8a1f1b; padding: 10px 12px; border-radius: 8px; margin: 0 0 16px; }

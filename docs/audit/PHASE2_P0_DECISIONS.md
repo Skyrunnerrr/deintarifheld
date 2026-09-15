@@ -9,11 +9,12 @@ Binding ticket: GitHub Issue #5. Legal copy for F-14 / F-15 / F-16 is **not** in
 
 ## Captcha (F-04 / F-22)
 
-- Server verifies `_recaptchaToken` against Google `siteverify` when `RECAPTCHA_SECRET_KEY` is set.
-- Production without that secret fail-closes (`captcha-not-configured`).
-- Private / business / career share `enforcePublicIntake`.
-- `BusinessForm` now sends the same token fields as the other channels.
-- LEGAL_REVIEW_REQUIRED for Google as processor / third country remains open (F-14 / F-16).
+- Production variant: **Standard reCAPTCHA v2/v3 + classic siteverify only**.
+- Enterprise frontend path is disabled. `NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY` is not production-supported.
+- Server derives expected action from endpoint + known `page_source` (`unternehmen` / `career` / `hero-funnel` / `main_funnel`). Client `_recaptchaAction` is telemetry only.
+- v3: missing or mismatched `data.action` → reject. Score + hostname are enforced.
+- Production without `RECAPTCHA_SECRET_KEY` fail-closes (`captcha-not-configured`).
+- LEGAL_REVIEW_REQUIRED for Google as processor / third country remains open (see `docs/compliance/RECAPTCHA_DATA_FLOW.md`).
 
 ## Origin (F-04 / F-05)
 
@@ -29,9 +30,10 @@ Binding ticket: GitHub Issue #5. Legal copy for F-14 / F-15 / F-16 is **not** in
 ## Rate limit (F-04)
 
 - Provider: `memory` (local/CI) or `supabase` (production default).
+- Consume is atomic: memory increment+check has no await in the critical section; Postgres `consume_rate_limit(...)` is one SECURITY DEFINER RPC (service_role only).
 - Production memory use requires explicit `LEADS_ALLOW_MEMORY_RATE_LIMIT=YES`.
 - Supabase errors fail-closed in production, memory-fallback otherwise.
-- Required production env: `LEADS_RATE_LIMIT_SALT`, Supabase URL + service role, additive migration `003_leads_rate_limits.sql`.
+- Required production env: `LEADS_RATE_LIMIT_SALT`, Supabase URL + service role, migrations `003` + `004`.
 - No new SaaS. No committed secrets.
 
 ## Admin / cron (F-01 / F-02)
@@ -52,7 +54,8 @@ Binding ticket: GitHub Issue #5. Legal copy for F-14 / F-15 / F-16 is **not** in
 
 ## Headers (F-19)
 
-- Vercel API: HSTS, nosniff, Referrer-Policy, Permissions-Policy, X-Frame-Options, tight default CSP; inbox CSP tighter.
+- Vercel API: HSTS, nosniff, Referrer-Policy, Permissions-Policy, X-Frame-Options, tight default CSP.
+- Inbox CSP: `script-src 'self'; style-src 'self'` (static `/ops/inbox.js` + CSS). No `unsafe-inline`.
 - Checkdomain `.htaccess`: HSTS + CSP allowing self, inline styles/scripts already used, reCAPTCHA, ProvenExpert, Vercel Lead API.
 
 ## Dependencies (F-21 / F-25)
@@ -67,5 +70,6 @@ Binding ticket: GitHub Issue #5. Legal copy for F-14 / F-15 / F-16 is **not** in
 - No autonomous customer communication.
 - No new CRM.
 - No invented legal/privacy copy.
-- Soft-delete / F-11 remains P1.
-- LEGAL_REVIEW_REQUIRED: F-14, F-15, F-16 (and F-10 before `live` customer mail).
+- Soft-delete is legal-hold only. Default erase/retention is anonymisation. Delete audits use HMAC email, not plaintext.
+- LEGAL_REVIEW_REQUIRED: F-14, F-15, F-16 (and F-10 before `live` customer mail). Public legal texts were not rewritten.
+- AI Act: no customer AI, no lead scoring, no career AI selection (`docs/compliance/AI_ACT_GUARDRAILS.md`).

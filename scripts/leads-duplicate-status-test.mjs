@@ -100,10 +100,11 @@ function assertAdminIsolation() {
 }
 
 function assertInboxFailedVisible() {
-  assert.match(ADMIN_INBOX_HTML, /mail-failed/)
   assert.match(ADMIN_INBOX_HTML, /Nur Mail fehlgeschlagen/)
-  assert.match(ADMIN_INBOX_HTML, /badge-failed/)
-  assert.match(ADMIN_INBOX_HTML, /unknown/)
+  const inboxJs = read('public/ops/inbox.js')
+  assert.match(inboxJs, /mail-failed/)
+  assert.match(inboxJs, /badge-failed/)
+  assert.match(inboxJs, /unknown/)
   assert.doesNotMatch(ADMIN_INBOX_HTML, /LEADS_ADMIN_SECRET=/)
   assert.doesNotMatch(ADMIN_INBOX_HTML, /\?secret=/)
   assert.doesNotMatch(ADMIN_INBOX_HTML, /sessionStorage/)

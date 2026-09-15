@@ -299,7 +299,7 @@ async function assertAdminBruteForceAndInbox() {
       const authedInbox = inboxGetResponse(fakeRequest({ authorization: `Bearer ${STRONG_ADMIN}` }))
       assert.equal(authedInbox.status, 200)
       const authedText = await authedInbox.text()
-      assert.match(authedText, /credentials: 'same-origin'/)
+      assert.match(authedText, /\/ops\/inbox\.js/)
 
       const adminData = await enforceAdminAccess(fakeRequest({}))
       assert.equal(adminData.ok, false)
@@ -331,7 +331,8 @@ async function assertHeadersAndHealth() {
   const cors = corsHeaders(fakeRequest({ origin: 'https://www.deintarifheld.de' }))
   assert.doesNotMatch(cors['Access-Control-Allow-Headers'] || '', /Authorization/i)
   assert.ok(API_SECURITY_HEADERS['Strict-Transport-Security'])
-  assert.match(INBOX_SECURITY_HEADERS['Content-Security-Policy'], /script-src 'unsafe-inline'/)
+  assert.match(INBOX_SECURITY_HEADERS['Content-Security-Policy'], /script-src 'self'/)
+  assert.doesNotMatch(INBOX_SECURITY_HEADERS['Content-Security-Policy'], /unsafe-inline/)
 
   const htaccess = readFileSync(join(root, 'public/.htaccess'), 'utf8')
   assert.match(htaccess, /Strict-Transport-Security/)
