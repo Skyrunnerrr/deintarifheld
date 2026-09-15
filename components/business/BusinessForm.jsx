@@ -580,7 +580,7 @@ function BusinessFormular() {
                 <rect x="1.5" y="6" width="10" height="7.5" rx="2" stroke="currentColor" strokeWidth="1.3" />
                 <path d="M4 6V4.5a2.5 2.5 0 015 0V6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
               </svg>
-              <span className="font-body text-xs">SSL-verschlüsselt & DSGVO-konform</span>
+              <span className="font-body text-xs">SSL-verschlüsselt</span>
             </div>
 
             {rateLimitMsg && (
