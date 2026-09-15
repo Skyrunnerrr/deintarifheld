@@ -19,10 +19,13 @@ They **mock** `.rpc()`. They do **not** prove a real Postgres `ON CONFLICT` incr
 Script: `scripts/rate-limit-atomic-remote.mjs`
 
 ```
-ALLOW_STAGING_RATE_LIMIT_TEST=YES node scripts/rate-limit-atomic-remote.mjs
+ALLOW_STAGING_RATE_LIMIT_TEST=YES \
+EXPECTED_STAGING_SUPABASE_PROJECT_REF=<staging-ref> \
+NEXT_PUBLIC_SUPABASE_URL=https://<staging-ref>.supabase.co \
+node scripts/rate-limit-atomic-remote.mjs
 ```
 
-Without that env the script prints `RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN` and exits 0. Production runtime is blocked.
+Without `ALLOW_STAGING_RATE_LIMIT_TEST=YES` the script prints `RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN` and exits 0. Missing expected ref, ref mismatch, production runtime, or production project ref → FAIL. No remote write in CI.
 
 Prerequisites: a **staging** Supabase project with `003` + `004` + `005` applied. No production writes.
 

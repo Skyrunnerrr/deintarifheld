@@ -22,7 +22,7 @@ function buildPayloadFor(source) {
   if (source === 'hero-funnel') {
     return {
       firstName: 'Max',
-      email: 'wunderland50@gmail.com',
+      email: 'ops-fixture@example.invalid',
       phone: '+49 89 123456',
       provider: 'Test Anbieter',
       usage: '3200',
@@ -39,7 +39,7 @@ function buildPayloadFor(source) {
   if (source === 'main_funnel') {
     return {
       name: 'Max Mustermann',
-      email: 'wunderland50@gmail.com',
+      email: 'ops-fixture@example.invalid',
       phone: '+49 89 123456',
       provider: 'Test Anbieter',
       consumption: '3500',
@@ -57,7 +57,7 @@ function buildPayloadFor(source) {
     return {
       firma: 'Test GmbH',
       ansprechpartner: 'Max Muster',
-      email: 'wunderland50@gmail.com',
+      email: 'ops-fixture@example.invalid',
       telefon: '+49 89 123456',
       plz: '80331',
       energieart: 'strom',
@@ -73,7 +73,7 @@ function buildPayloadFor(source) {
 
   return {
     name: 'Test Nutzer',
-    email: 'wunderland50@gmail.com',
+    email: 'ops-fixture@example.invalid',
     phone: '+49 89 123456',
     motivation: 'Test der Backend-Integration - bitte ignorieren',
     gdpr: true,

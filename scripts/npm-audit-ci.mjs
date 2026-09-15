@@ -2,13 +2,14 @@
 /**
  * npm audit CI gate.
  * Never runs `npm audit fix`.
+ * Match allowlist on id AND package AND severity.
  * Unknown new Critical or High → FAIL.
- * Previously assessed High/Critical IDs may be allowlisted with review + expiry.
  */
 import { spawnSync } from 'node:child_process'
 import { readFileSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { indexAllowlist, matchAllowlistedFinding } from '../lib/audit/npm-allowlist.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const allowlistPath = join(root, 'docs/audit/NPM_ADVISORY_ALLOWLIST.json')
@@ -55,12 +56,8 @@ try {
   process.exit(1)
 }
 
-const allowed = new Map()
-for (const row of allowlist.advisories || []) {
-  const id = String(row.id || '').toUpperCase()
-  if (!id) continue
-  allowed.set(id, row)
-}
+const { map: allowed, errors: indexErrors } = indexAllowlist(allowlist.advisories || [])
+const fail = [...indexErrors]
 
 const result = spawnSync('npm', ['audit', '--json'], {
   cwd: root,
@@ -97,20 +94,17 @@ console.log(`NPM_AUDIT_LOW=${counts.low}`)
 console.log('NPM_AUDIT_FIX=NOT_RUN')
 console.log('CUSTOMER_MAIL_ENABLED=NO')
 
-const fail = []
 for (const f of unique.values()) {
   if (f.severity !== 'high' && f.severity !== 'critical') continue
-  const row = allowed.get(f.id)
+  const row = matchAllowlistedFinding(f, allowed)
   if (!row) {
     fail.push(`unknown ${f.severity} ${f.id} (${f.package}) ${f.url}`)
     continue
   }
-  const expires = String(row.expires_at || allowlist.expires_at || '')
+  const expires = String(row.expires_at || '')
   if (!expires || expires < today) {
-    fail.push(`expired allowlist ${f.id} expires_at=${expires || 'missing'}`)
+    fail.push(`expired allowlist ${f.id} ${f.package} expires_at=${expires || 'missing'}`)
   }
-  if (!row.url) fail.push(`allowlist ${f.id} missing url`)
-  if (!row.reviewed_at) fail.push(`allowlist ${f.id} missing reviewed_at`)
   console.log(`NPM_ALLOWLISTED=${f.id} ${f.package} ${f.severity} expires=${expires}`)
 }
 
@@ -125,6 +119,9 @@ if (/"next":\s*"16/.test(nextPin) || /"next":\s*"\^16/.test(nextPin)) {
 
 console.log(`NPM_ADVISORY_REGISTER=${fail.length ? 'FAIL' : 'PASS'}`)
 console.log(`NPM_UNKNOWN_HIGH_CRITICAL_CI_GATE=${fail.length ? 'FAIL' : 'PASS'}`)
+console.log(`NPM_ALLOWLIST_ID_MATCH=${fail.length ? 'FAIL' : 'PASS'}`)
+console.log(`NPM_ALLOWLIST_PACKAGE_MATCH=${fail.length ? 'FAIL' : 'PASS'}`)
+console.log(`NPM_ALLOWLIST_SEVERITY_MATCH=${fail.length ? 'FAIL' : 'PASS'}`)
 
 if (fail.length) {
   console.error('NPM_AUDIT_CI=FAIL')
@@ -133,5 +130,5 @@ if (fail.length) {
 }
 
 console.log('NPM_AUDIT_CI=PASS')
-console.log('NPM_AUDIT_POLICY=ALLOWLIST_UNKNOWN_HIGH_CRITICAL_FAIL')
+console.log('NPM_AUDIT_POLICY=ALLOWLIST_ID_PACKAGE_SEVERITY')
 process.exit(0)

@@ -1,32 +1,38 @@
 #!/usr/bin/env node
 /**
  * Staging-only parallel consume_rate_limit proof.
- * Not for production. Not run by default CI against a live DB.
- *
- * Expected: 20 parallel consume, p_max_hits=5 → exactly 5 allowed, 15 denied,
- * hit_count contiguous, no lost updates.
- *
- * Without ALLOW_STAGING_RATE_LIMIT_TEST=YES this script only documents
- * RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN and exits 0.
+ * Writes only when ALLOW_STAGING_RATE_LIMIT_TEST=YES and the live
+ * Supabase project ref equals EXPECTED_STAGING_SUPABASE_PROJECT_REF.
+ * CI without those credentials stays UNKNOWN and does not write.
  */
 import { getServiceSupabase } from '../lib/leads/supabase.js'
 import { isProductionRuntime } from '../lib/leads/runtime-env.js'
+import { evaluateStagingRateLimitTarget } from '../lib/leads/staging-rate-limit-guard.js'
 
 const PARALLEL = 20
 const MAX_HITS = 5
 const allow = (process.env.ALLOW_STAGING_RATE_LIMIT_TEST || '').trim().toUpperCase() === 'YES'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ''
+const gate = evaluateStagingRateLimitTarget({
+  allowTest: allow,
+  expectedRef: process.env.EXPECTED_STAGING_SUPABASE_PROJECT_REF || '',
+  supabaseUrl,
+  productionRuntime: isProductionRuntime(),
+  productionProjectRef: process.env.PRODUCTION_SUPABASE_PROJECT_REF || '',
+})
 
-if (isProductionRuntime()) {
-  console.error('RATE_LIMIT_ATOMIC_REMOTE_DB=BLOCKED_PRODUCTION')
-  console.error('PRODUCTION_DATA_MUTATED=NO')
-  process.exit(1)
-}
-
-if (!allow) {
+if (gate.status === 'UNKNOWN') {
   console.log('RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN')
-  console.log('RATE_LIMIT_ATOMIC_REMOTE_REASON=staging_test_not_authorized')
+  console.log(`RATE_LIMIT_ATOMIC_REMOTE_REASON=${gate.reason}`)
   console.log('PRODUCTION_DATA_MUTATED=NO')
   process.exit(0)
+}
+
+if (!gate.ok) {
+  console.error('RATE_LIMIT_ATOMIC_REMOTE_DB=FAIL')
+  console.error(`RATE_LIMIT_ATOMIC_REMOTE_REASON=${gate.reason}`)
+  console.error('PRODUCTION_DATA_MUTATED=NO')
+  process.exit(1)
 }
 
 const supabase = getServiceSupabase()

@@ -34,7 +34,7 @@ The banner does **not** claim “keine Daten ohne Zustimmung an Dritte”, becau
 - strip `.pe-pro-seal` / provider DOM and PE scripts
 - no further PE requests
 - show the local badge
-- ProvenExpert has no documented destroy API in this codebase → persist the withdrawn consent, strip DOM, then a **single** controlled full-page reload (`sessionStorage` flag `dth_pe_withdraw_reload`)
+- persist the withdrawn consent, strip script and provider DOM, then **always** one controlled full-page reload (`sessionStorage` flag `dth_pe_withdraw_reload` prevents a loop). No provider destroy-API shortcut.
 
 Covered transition: `false → true → false`.
 

@@ -33,7 +33,7 @@ Add one row when a system that meets the AI Act “AI system” definition is ac
 | class | system | purpose | operators | risks | human_control | training | date | review | owner |
 |---|---|---|---|---|---|---|---|---|---|
 | CUSTOMER_FACING_AI | — none — | No customer-facing or lead-scoring AI is in production. | — | Enabling career/partner AI selection is forbidden until a new classification gate. | N/A | UNKNOWN (not applicable while CUSTOMER_FACING_AI=NO) | 2026-09-15 | 2026-12-15 | Ops |
-| INTERNAL_AI_USE | Cursor Cloud Agent (product version UNKNOWN) | Professional code, test, and documentation work on github.com/Skyrunnerrr/deintarifheld | Operator: Averi (`wunderland50@gmail.com`); human PR reviewer | Incorrect or incomplete changes if merged without review; no production data writes from this agent | Human review of PR #6; no merge/E2E/production writes from the agent | UNKNOWN | 2026-09-15 | 2026-12-15 | Ops |
+| INTERNAL_AI_USE | Cursor Cloud Agent (product version UNKNOWN) | Professional code, test, and documentation work on github.com/Skyrunnerrr/deintarifheld | Internal AI Operator / Human PR Reviewer | Incorrect or incomplete changes if merged without review; no production data writes from this agent | Human review of PR #6; no merge/E2E/production writes from the agent | UNKNOWN | 2026-09-15 | 2026-12-15 | Ops |
 
 ## Review rule
 

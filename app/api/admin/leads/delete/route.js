@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { enforceAdminAccess } from '@/lib/leads/admin-guard'
 import { getServiceSupabase, processLeadDeletion } from '@/lib/leads/supabase'
-import { isDeletionMode } from '@/lib/leads/retention-privacy'
+import { resolveDeletionMode } from '@/lib/leads/deletion-mode'
 import { applySecurityHeaders } from '@/lib/leads/security-headers'
 
 export const runtime = 'nodejs'
@@ -17,7 +17,10 @@ function json(body, status = 200, extraHeaders) {
   return response
 }
 
-/** Automated DSGVO delete-by-email across lead channels (no UI required). */
+/**
+ * Admin erase-by-email. Mode is required.
+ * Not a legal DSGVO decision: Legal/Ops must choose soft | redact | physical.
+ */
 export async function POST(request) {
   const gate = await enforceAdminAccess(request)
   if (!gate.ok) {
@@ -41,13 +44,18 @@ export async function POST(request) {
     return json({ ok: false, code: 'invalid-channel' }, 400)
   }
 
+  const resolved = resolveDeletionMode(body.mode)
+  if (!resolved.ok) {
+    // deletion-mode-required | invalid-deletion-mode — no implied privacy mode
+    return json({ ok: false, code: resolved.code }, 400)
+  }
+
   const supabase = getServiceSupabase()
   if (!supabase) {
     return json({ ok: false, code: 'storage-not-configured' }, 500)
   }
 
-  const mode = typeof body.mode === 'string' && isDeletionMode(body.mode) ? body.mode : 'anonymise'
-  const result = await processLeadDeletion(supabase, email, { channel, mode })
+  const result = await processLeadDeletion(supabase, email, { channel, mode: resolved.mode })
   if (result.error) {
     return json({ ok: false, code: 'delete-failed' }, 500)
   }
@@ -56,6 +64,7 @@ export async function POST(request) {
     ok: true,
     channel,
     mode: result.mode,
+    legacyAlias: resolved.legacyAlias || false,
     updated: result.updated,
     careerUpdated: result.careerUpdated,
     ids: result.ids,

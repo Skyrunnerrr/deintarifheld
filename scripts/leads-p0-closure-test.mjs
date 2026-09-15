@@ -27,13 +27,22 @@ import {
   isRetentionEligible,
 } from '../lib/leads/deletion-state.js'
 import {
+  HISTORIC_CLEANUP_EXECUTION_READY,
   assertNoPiiInSummary,
-  cleanupAuthorization,
   dryRunHistoricSoftDeletes,
 } from '../lib/leads/historic-cleanup.js'
+import { resolveDeletionMode } from '../lib/leads/deletion-mode.js'
+import {
+  evaluateStagingRateLimitTarget,
+  parseSupabaseProjectRef,
+} from '../lib/leads/staging-rate-limit-guard.js'
+import {
+  allowlistRowFieldErrors,
+  indexAllowlist,
+  matchAllowlistedFinding,
+} from '../lib/audit/npm-allowlist.js'
 import { processLeadDeletion, runRetention } from '../lib/leads/supabase.js'
 import {
-  hasProvenExpertDestroyApi,
   planProvenExpertWithdrawal,
   simulateProvenExpertFalseTrueFalse,
   stripProvenExpertDom,
@@ -184,7 +193,9 @@ function assertLegalAlignmentDocs() {
   assert.match(agb, /automatische\s+Eingangsbestätigung/)
   assert.match(read('docs/deployment/PR6_DEPLOY_ORDER.md'), /AUTO_PRODUCTION_DEPLOY_ON_MAIN=UNKNOWN/)
   assert.match(read('docs/deployment/PR6_DEPLOY_ORDER.md'), /PR6_DEPLOYMENT_SAFE=NO/)
-  assert.match(read('docs/compliance/HISTORIC_SOFT_DELETE_CLEANUP.md'), /HISTORIC_SOFT_DELETE_CLEANUP=PASS/)
+  assert.match(read('docs/compliance/HISTORIC_SOFT_DELETE_CLEANUP.md'), /HISTORIC_CLEANUP_DISCOVERY=PASS/)
+  assert.match(read('docs/compliance/HISTORIC_SOFT_DELETE_CLEANUP.md'), /HISTORIC_CLEANUP_EXECUTION=NO/)
+  assert.match(read('docs/compliance/HISTORIC_SOFT_DELETE_CLEANUP.md'), /HISTORIC_CLEANUP_EXECUTION_READY=NO/)
   assert.match(read('docs/compliance/HISTORIC_SOFT_DELETE_CLEANUP.md'), /HISTORIC_CLEANUP_APPLIED=NO/)
   assert.match(read('docs/compliance/RATE_LIMIT_ATOMIC_REMOTE.md'), /RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN/)
   console.log('PUBLIC_LEGAL_ALIGNMENT=FAIL')
@@ -214,7 +225,6 @@ function assertProvenExpertWithdrawal() {
   const withdraw = planProvenExpertWithdrawal({
     previousAllowed: true,
     nextAllowed: false,
-    destroyApiAvailable: false,
     alreadyReloaded: false,
   })
   assert.equal(withdraw.loadScript, false)
@@ -226,23 +236,19 @@ function assertProvenExpertWithdrawal() {
   const afterReload = planProvenExpertWithdrawal({
     previousAllowed: true,
     nextAllowed: false,
-    destroyApiAvailable: false,
     alreadyReloaded: true,
   })
   assert.equal(afterReload.reload, false)
   assert.equal(afterReload.stripDom, true)
 
-  const withDestroy = planProvenExpertWithdrawal({
+  const noDestroyShortcut = planProvenExpertWithdrawal({
     previousAllowed: true,
     nextAllowed: false,
     destroyApiAvailable: true,
     alreadyReloaded: false,
   })
-  assert.equal(withDestroy.reload, false)
-  assert.equal(withDestroy.stripDom, true)
-
-  assert.equal(hasProvenExpertDestroyApi({}), false)
-  assert.equal(hasProvenExpertDestroyApi({ provenExpert: { proSeal() {} } }), false)
+  assert.equal(noDestroyShortcut.reload, true, 'destroy-api flag must not skip reload')
+  assert.equal(noDestroyShortcut.stripDom, true)
 
   const nodes = []
   const fakeRoot = {
@@ -263,7 +269,7 @@ function assertProvenExpertWithdrawal() {
   assert.match(widget, /stripProvenExpertDom/)
   assert.match(widget, /location\.reload/)
 
-  const cycle = simulateProvenExpertFalseTrueFalse({ destroyApiAvailable: false })
+  const cycle = simulateProvenExpertFalseTrueFalse()
   assert.equal(cycle.off.consent, false)
   assert.equal(cycle.off.scriptPresent, false)
   assert.equal(cycle.off.localFallback, true)
@@ -315,7 +321,14 @@ async function assertDeleteStateMachine() {
     }],
     careers: [],
   })
-  const r1 = await processLeadDeletion(active, 'person@example.invalid', { channel: 'business', mode: 'anonymise' })
+  const missing = await processLeadDeletion(active, 'person@example.invalid', { channel: 'business' })
+  assert.equal(missing.code, 'deletion-mode-required')
+  const alias = resolveDeletionMode('anonymise')
+  assert.equal(alias.ok, true)
+  assert.equal(alias.mode, 'redact')
+  assert.equal(alias.legacyAlias, true)
+  assert.equal(resolveDeletionMode('').code, 'deletion-mode-required')
+  const r1 = await processLeadDeletion(active, 'person@example.invalid', { channel: 'business', mode: 'redact' })
   assert.equal(r1.updated, 1)
   assert.equal(active.leads[0].email, ANONYMISED_EMAIL)
   assert.equal(active.leads[0].payload.nachricht, undefined)
@@ -368,6 +381,7 @@ async function assertDeleteStateMachine() {
     }],
   })
   const r4 = await processLeadDeletion(softThenRedact, 'person@example.invalid', { channel: 'business', mode: 'anonymise' })
+  assert.equal(r4.mode, 'redact')
   assert.equal(r4.updated, 1)
   assert.equal(softThenRedact.leads[0].payload.nachricht, undefined)
   assert.equal(softThenRedact.leads[0].firma, 'HoldCo')
@@ -400,7 +414,7 @@ async function assertDeleteStateMachine() {
     }],
   })
   const before = JSON.stringify(already.leads[0].payload)
-  const r6 = await processLeadDeletion(already, 'person@example.invalid', { channel: 'business', mode: 'anonymise' })
+  const r6 = await processLeadDeletion(already, 'person@example.invalid', { channel: 'business', mode: 'redact' })
   assert.equal(r6.updated, 0)
   assert.equal(JSON.stringify(already.leads[0].payload), before)
   assert.equal(already.leads[0].firma, 'ShouldStay')
@@ -416,7 +430,7 @@ async function assertDeleteStateMachine() {
       payload: { nachricht: 'held' },
     }],
   })
-  const r7 = await processLeadDeletion(hold, 'person@example.invalid', { channel: 'business', mode: 'anonymise' })
+  const r7 = await processLeadDeletion(hold, 'person@example.invalid', { channel: 'business', mode: 'redact' })
   assert.equal(r7.updated, 0)
   assert.equal(hold.leads[0].payload.nachricht, 'held')
 
@@ -505,14 +519,25 @@ async function assertDeleteStateMachine() {
   assert.equal(dry.careers.count, 1)
   assert.ok(assertNoPiiInSummary(dry.leads))
   assert.ok(assertNoPiiInSummary(dry.careers))
-  assert.equal(cleanupAuthorization({ apply: true, productionRuntime: true }).allowed, false)
-  assert.equal(cleanupAuthorization({ apply: true, explicitApply: true, productionRuntime: false }).allowed, true)
-  assert.match(read('scripts/historic-soft-delete-dry-run.mjs'), /DRY-RUN|dry-run/)
-  assert.match(read('scripts/rate-limit-atomic-remote.mjs'), /ALLOW_STAGING_RATE_LIMIT_TEST/)
-  assert.match(read('scripts/rate-limit-atomic-remote.mjs'), /BLOCKED_PRODUCTION/)
+  assert.equal(HISTORIC_CLEANUP_EXECUTION_READY, false)
+  assert.equal(dry.executionReady, false)
+  const historicScript = read('scripts/historic-soft-delete-dry-run.mjs')
+  assert.match(historicScript, /INVENTORY ONLY/)
+  assert.doesNotMatch(historicScript, /APPLY_HISTORIC_CLEANUP/)
+  assert.doesNotMatch(historicScript, /EXPLICITLY_AUTHORIZED_CLEANUP/)
+  assert.match(read('scripts/rate-limit-atomic-remote.mjs'), /EXPECTED_STAGING_SUPABASE_PROJECT_REF/)
+  const deleteRoute = read('app/api/admin/leads/delete/route.js')
+  assert.doesNotMatch(deleteRoute, /Automated DSGVO/)
+  assert.doesNotMatch(deleteRoute, /legal anonymisation/)
+  assert.match(deleteRoute, /deletion-mode-required/)
+  assert.match(read('docs/compliance/DELETION_RETENTION_MODES.md'), /Not legal anonymisation/)
   console.log('DELETE_STATE_MACHINE=PASS')
+  console.log('DELETION_MODE_EXPLICIT=PASS')
+  console.log('DSGVO_DELETE_SEMANTICS=PASS')
   console.log('LEGAL_HOLD_SEPARATION=PASS')
-  console.log('HISTORIC_SOFT_DELETE_CLEANUP=PASS')
+  console.log('HISTORIC_CLEANUP_DISCOVERY=PASS')
+  console.log('HISTORIC_CLEANUP_EXECUTION=NO')
+  console.log('HISTORIC_CLEANUP_APPLIED=NO')
   console.log('PII_STATE_NAMING=PASS')
 }
 
@@ -527,6 +552,8 @@ function assertAiRegister() {
   assert.match(lit, /TRAINING=UNKNOWN/)
   assert.match(lit, /Cursor Cloud Agent/)
   assert.match(lit, /INTERNAL_AI_USE/)
+  assert.match(lit, /Internal AI Operator \/ Human PR Reviewer/)
+  assert.doesNotMatch(lit, /@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/)
   console.log('AI_ACT_GUARDRAILS=PASS')
   console.log('INTERNAL_AI_USE_REGISTER=PASS')
   console.log('ARTICLE4_AI_LITERACY_REGISTER=PARTIAL')
@@ -537,19 +564,83 @@ function assertAiRegister() {
 function assertNpmRegister() {
   assert.ok(existsSync(join(root, 'docs/audit/NPM_ADVISORY_ALLOWLIST.json')))
   const allow = JSON.parse(read('docs/audit/NPM_ADVISORY_ALLOWLIST.json'))
-  assert.ok(Array.isArray(allow.advisories) && allow.advisories.length > 0)
-  for (const row of allow.advisories) {
-    assert.match(row.id, /^GHSA-/)
-    assert.match(row.url, /github\.com\/advisories\/GHSA-/)
-    assert.ok(row.expires_at)
-    assert.ok(row.reviewed_at)
-  }
+  const { map, errors } = indexAllowlist(allow.advisories || [])
+  assert.equal(errors.length, 0)
+  assert.ok(map.size > 0)
+  const sample = allow.advisories[0]
+  assert.equal(allowlistRowFieldErrors({ ...sample, url: '' }).includes('url'), true)
+  const pkgMismatch = matchAllowlistedFinding(
+    { id: sample.id, package: 'other-package', severity: sample.severity },
+    map,
+  )
+  assert.equal(pkgMismatch, null)
+  const sevMismatch = matchAllowlistedFinding(
+    { id: sample.id, package: sample.package, severity: 'critical' },
+    map,
+  )
+  assert.equal(sevMismatch, null)
+  const ok = matchAllowlistedFinding(
+    { id: sample.id, package: sample.package, severity: sample.severity },
+    map,
+  )
+  assert.ok(ok)
   const ci = read('scripts/npm-audit-ci.mjs')
-  assert.match(ci, /unknown/)
-  assert.match(ci, /Unknown new Critical or High/)
+  assert.match(ci, /id AND package AND severity/)
   assert.match(ci, /process\.exit\(1\)/)
-  assert.doesNotMatch(ci, /Exit 0 after a successful audit/)
   console.log('NPM_ADVISORY_REGISTER=PASS')
+  console.log('NPM_ALLOWLIST_ID_MATCH=PASS')
+  console.log('NPM_ALLOWLIST_PACKAGE_MATCH=PASS')
+  console.log('NPM_ALLOWLIST_SEVERITY_MATCH=PASS')
+}
+
+function assertStagingRateLimitGuard() {
+  assert.equal(parseSupabaseProjectRef('https://abcd1234.supabase.co'), 'abcd1234')
+  const unknown = evaluateStagingRateLimitTarget({ allowTest: false })
+  assert.equal(unknown.status, 'UNKNOWN')
+  const missing = evaluateStagingRateLimitTarget({
+    allowTest: true,
+    expectedRef: '',
+    supabaseUrl: 'https://abcd1234.supabase.co',
+  })
+  assert.equal(missing.ok, false)
+  assert.equal(missing.reason, 'missing_expected_ref')
+  const mismatch = evaluateStagingRateLimitTarget({
+    allowTest: true,
+    expectedRef: 'staging-ref',
+    supabaseUrl: 'https://other-ref.supabase.co',
+  })
+  assert.equal(mismatch.ok, false)
+  assert.equal(mismatch.reason, 'project_ref_mismatch')
+  const prodRt = evaluateStagingRateLimitTarget({
+    allowTest: true,
+    expectedRef: 'staging-ref',
+    supabaseUrl: 'https://staging-ref.supabase.co',
+    productionRuntime: true,
+  })
+  assert.equal(prodRt.ok, false)
+  const prodProj = evaluateStagingRateLimitTarget({
+    allowTest: true,
+    expectedRef: 'prod-ref',
+    supabaseUrl: 'https://prod-ref.supabase.co',
+    productionProjectRef: 'prod-ref',
+  })
+  assert.equal(prodProj.ok, false)
+  assert.equal(prodProj.reason, 'production_project')
+  const ok = evaluateStagingRateLimitTarget({
+    allowTest: true,
+    expectedRef: 'staging-ref',
+    supabaseUrl: 'https://staging-ref.supabase.co',
+  })
+  assert.equal(ok.ok, true)
+  console.log('STAGING_RATE_LIMIT_TARGET_GUARD=PASS')
+  console.log('RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN')
+}
+
+function assertPublicRepoPii() {
+  const lit = read('docs/compliance/AI_LITERACY_REGISTER.md')
+  assert.doesNotMatch(lit, /wunderland50@gmail\.com/)
+  assert.doesNotMatch(lit, /@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/)
+  console.log('PUBLIC_REPO_PII_MINIMISATION=PASS')
 }
 
 async function main() {
@@ -560,6 +651,8 @@ async function main() {
   await assertDeleteStateMachine()
   assertAiRegister()
   assertNpmRegister()
+  assertStagingRateLimitGuard()
+  assertPublicRepoPii()
   console.log('P0_CLOSURE_TESTS=PASS')
   console.log('REAL_CUSTOMER_MAIL_SENT=NO')
   console.log('PRODUCTION_DATA_MUTATED=NO')

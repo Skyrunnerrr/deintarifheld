@@ -9,7 +9,6 @@ import {
   shouldLoadProvenExpertScript,
 } from '@/lib/consent/third-party'
 import {
-  hasProvenExpertDestroyApi,
   planProvenExpertWithdrawal,
   readWithdrawalReloadFlag,
   stripProvenExpertDom,
@@ -93,7 +92,6 @@ export function ProSealWidget() {
     const plan = planProvenExpertWithdrawal({
       previousAllowed: prevAllowedRef.current,
       nextAllowed: loadExternal,
-      destroyApiAvailable: hasProvenExpertDestroyApi(window),
       alreadyReloaded: readWithdrawalReloadFlag(window.sessionStorage),
     })
 

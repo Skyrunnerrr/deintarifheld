@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Automated DSGVO delete-by-email.
+ * Admin erase-by-email. Mode is required. Not a legal DSGVO decision.
  * Usage:
  *   LEADS_API_BASE=https://xxx.vercel.app LEADS_ADMIN_SECRET=... \
- *     node scripts/leads-delete-by-email.mjs --email user@example.com
+ *     node scripts/leads-delete-by-email.mjs --email user@example.com --mode=redact
  */
 import 'dotenv/config'
 
@@ -13,13 +13,15 @@ const emailArg = process.argv.find((a) => a.startsWith('--email='))
 const email = emailArg ? emailArg.slice('--email='.length) : process.argv[process.argv.indexOf('--email') + 1]
 const channelArg = process.argv.find((a) => a.startsWith('--channel='))
 const channel = channelArg ? channelArg.slice('--channel='.length) : 'all'
+const modeArg = process.argv.find((a) => a.startsWith('--mode='))
+const mode = modeArg ? modeArg.slice('--mode='.length) : ''
 
 if (!secret) {
   console.error('LEADS_ADMIN_SECRET required')
   process.exit(1)
 }
-if (!email || !email.includes('@')) {
-  console.error('Usage: node scripts/leads-delete-by-email.mjs --email user@example.com [--channel=all|business|private|career]')
+if (!email || !email.includes('@') || !mode) {
+  console.error('Usage: node scripts/leads-delete-by-email.mjs --email user@example.com --mode=soft|redact|physical [--channel=all|business|private|career]')
   process.exit(1)
 }
 
@@ -29,7 +31,7 @@ const res = await fetch(`${base}/api/admin/leads/delete`, {
     'content-type': 'application/json',
     authorization: `Bearer ${secret}`,
   },
-  body: JSON.stringify({ email, channel }),
+  body: JSON.stringify({ email, channel, mode }),
 })
 const json = await res.json().catch(() => ({}))
 console.log(res.status, json)
