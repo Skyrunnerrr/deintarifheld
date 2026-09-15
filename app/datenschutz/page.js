@@ -413,8 +413,7 @@ export default function DatenschutzPage() {
             </p>
             <p style={{ margin: 0 }}>
               Wir treffen hier keine Aussage zu Speicherdauern, Auftragsverarbeitungsverträgen
-              oder Drittlandgarantien auf Seiten von Google. Die rechtliche Einordnung bleibt
-              Gegenstand der Datenschutzprüfung.
+              oder Drittlandgarantien auf Seiten von Google.
             </p>
           </SubSection>
           <SubSection title="9.5 ProvenExpert">
@@ -523,14 +522,16 @@ export default function DatenschutzPage() {
           />
           <p style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
             Diese Dienstleister können im Rahmen ihrer technischen Leistung personenbezogene Daten
-            verarbeiten. Vercel und Resend können personenbezogene Daten auch in den USA oder in
-            anderen Staaten außerhalb der Europäischen Union und des Europäischen Wirtschaftsraums
-            verarbeiten. Soweit eine solche Übermittlung nicht auf einem Angemessenheitsbeschluss
-            beruht, können insbesondere die von der Europäischen Kommission erlassenen
-            Standardvertragsklauseln als geeignete Garantie eingesetzt werden. Weitere
-            Informationen zu den für eine konkrete Übermittlung maßgeblichen Garantien oder eine
-            Kopie der einschlägigen Regelungen können Sie unter{' '}
+            verarbeiten, einschließlich außerhalb der Europäischen Union oder des Europäischen
+            Wirtschaftsraums. Soweit das der Fall ist, erfolgt es nur unter Beachtung der
+            geltenden gesetzlichen Voraussetzungen. Je nach Anbieter können insbesondere ein
+            Angemessenheitsbeschluss oder geeignete Garantien wie die Standardvertragsklauseln
+            der Europäischen Kommission einschlägig sein. Welche Garantien für eine konkrete
+            Übermittlung maßgeblich sind, teilen wir auf Anfrage mit; eine Kopie der uns
+            vorliegenden Regelungen können Sie unter{' '}
             <ObfuscatedEmail style={{ color: '#8E97A8', textDecoration: 'none' }} /> anfordern.
+            Ein abgeschlossener Nachweis aller Drittlandtransfers oder aller
+            Auftragsverarbeitungsverträge wird hier nicht behauptet.
           </p>
           <p style={{ margin: 0 }}>
             Die Angabe der primären EU-Datenbankregion bei Supabase bedeutet weiterhin nicht, dass
@@ -596,17 +597,16 @@ export default function DatenschutzPage() {
           </SubSection>
         </LegalSection>
 
-        <LegalSection id="altbestaende" title="16. Alte Google Apps Script- und Google Sheets-Datenbestände">
+        <LegalSection id="altbestaende" title="16. Historische Datenbestände">
           <p style={{ marginBottom: '0.75rem' }}>
-            Vor dem Umstellungspunkt dieses Website-Releases wurden Anfragen teilweise über Google
-            Apps Script und Google Sheets entgegengenommen und gespeichert. Diese Altbestände
-            werden durch den neuen Löschprozess nicht automatisch entfernt. Ob und wie historische
-            Bestände migriert, archiviert oder gelöscht werden, ist eine gesonderte operative
-            Entscheidung und nicht Gegenstand der automatischen Fristen des neuen Systems.
+            Historische Datenbestände aus früheren technischen Verfahren werden getrennt vom
+            aktuellen System behandelt und nach den jeweils anwendbaren gesetzlichen und
+            betrieblichen Aufbewahrungs- und Löschvorgaben verwaltet.
           </p>
           <p style={{ margin: 0 }}>
-            Google Apps Script und Google Sheets sind nach diesem Release nicht mehr der
-            vorgesehene aktive Intake-Pfad der öffentlichen Formulare.
+            Google Apps Script und Google Sheets sind nicht mehr der vorgesehene aktive
+            Aufnahmeweg der öffentlichen Formulare. Eine bereits erfolgte Löschung oder
+            Migration dieser Altbestände wird hier nicht behauptet.
           </p>
         </LegalSection>
 

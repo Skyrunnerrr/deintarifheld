@@ -39,6 +39,11 @@ requireMatch('datenschutz no customer confirmation', datenschutz, /keine[\s\S]{0
 
 forbid('datenschutz als gelöscht gekennzeichnet', datenschutz, /als gelöscht gekennzeichnet/)
 forbid('datenschutz invented DPA signed', datenschutz, /Auftragsverarbeitungsvertrag (ist|wurde) abgeschlossen/)
+forbid('datenschutz invented SCC deployed', datenschutz, /Standardvertragsklauseln als geeignete Garantie eingesetzt werden/)
+requireMatch('datenschutz statutory transfer framing', datenschutz, /gesetzlichen Voraussetzungen/)
+requireMatch('datenschutz no completed transfer proof claim', datenschutz, /nicht behauptet/)
+requireMatch('datenschutz historic stocks separated', datenschutz, /getrennt vom\s+aktuellen System/)
+forbid('datenschutz public ops-decision leak', datenschutz, /gesonderte operative\s+Entscheidung/)
 
 requireMatch('AGB no automatic confirmation promise', agb, /kein vertraglicher Anspruch auf eine automatische\s+Eingangsbestätigung/)
 requireMatch('AGB contact via supplied data', agb, /angegebenen Kontaktdaten/)

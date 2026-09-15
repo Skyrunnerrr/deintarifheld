@@ -135,7 +135,7 @@ function Step1({ onNext }) {
         </Button>
 
         <p className="text-text-tertiary text-xs text-center font-body">
-          🔒 SSL-verschlüsselt · Datenschutzinformationen verfügbar
+          🔒 SSL-verschlüsselt · Daten nur zur Bearbeitung deiner Anfrage
         </p>
       </div>
     </form>
