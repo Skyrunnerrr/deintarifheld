@@ -5,8 +5,10 @@
  *   LEADS_API_BASE=http://127.0.0.1:3000 node scripts/leads-smoke.mjs
  */
 import 'dotenv/config'
+import { refuseProductionTarget } from './lib/refuse-production-smoke.mjs'
 
 const base = (process.env.LEADS_API_BASE || 'http://127.0.0.1:3000').replace(/\/$/, '')
+refuseProductionTarget(base)
 const email = process.env.SMOKE_EMAIL || `smoke+${Date.now()}@example.com`
 
 async function main() {
