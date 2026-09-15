@@ -84,6 +84,10 @@ jobs:
         run: npm run leads:p0:remediation
       - name: P0 closure (delete SM, PE withdrawal, legal/AI/npm gates)
         run: npm run leads:p0:closure
+      - name: Historic soft-delete dry-run (no backend / no mutate)
+        run: npm run leads:historic:dry-run
+      - name: Remote rate-limit probe (must stay UNKNOWN without staging auth)
+        run: npm run leads:rate-limit:remote
       - name: Form privacy semantics
         run: npm run forms:privacy-semantics:test
       - name: AGB / privacy checkbox semantics
@@ -96,7 +100,7 @@ jobs:
         run: npm run forms:intercept:test
       - name: Phase B verify
         run: npm run phase-b:verify
-      - name: npm audit (report only, no fix)
+      - name: npm audit allowlist gate (no fix)
         run: npm run deps:audit
       - name: No remote migrate on PR
         run: echo "REMOTE_MIGRATE=SKIPPED_ON_PR"

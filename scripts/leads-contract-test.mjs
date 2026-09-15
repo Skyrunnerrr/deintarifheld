@@ -206,6 +206,8 @@ for (const s of [
   'leads:p0:security',
   'leads:p0:remediation',
   'leads:p0:closure',
+  'leads:historic:dry-run',
+  'leads:rate-limit:remote',
   'deps:audit',
   'phase-b:verify',
 ]) {

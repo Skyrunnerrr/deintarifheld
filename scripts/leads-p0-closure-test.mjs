@@ -15,16 +15,27 @@ import {
 } from '../lib/leads/captcha-action.js'
 import {
   ANONYMISED_EMAIL,
+  PII_REDACTION_COLUMN,
+  PII_STATES,
+  PII_STATE_NAMING,
+  classifyPiiState,
   isAlreadyRedacted,
   isEraseEligible,
+  isHistoricCleanupEligible,
   isLegalHold,
   isPhysicalEligible,
   isRetentionEligible,
 } from '../lib/leads/deletion-state.js'
+import {
+  assertNoPiiInSummary,
+  cleanupAuthorization,
+  dryRunHistoricSoftDeletes,
+} from '../lib/leads/historic-cleanup.js'
 import { processLeadDeletion, runRetention } from '../lib/leads/supabase.js'
 import {
   hasProvenExpertDestroyApi,
   planProvenExpertWithdrawal,
+  simulateProvenExpertFalseTrueFalse,
   stripProvenExpertDom,
 } from '../lib/consent/provenexpert-runtime.js'
 
@@ -173,7 +184,8 @@ function assertLegalAlignmentDocs() {
   assert.match(agb, /automatische\s+Eingangsbestätigung/)
   assert.match(read('docs/deployment/PR6_DEPLOY_ORDER.md'), /AUTO_PRODUCTION_DEPLOY_ON_MAIN=UNKNOWN/)
   assert.match(read('docs/deployment/PR6_DEPLOY_ORDER.md'), /PR6_DEPLOYMENT_SAFE=NO/)
-  assert.match(read('docs/compliance/HISTORIC_SOFT_DELETE_CLEANUP.md'), /HISTORIC_SOFT_DELETE_CLEANUP=PLAN_ONLY/)
+  assert.match(read('docs/compliance/HISTORIC_SOFT_DELETE_CLEANUP.md'), /HISTORIC_SOFT_DELETE_CLEANUP=PASS/)
+  assert.match(read('docs/compliance/HISTORIC_SOFT_DELETE_CLEANUP.md'), /HISTORIC_CLEANUP_APPLIED=NO/)
   assert.match(read('docs/compliance/RATE_LIMIT_ATOMIC_REMOTE.md'), /RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN/)
   console.log('PUBLIC_LEGAL_ALIGNMENT=FAIL')
   console.log('LEGAL_TEXT_CODE_MISMATCH=YES')
@@ -250,11 +262,34 @@ function assertProvenExpertWithdrawal() {
   assert.match(widget, /planProvenExpertWithdrawal/)
   assert.match(widget, /stripProvenExpertDom/)
   assert.match(widget, /location\.reload/)
+
+  const cycle = simulateProvenExpertFalseTrueFalse({ destroyApiAvailable: false })
+  assert.equal(cycle.off.consent, false)
+  assert.equal(cycle.off.scriptPresent, false)
+  assert.equal(cycle.off.localFallback, true)
+  assert.equal(cycle.on.consent, true)
+  assert.equal(cycle.on.scriptPresent, true)
+  assert.equal(cycle.on.sealPresent, true)
+  assert.equal(cycle.on.localFallback, false)
+  assert.equal(cycle.withdrawn.consent, false)
+  assert.equal(cycle.withdrawn.scriptPresent, false)
+  assert.equal(cycle.withdrawn.sealPresent, false)
+  assert.equal(cycle.withdrawn.localFallback, true)
+  assert.equal(cycle.withdrawn.reload, true)
   console.log('PROVENEXPERT_INITIAL_CONSENT=PASS')
   console.log('PROVENEXPERT_WITHDRAWAL=PASS')
 }
 
 async function assertDeleteStateMachine() {
+  assert.equal(PII_REDACTION_COLUMN, 'anonymized_at')
+  assert.equal(PII_STATE_NAMING, 'legacy_anonymized_at_means_redacted_not_anonymous')
+  assert.equal(classifyPiiState({ status: 'new', legal_hold: false }), PII_STATES.ACTIVE)
+  assert.equal(classifyPiiState({ status: 'deleted', anonymized_at: null, legal_hold: false }), PII_STATES.SOFT_DELETED)
+  assert.equal(classifyPiiState({ status: 'deleted', legal_hold: true }), PII_STATES.LEGAL_HOLD)
+  assert.equal(classifyPiiState({ status: 'deleted', anonymized_at: '2026-01-01', legal_hold: false }), PII_STATES.REDACTED)
+  assert.equal(classifyPiiState(null), PII_STATES.PHYSICALLY_DELETED)
+  assert.equal(isHistoricCleanupEligible({ status: 'deleted', anonymized_at: null, legal_hold: false }), true)
+  assert.equal(isHistoricCleanupEligible({ status: 'deleted', anonymized_at: null, legal_hold: true }), false)
   assert.equal(isLegalHold({ legal_hold: true }), true)
   assert.equal(isLegalHold({ legal_hold: false, status: 'deleted' }), false)
   assert.equal(isAlreadyRedacted({ anonymized_at: '2026-01-01T00:00:00.000Z' }), true)
@@ -431,9 +466,54 @@ async function assertDeleteStateMachine() {
   assert.doesNotMatch(sql, /loadLeadsForDeletion[\s\S]{0,400}neq\('status',\s*'deleted'\)/)
   assert.doesNotMatch(sql, /legal hold by email/)
   assert.match(read('docs/compliance/DELETION_RETENTION_MODES.md'), /legal anonymisation/)
+  assert.match(read('docs/compliance/DELETION_RETENTION_MODES.md'), /PII_STATE_NAMING=PASS/)
+  assert.match(read('docs/compliance/DELETION_RETENTION_MODES.md'), /technical legacy name/)
+
+  const historicClient = makeClient({
+    leads: [
+      {
+        id: 'hist-1',
+        lead_ref: 'B2B-SAFE-1',
+        email: 'old@example.invalid',
+        status: 'deleted',
+        anonymized_at: null,
+        legal_hold: false,
+        payload: { nachricht: 'secret-should-not-appear' },
+      },
+      {
+        id: 'hist-hold',
+        lead_ref: 'B2B-HOLD-1',
+        email: 'hold@example.invalid',
+        status: 'deleted',
+        anonymized_at: null,
+        legal_hold: true,
+      },
+    ],
+    careers: [{
+      id: 'hist-car',
+      application_ref: 'CAR-SAFE-1',
+      email: 'car@example.invalid',
+      status: 'deleted',
+      anonymized_at: null,
+      legal_hold: false,
+    }],
+  })
+  const dry = await dryRunHistoricSoftDeletes(historicClient)
+  assert.equal(dry.ok, true)
+  assert.equal(dry.leads.count, 1)
+  assert.deepEqual(dry.leads.refs, ['B2B-SAFE-1'])
+  assert.equal(dry.careers.count, 1)
+  assert.ok(assertNoPiiInSummary(dry.leads))
+  assert.ok(assertNoPiiInSummary(dry.careers))
+  assert.equal(cleanupAuthorization({ apply: true, productionRuntime: true }).allowed, false)
+  assert.equal(cleanupAuthorization({ apply: true, explicitApply: true, productionRuntime: false }).allowed, true)
+  assert.match(read('scripts/historic-soft-delete-dry-run.mjs'), /DRY-RUN|dry-run/)
+  assert.match(read('scripts/rate-limit-atomic-remote.mjs'), /ALLOW_STAGING_RATE_LIMIT_TEST/)
+  assert.match(read('scripts/rate-limit-atomic-remote.mjs'), /BLOCKED_PRODUCTION/)
   console.log('DELETE_STATE_MACHINE=PASS')
   console.log('LEGAL_HOLD_SEPARATION=PASS')
-  console.log('HISTORIC_SOFT_DELETE_CLEANUP=PLAN_ONLY')
+  console.log('HISTORIC_SOFT_DELETE_CLEANUP=PASS')
+  console.log('PII_STATE_NAMING=PASS')
 }
 
 function assertAiRegister() {

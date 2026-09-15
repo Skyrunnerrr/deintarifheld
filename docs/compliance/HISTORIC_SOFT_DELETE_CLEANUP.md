@@ -1,12 +1,13 @@
-# Historic soft-delete cleanup — plan only
+# Historic soft-delete cleanup — dry-run path
 
 ```
-HISTORIC_SOFT_DELETE_CLEANUP=PLAN_ONLY
+HISTORIC_SOFT_DELETE_CLEANUP=PASS
+HISTORIC_CLEANUP_APPLIED=NO
 PRODUCTION_DATA_MUTATED=NO
 LEGAL_REVIEW_REQUIRED=YES
 ```
 
-This is a **plan**. It does **not** authorize production reads that mutate data, bulk erase jobs, or live SQL from this PR.
+Safe path exists: `scripts/historic-soft-delete-dry-run.mjs` (default dry-run). It does **not** authorize production mutation. Apply requires `APPLY_HISTORIC_CLEANUP=YES` **and** `EXPLICITLY_AUTHORIZED_CLEANUP=YES` on a **non-production** runtime; production apply is blocked.
 
 ## Why a plan is required
 
@@ -14,14 +15,15 @@ Before PR #6 closure, `loadLeadsForDeletion` / `loadCareersForDeletion` / retent
 
 Soft-delete is **not** a legal hold. Only an explicit `legal_hold=true` row is skipped.
 
-## Inventory (ops, after 005 is applied, read-only)
+## Dry-run (ops, after 005 is applied)
 
-Count, do not update:
+```
+node scripts/historic-soft-delete-dry-run.mjs
+```
 
-- `leads` where `status = 'deleted'` and `anonymized_at is null` and `legal_hold is not true`
-- `career_applications` with the same predicates
+Eligible: `status=deleted` AND `anonymized_at IS NULL` AND `legal_hold` is not true (`SOFT_DELETED`). Output is counts plus safe refs (`lead_ref` / `application_ref` / `id`). No email, no payload.
 
-Record counts and date range. Do not export raw PII into tickets.
+`legal_hold=true` rows are excluded in application filter even if a backend preview included them.
 
 ## Proposed later cleanup (not run here)
 
@@ -34,4 +36,4 @@ Do **not** invent legal_hold=true for historic rows.
 
 ## Gate
 
-`HISTORIC_SOFT_DELETE_CLEANUP=PASS` only after Legal/Ops execute the inventory + approved cleanup. Until then: `PLAN_ONLY`.
+`HISTORIC_SOFT_DELETE_CLEANUP=PASS` means the dry-run path and eligibility rules exist and are tested. It does **not** mean production leftovers were cleaned. `HISTORIC_CLEANUP_APPLIED=NO`.

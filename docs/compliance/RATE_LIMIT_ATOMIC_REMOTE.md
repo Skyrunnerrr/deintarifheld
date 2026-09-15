@@ -16,11 +16,19 @@ They **mock** `.rpc()`. They do **not** prove a real Postgres `ON CONFLICT` incr
 
 ## Staging parallel test (ops, not CI, not production)
 
+Script: `scripts/rate-limit-atomic-remote.mjs`
+
+```
+ALLOW_STAGING_RATE_LIMIT_TEST=YES node scripts/rate-limit-atomic-remote.mjs
+```
+
+Without that env the script prints `RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN` and exits 0. Production runtime is blocked.
+
 Prerequisites: a **staging** Supabase project with `003` + `004` + `005` applied. No production writes.
 
 1. Confirm `LEADS_RATE_LIMIT_PROVIDER=supabase` and a dedicated staging service role.
-2. From two or more concurrent clients, call `consume_rate_limit` 20+ times on one unused `p_bucket_key` with `p_max_hits=5`.
-3. PASS only if allowed rows = 5, `hit_count` is contiguous 1..N, and no lost updates.
+2. The script issues 20 parallel `consume_rate_limit` calls on one unused `p_bucket_key` with `p_max_hits=5`.
+3. PASS only if allowed = 5, denied = 15, `hit_count` is contiguous 1..20.
 4. Print `RATE_LIMIT_ATOMIC_REMOTE_DB=PASS` only after that run. Until then keep `UNKNOWN`.
 
 Never fail-open rate limit in production if the RPC is missing.

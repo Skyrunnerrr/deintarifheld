@@ -3,13 +3,16 @@
 ```
 DELETE_STATE_MACHINE=PASS
 LEGAL_HOLD_SEPARATION=PASS
-HISTORIC_SOFT_DELETE_CLEANUP=PLAN_ONLY
+HISTORIC_SOFT_DELETE_CLEANUP=PASS
+PII_STATE_NAMING=PASS
 LEGAL_REVIEW_REQUIRED=YES
 ```
 
 This file does **not** invent statutory retention periods. App cutoffs (`LEADS_RETENTION_DAYS` etc.) are operational defaults pending Legal.
 
-Column `anonymized_at` already exists (migration `004`, comments updated in `005`). It is a **redaction / minimisation** timestamp, **not** legal anonymisation. Keeping `firma` on a business row is redacted / minimised / pseudonymised ops state — not an anonymous state.
+Column `anonymized_at` is a **technical legacy name** (set in `004`). Semantic meaning: redacted / PII-minimised at. It is **not** legal anonymisation. A second column was not added, to avoid dual-write drift. Keeping `firma` on a business row is redacted / minimised / pseudonymised ops state — not an anonymous state.
+
+Explicit states (`classifyPiiState`): `ACTIVE`, `SOFT_DELETED`, `LEGAL_HOLD`, `REDACTED`, `PHYSICALLY_DELETED`. `status=deleted` alone is never `LEGAL_HOLD`.
 
 ## Modes
 
@@ -34,7 +37,7 @@ Already-redacted (`anonymized_at` set) → no second PII rewrite.
 
 Retention skips `legal_hold=true`. Soft-delete is not a hold. Application code never auto-sets `legal_hold`.
 
-Historic inventory/cleanup: `docs/compliance/HISTORIC_SOFT_DELETE_CLEANUP.md` (plan only; no production mutation from this PR).
+Historic inventory: `npm run leads:historic:dry-run` / `docs/compliance/HISTORIC_SOFT_DELETE_CLEANUP.md`. No production mutation from this PR.
 
 ## Delete audits
 
