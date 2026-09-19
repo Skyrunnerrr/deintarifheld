@@ -84,6 +84,8 @@ jobs:
         run: npm run leads:p0:remediation
       - name: P0 closure (delete SM, PE withdrawal, legal/AI/npm gates)
         run: npm run leads:p0:closure
+      - name: P0 reCAPTCHA v3 submit contract
+        run: npm run leads:p0:recaptcha-v3
       - name: Historic soft-delete dry-run (no backend / no mutate)
         run: npm run leads:historic:dry-run
       - name: Remote rate-limit probe (must stay UNKNOWN without staging auth)

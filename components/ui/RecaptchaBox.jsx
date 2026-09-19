@@ -2,18 +2,21 @@
 
 import { useEffect, useRef, useState } from 'react'
 import {
-  getRecaptchaToken,
   getVisibleRecaptchaSiteKey,
   hasStandardV3SiteKey,
   hasVisibleRecaptchaSiteKey,
+  isRecaptchaV3RuntimeReady,
+  loadRecaptcha,
   renderVisibleRecaptcha,
 } from '@/lib/security'
 
 /**
  * Standard reCAPTCHA only (v2 checkbox or v3 execute).
  * Enterprise is not a supported DTH production variant.
- * `action` is used only to mint a v3 token; the server derives expectedAction
- * from endpoint + page_source and ignores client `_recaptchaAction`.
+ * v3: preload/initialize the library only. Submission tokens are minted by
+ * the form submit handler immediately before POST.
+ * `action` is informational; the server derives expectedAction from
+ * endpoint + page_source and ignores client `_recaptchaAction`.
  */
 export function RecaptchaBox({ onToken, theme = 'dark', action = 'submit' }) {
   const containerRef = useRef(null)
@@ -22,26 +25,24 @@ export function RecaptchaBox({ onToken, theme = 'dark', action = 'submit' }) {
 
   useEffect(() => {
     let disposed = false
-    let refreshTimer = null
 
     async function setup() {
-      onToken('')
-
       if (hasVisibleRecaptchaSiteKey()) {
         if (!containerRef.current) return
         setMode('visible')
+        if (typeof onToken === 'function') onToken('')
 
         try {
           await renderVisibleRecaptcha(containerRef.current, {
             theme,
             callback: (token) => {
-              if (!disposed) {
+              if (!disposed && typeof onToken === 'function') {
                 setError('')
                 onToken(token || '')
               }
             },
             expiredCallback: () => {
-              if (!disposed) {
+              if (!disposed && typeof onToken === 'function') {
                 onToken('')
                 setError('Captcha ist abgelaufen. Bitte erneut bestätigen.')
               }
@@ -49,7 +50,7 @@ export function RecaptchaBox({ onToken, theme = 'dark', action = 'submit' }) {
           })
         } catch {
           if (!disposed) {
-            onToken('')
+            if (typeof onToken === 'function') onToken('')
             setError('Captcha konnte nicht geladen werden. Bitte Seite neu laden.')
           }
         }
@@ -57,19 +58,20 @@ export function RecaptchaBox({ onToken, theme = 'dark', action = 'submit' }) {
       }
 
       if (hasStandardV3SiteKey()) {
-        const token = await getRecaptchaToken(action)
-        if (!disposed && token) {
-          setMode('v3')
-          setError('')
-          onToken(token)
-          refreshTimer = setInterval(async () => {
-            const refreshed = await getRecaptchaToken(action)
-            if (!disposed) onToken(refreshed || '')
-          }, 90_000)
-          return
-        }
-        if (!disposed) {
-          setError('Captcha konnte nicht geladen werden. Bitte Seite neu laden.')
+        try {
+          await loadRecaptcha()
+          if (!disposed && isRecaptchaV3RuntimeReady()) {
+            setMode('v3')
+            setError('')
+          } else if (!disposed) {
+            setMode('')
+            setError('Captcha konnte nicht geladen werden. Bitte Seite neu laden.')
+          }
+        } catch {
+          if (!disposed) {
+            setMode('')
+            setError('Captcha konnte nicht geladen werden. Bitte Seite neu laden.')
+          }
         }
         return
       }
@@ -80,17 +82,16 @@ export function RecaptchaBox({ onToken, theme = 'dark', action = 'submit' }) {
     setup()
     return () => {
       disposed = true
-      if (refreshTimer) clearInterval(refreshTimer)
     }
   }, [onToken, theme, action])
 
   return (
-    <div>
+    <div data-recaptcha-action={action}>
       <div ref={containerRef} />
       {error && <p role="alert" className="text-xs mt-2" style={{ color: '#EF4444' }}>{error}</p>}
       {!error && (mode === 'visible' || mode === 'v3') && (
         <p className="text-xs mt-2" style={{ color: 'rgba(255,255,255,0.55)' }}>
-          Geschuetzt durch reCAPTCHA
+          Geschützt durch reCAPTCHA
         </p>
       )}
       {!hasVisibleRecaptchaSiteKey() && !hasStandardV3SiteKey() && (
