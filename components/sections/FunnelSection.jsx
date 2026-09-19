@@ -163,6 +163,7 @@ function Step2({ step1Data, onSuccess }) {
   })
 
   async function onSubmit(data) {
+    if (loading) return
     setRateLimitMsg('')
     setRecaptchaError('')
 

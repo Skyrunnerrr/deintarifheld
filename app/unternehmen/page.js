@@ -90,6 +90,7 @@ function B2BFormular() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (sending) return
     setRateLimitMsg('')
     setRecaptchaError('')
     setValidationErrors({})

@@ -69,6 +69,7 @@ export function CareerSection({ headingLevel = 'h1' }) {
   })
 
   async function onSubmit(data) {
+    if (loading) return
     setRateLimitMsg('')
     setRecaptchaError('')
     if (isBot(honeypot, honeypot2)) { setSubmitted(true); return }

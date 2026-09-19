@@ -246,6 +246,39 @@ async function assertLoadRecaptchaContract() {
       missingExecute,
       (err) => err instanceof RecaptchaClientError && err.code === 'recaptcha-execute-unavailable',
     )
+
+    resetRecaptchaClientForTests()
+    const failedOnce = installBrowserMocks()
+    delete globalThis.grecaptcha
+    const firstFail = loadRecaptcha()
+    failedOnce.scripts[0].onerror()
+    await assert.rejects(
+      firstFail,
+      (err) => err instanceof RecaptchaClientError && err.code === 'recaptcha-script-failed',
+    )
+    assert.equal(failedOnce.scripts[0].attrs['data-recaptcha-v3-status'], 'failed')
+    const retry = loadRecaptcha()
+    assert.equal(failedOnce.scripts.length, 2, 'failed v3 script must not be reused')
+    readyGrecaptcha()
+    fireScriptLoad(failedOnce.scripts[1])
+    await retry
+
+    await withEnv({ NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: SITE_KEY, RECAPTCHA_READY_TIMEOUT_MS: '40' }, async () => {
+      resetRecaptchaClientForTests()
+      const hung = installBrowserMocks()
+      globalThis.grecaptcha = {
+        ready() {
+          /* never invokes callback */
+        },
+      }
+      globalThis.window.grecaptcha = globalThis.grecaptcha
+      const pending = loadRecaptcha()
+      fireScriptLoad(hung.scripts[0])
+      await assert.rejects(
+        pending,
+        (err) => err instanceof RecaptchaClientError && err.code === 'recaptcha-ready-timeout',
+      )
+    })
   })
   console.log('P0_RECAPTCHA_LOAD=PASS')
 }
@@ -318,6 +351,7 @@ async function assertFormTokenFlow() {
     assert.doesNotMatch(src, /Bitte prüfe deine Verbindung und versuche es erneut/)
     assert.doesNotMatch(src, /Bitte prüfen Sie Ihre Verbindung und versuchen Sie es erneut/)
     assert.match(src, /if\s*\(\s*!captcha\.ok\s*\)/)
+    assert.match(src, /if\s*\(\s*(sending|loading)\s*\)\s*return/)
     const submitAt = src.search(/async function (submitForm|onSubmit)|const handleSubmit = async/)
     assert.ok(submitAt >= 0, `${name} must have a submit handler`)
     const submitSlice = src.slice(submitAt)
