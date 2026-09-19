@@ -12,6 +12,7 @@ import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { Footer } from '@/components/sections/Footer'
 import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
+import { awaitFreshRecaptchaToken, leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage } from '@/lib/leads/form-submit'
 
 // ─── Inline SVG Icons ────────────────────────────────────────────────────────
 
@@ -51,7 +52,6 @@ function B2BFormular() {
   const [rateLimitMsg, setRateLimitMsg] = useState('')
   const [honeypot, setHoneypot] = useState('')
   const [honeypot2, setHoneypot2] = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
   const [recaptchaError, setRecaptchaError] = useState('')
 
   // Security: record form load time
@@ -113,14 +113,14 @@ function B2BFormular() {
     const rl = checkRateLimit('b2b-form')
     if (!rl.allowed) { setRateLimitMsg(`Bitte warten Sie ${rl.remainingSeconds}s bevor Sie erneut absenden.`); return }
 
-    if (!recaptchaToken) {
-      setRecaptchaError('Bitte bestaetigen Sie das Captcha.')
-      return
-    }
-
     setSending(true)
-    recordSubmission('b2b-form')
     try {
+      const captcha = await awaitFreshRecaptchaToken('unternehmen')
+      if (!captcha.ok) {
+        setRecaptchaError(leadSubmitCaptchaClientMessage('formal'))
+        return
+      }
+      recordSubmission('b2b-form')
       const payload = sanitizePayload({
         ...form,
         page_source: 'unternehmen',
@@ -129,18 +129,22 @@ function B2BFormular() {
         form_version: '2.0',
         timestamp: new Date().toISOString(),
         _formLoadedAt: getFormTiming('b2b-form')._formLoadedAt,
-        _recaptchaToken: recaptchaToken,
+        _recaptchaToken: captcha.token,
         _recaptchaAction: 'unternehmen',
         source_page: '/unternehmen/',
         website_url: honeypot,
         company_fax: honeypot2,
       })
       const { res, json } = await postJsonLead(leadsApiUrl(), payload)
-      if (!res.ok || !json?.ok) throw new Error(json?.code || 'submit-failed')
+      if (!res.ok || !json?.ok) {
+        console.error('B2B submit error:', json?.code || 'submit-failed', res.status)
+        setRateLimitMsg(mapLeadSubmitUserMessage({ status: res.status, code: json?.code }, { tone: 'formal' }))
+        return
+      }
       setDone(true)
     } catch (error) {
-      console.error('B2B submit error:', error)
-      setRateLimitMsg('Absenden fehlgeschlagen. Bitte prüfen Sie Ihre Verbindung und versuchen Sie es erneut.')
+      console.error('B2B submit error:', error?.code || error?.name || 'submit-failed')
+      setRateLimitMsg(mapLeadSubmitUserMessage({ thrown: error }, { tone: 'formal' }))
     } finally {
       setSending(false)
     }
@@ -492,7 +496,7 @@ function B2BFormular() {
               </p>
             )}
 
-            <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="unternehmen" />
+            <RecaptchaBox theme="dark" action="unternehmen" />
 
             {recaptchaError && (
               <p role="alert" className="font-body text-[#EF4444] text-xs">{recaptchaError}</p>

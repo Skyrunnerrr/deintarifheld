@@ -16,6 +16,7 @@ import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { cn } from '@/lib/utils'
 import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
+import { awaitFreshRecaptchaToken, leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage } from '@/lib/leads/form-submit'
 
 // ─── Schemas ─────────────────────────────────────────────────────
 
@@ -150,7 +151,6 @@ function Step2({ step1Data, onSuccess }) {
   const [rateLimitMsg, setRateLimitMsg] = useState('')
   const [honeypot, setHoneypot]     = useState('')
   const [honeypot2, setHoneypot2]   = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
   const [recaptchaError, setRecaptchaError] = useState('')
 
   // Security: record form load time
@@ -176,14 +176,14 @@ function Step2({ step1Data, onSuccess }) {
     const rl = checkRateLimit('main-funnel')
     if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s bevor du erneut absendest.`); return }
 
-    if (!recaptchaToken) {
-      setRecaptchaError('Bitte bestaetige das Captcha.')
-      return
-    }
-
     setLoading(true)
-    recordSubmission('main-funnel')
     try {
+      const captcha = await awaitFreshRecaptchaToken('main_funnel')
+      if (!captcha.ok) {
+        setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
+        return
+      }
+      recordSubmission('main-funnel')
       const payload = sanitizePayload({
         firstName: step1Data.firstName,
         email: step1Data.email,
@@ -196,7 +196,7 @@ function Step2({ step1Data, onSuccess }) {
         gdpr: true,
         timestamp: new Date().toISOString(),
         _formLoadedAt: getFormTiming('main-funnel')._formLoadedAt,
-        _recaptchaToken: recaptchaToken,
+        _recaptchaToken: captcha.token,
         _recaptchaAction: 'main_funnel',
         page_source: 'main_funnel',
         lead_type: 'private_energy',
@@ -207,11 +207,15 @@ function Step2({ step1Data, onSuccess }) {
         company_fax: '',
       })
       const { res, json } = await postJsonLead(leadsApiUrl(), payload)
-      if (!res.ok || !json?.ok) throw new Error(json?.code || 'submit-failed')
+      if (!res.ok || !json?.ok) {
+        console.error('Funnel submit error:', json?.code || 'submit-failed', res.status)
+        setRateLimitMsg(mapLeadSubmitUserMessage({ status: res.status, code: json?.code }, { tone: 'informal' }))
+        return
+      }
       onSuccess()
     } catch (err) {
-      console.error('Funnel submit error:', err)
-      setRateLimitMsg('Absenden fehlgeschlagen. Bitte prüfe deine Verbindung und versuche es erneut.')
+      console.error('Funnel submit error:', err?.code || err?.name || 'submit-failed')
+      setRateLimitMsg(mapLeadSubmitUserMessage({ thrown: err }, { tone: 'informal' }))
     } finally {
       setLoading(false)
     }
@@ -283,7 +287,7 @@ function Step2({ step1Data, onSuccess }) {
           {...register('gdpr')}
         />
 
-        <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="main_funnel" />
+        <RecaptchaBox theme="dark" action="main_funnel" />
 
         {recaptchaError && (
           <p className="text-energy text-xs text-center font-body" role="alert">{recaptchaError}</p>

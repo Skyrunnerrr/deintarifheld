@@ -27,6 +27,7 @@
     "leads:p0:security": "node scripts/leads-p0-security-test.mjs",
     "leads:p0:remediation": "node scripts/leads-p0-remediation-test.mjs",
     "leads:p0:closure": "node scripts/leads-p0-closure-test.mjs",
+    "leads:p0:recaptcha-v3": "node scripts/leads-p0-recaptcha-v3-fix-test.mjs",
     "leads:historic:dry-run": "node scripts/historic-soft-delete-dry-run.mjs",
     "leads:rate-limit:remote": "node scripts/rate-limit-atomic-remote.mjs",
     "deps:audit": "node scripts/npm-audit-ci.mjs",

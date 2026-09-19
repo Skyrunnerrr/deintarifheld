@@ -12,6 +12,7 @@ import { Input, Textarea, Checkbox } from '@/components/ui/Form'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
 import { careersApiUrl, postJsonLead } from '@/lib/leads/browser-api'
+import { awaitFreshRecaptchaToken, leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage } from '@/lib/leads/form-submit'
 
 const KF = `
   @keyframes career-orb1 {
@@ -56,7 +57,6 @@ export function CareerSection({ headingLevel = 'h1' }) {
   const [rateLimitMsg, setRateLimitMsg] = useState('')
   const [honeypot, setHoneypot]         = useState('')
   const [honeypot2, setHoneypot2]       = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
   const [recaptchaError, setRecaptchaError] = useState('')
 
   // Security: record form load time
@@ -75,13 +75,17 @@ export function CareerSection({ headingLevel = 'h1' }) {
     if (isTooFast('career-form')) { setSubmitted(true); return }
     const rl = checkRateLimit('career-form')
     if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s.`); return }
-    if (!recaptchaToken) { setRecaptchaError('Bitte bestaetige das Captcha.'); return }
     setLoading(true)
-    recordSubmission('career-form')
     try {
+      const captcha = await awaitFreshRecaptchaToken('career')
+      if (!captcha.ok) {
+        setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
+        return
+      }
+      recordSubmission('career-form')
       const payload = sanitizePayload({
         ...data,
-        _recaptchaToken: recaptchaToken,
+        _recaptchaToken: captcha.token,
         _recaptchaAction: 'career',
         page_source: 'career',
         timestamp: new Date().toISOString(),
@@ -92,11 +96,15 @@ export function CareerSection({ headingLevel = 'h1' }) {
         company_fax: honeypot2,
       })
       const { res, json } = await postJsonLead(careersApiUrl(), payload)
-      if (!res.ok || !json?.ok) throw new Error(json?.code || 'submit-failed')
+      if (!res.ok || !json?.ok) {
+        console.error('Career submit error:', json?.code || 'submit-failed', res.status)
+        setRateLimitMsg(mapLeadSubmitUserMessage({ status: res.status, code: json?.code }, { tone: 'informal' }))
+        return
+      }
       setSubmitted(true)
     } catch (error) {
-      console.error('Career submit error:', error)
-      setRateLimitMsg('Absenden fehlgeschlagen. Bitte prüfe deine Verbindung und versuche es erneut.')
+      console.error('Career submit error:', error?.code || error?.name || 'submit-failed')
+      setRateLimitMsg(mapLeadSubmitUserMessage({ thrown: error }, { tone: 'informal' }))
     } finally {
       setLoading(false)
     }
@@ -341,7 +349,7 @@ export function CareerSection({ headingLevel = 'h1' }) {
                         {...register('gdpr')}
                       />
 
-                      <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="career" />
+                      <RecaptchaBox theme="dark" action="career" />
 
                       {recaptchaError && (
                         <p className="text-xs text-center font-body" style={{ color: '#FF6B2B' }} role="alert">{recaptchaError}</p>

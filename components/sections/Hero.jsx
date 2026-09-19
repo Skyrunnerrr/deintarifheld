@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
+import { awaitFreshRecaptchaToken, leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage } from '@/lib/leads/form-submit'
 
 // ─── Keyframes via inline style tag ────────────────────────────────
 const KEYFRAMES = `
@@ -144,7 +145,6 @@ export function Hero() {
   })
   const [errors, setErrors] = useState({})
   const [rateLimitMsg, setRateLimitMsg] = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
   const [recaptchaError, setRecaptchaError] = useState('')
   const [sending, setSending] = useState(false)
 
@@ -206,21 +206,21 @@ export function Hero() {
     const rl = checkRateLimit('hero-funnel')
     if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s bevor du erneut absendest.`); return }
 
-    if (!recaptchaToken) {
-      setRecaptchaError('Bitte bestaetige das Captcha.')
-      return
-    }
-
-    recordSubmission('hero-funnel')
     setSending(true)
     try {
+      const captcha = await awaitFreshRecaptchaToken('hero_funnel')
+      if (!captcha.ok) {
+        setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
+        return
+      }
+      recordSubmission('hero-funnel')
       const { [HONEYPOT_FIELD]: _hp, [HONEYPOT_FIELD_2]: _hp2, gdprStep1: _g1, ...rest } = formData
       const { _formLoadedAt } = getFormTiming('hero-funnel')
       const payload = sanitizePayload({
         ...rest,
         firstName: rest.firstName,
         gdpr: true,
-        _recaptchaToken: recaptchaToken,
+        _recaptchaToken: captcha.token,
         _recaptchaAction: 'hero_funnel',
         page_source: 'hero-funnel',
         lead_type: 'private_energy',
@@ -233,11 +233,15 @@ export function Hero() {
         company_fax: formData[HONEYPOT_FIELD_2] || '',
       })
       const { res, json } = await postJsonLead(leadsApiUrl(), payload)
-      if (!res.ok || !json?.ok) throw new Error(json?.code || 'submit-failed')
+      if (!res.ok || !json?.ok) {
+        console.error('Lead submit error:', json?.code || 'submit-failed', res.status)
+        setRateLimitMsg(mapLeadSubmitUserMessage({ status: res.status, code: json?.code }, { tone: 'informal' }))
+        return
+      }
       setStep('success')
     } catch (e) {
-      console.error('Lead submit error:', e)
-      setRateLimitMsg('Absenden fehlgeschlagen. Bitte prüfe deine Verbindung und versuche es erneut.')
+      console.error('Lead submit error:', e?.code || e?.name || 'submit-failed')
+      setRateLimitMsg(mapLeadSubmitUserMessage({ thrown: e }, { tone: 'informal' }))
     } finally {
       setSending(false)
     }
@@ -566,7 +570,7 @@ export function Hero() {
                       <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{errors.gdpr}</p>
                     )}
                     <div style={{ marginTop: 10 }}>
-                      <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="hero_funnel" />
+                      <RecaptchaBox theme="dark" action="hero_funnel" />
                     </div>
                     {recaptchaError && (
                       <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{recaptchaError}</p>

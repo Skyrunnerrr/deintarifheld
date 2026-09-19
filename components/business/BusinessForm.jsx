@@ -21,6 +21,7 @@ import {
 import { BUSINESS_FORM, BUSINESS_TRIGGERS } from '@/lib/business-content'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
+import { awaitFreshRecaptchaToken, leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage } from '@/lib/leads/form-submit'
 
 function IconArrow() {
   return (
@@ -59,7 +60,6 @@ function BusinessFormular() {
   const [rateLimitMsg, setRateLimitMsg] = useState('')
   const [honeypot, setHoneypot] = useState('')
   const [honeypot2, setHoneypot2] = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
   const [recaptchaError, setRecaptchaError] = useState('')
   const [validationErrors, setValidationErrors] = useState({})
   const [form, setForm] = useState({
@@ -118,10 +118,6 @@ function BusinessFormular() {
     }
     setDsgvoError(false)
 
-    if (!recaptchaToken) {
-      setRecaptchaError('Bitte bestätigen Sie das Captcha.')
-      return
-    }
     setRecaptchaError('')
 
     if (isBot(honeypot, honeypot2)) {
@@ -141,8 +137,13 @@ function BusinessFormular() {
     }
 
     setSending(true)
-    recordSubmission('b2b-form')
     try {
+      const captcha = await awaitFreshRecaptchaToken('unternehmen')
+      if (!captcha.ok) {
+        setRecaptchaError(leadSubmitCaptchaClientMessage('formal'))
+        return
+      }
+      recordSubmission('b2b-form')
       const payload = sanitizePayload({
         ...form,
         page_source: 'unternehmen',
@@ -151,7 +152,7 @@ function BusinessFormular() {
         source_page: typeof window !== 'undefined' ? window.location.pathname : '/unternehmen-neu/',
         timestamp: new Date().toISOString(),
         _formLoadedAt: getFormTiming('b2b-form')._formLoadedAt,
-        _recaptchaToken: recaptchaToken,
+        _recaptchaToken: captcha.token,
         _recaptchaAction: 'unternehmen',
         [HONEYPOT_FIELD]: honeypot,
         [HONEYPOT_FIELD_2]: honeypot2,
@@ -159,13 +160,15 @@ function BusinessFormular() {
 
       const { res, json } = await postJsonLead(leadsApiUrl(), payload)
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.code || `submit-failed-${res.status}`)
+        console.error('Business form submit error:', json?.code || 'submit-failed', res.status)
+        setRateLimitMsg(mapLeadSubmitUserMessage({ status: res.status, code: json?.code }, { tone: 'formal' }))
+        return
       }
       setDone(true)
     } catch (error) {
-      console.error('Business form submit error:', error)
+      console.error('Business form submit error:', error?.code || error?.name || 'submit-failed')
       setDone(false)
-      setRateLimitMsg('Absenden fehlgeschlagen. Bitte prüfen Sie Ihre Verbindung und versuchen Sie es erneut.')
+      setRateLimitMsg(mapLeadSubmitUserMessage({ thrown: error }, { tone: 'formal' }))
     } finally {
       setSending(false)
     }
@@ -570,7 +573,7 @@ function BusinessFormular() {
               </p>
             )}
 
-            <RecaptchaBox onToken={setRecaptchaToken} theme="light" action="unternehmen" />
+            <RecaptchaBox theme="light" action="unternehmen" />
             {recaptchaError && (
               <p role="alert" className="font-body text-[#EF4444] text-xs">{recaptchaError}</p>
             )}
