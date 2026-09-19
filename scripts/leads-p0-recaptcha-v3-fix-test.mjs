@@ -9,6 +9,8 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { allowedOrigins } from '../lib/leads/cors.js'
 import {
+  captchaDiagnosticsFromSiteverify,
+  GOOGLE_SITEVERIFY_ERROR_CODES,
   publicCaptchaErrorCode,
   verifyCaptchaToken,
 } from '../lib/leads/captcha.js'
@@ -19,6 +21,10 @@ import { customerMailDualGuardOpen } from '../lib/leads/mail.js'
 import {
   RecaptchaClientError,
   getRecaptchaToken,
+  hasStandardV3SiteKey,
+  hasVisibleRecaptchaSiteKey,
+  isConflictingV3ScriptSrc,
+  isCurrentV3ScriptSrc,
   loadRecaptcha,
   resetRecaptchaClientForTests,
 } from '../lib/security.js'
@@ -26,6 +32,7 @@ import {
   awaitFreshRecaptchaToken,
   isCaptchaPublicCode,
   mapLeadSubmitUserMessage,
+  resolveSubmitCaptchaToken,
 } from '../lib/leads/form-submit.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -339,12 +346,13 @@ async function assertFormTokenFlow() {
   for (const [name, rel] of Object.entries(FORM_FILES)) {
     const src = read(rel)
     const expected = actions[name]
-    assert.match(src, /awaitFreshRecaptchaToken\(/)
-    assert.match(src, new RegExp(`awaitFreshRecaptchaToken\\(\\s*'${expected.action}'\\s*\\)`))
+    assert.match(src, /resolveSubmitCaptchaToken\(/)
+    assert.match(src, new RegExp(`resolveSubmitCaptchaToken\\(\\s*'${expected.action}'\\s*,\\s*recaptchaToken\\s*\\)`))
     assert.match(src, new RegExp(`_recaptchaAction:\\s*'${expected.action}'`))
     assert.match(src, new RegExp(`page_source:\\s*'${expected.page}'`))
     assert.match(src, /_recaptchaToken:\s*captcha\.token/)
-    assert.doesNotMatch(src, /const \[recaptchaToken,\s*setRecaptchaToken\]/)
+    assert.match(src, /const \[recaptchaToken,\s*setRecaptchaToken\]/)
+    assert.match(src, /onToken=\{setRecaptchaToken\}/)
     assert.doesNotMatch(src, /_recaptchaToken:\s*recaptchaToken/)
     assert.doesNotMatch(src, /90_000|90000/)
     assert.match(src, /mapLeadSubmitUserMessage/)
@@ -355,9 +363,9 @@ async function assertFormTokenFlow() {
     const submitAt = src.search(/async function (submitForm|onSubmit)|const handleSubmit = async/)
     assert.ok(submitAt >= 0, `${name} must have a submit handler`)
     const submitSlice = src.slice(submitAt)
-    const tokenIdx = submitSlice.indexOf('awaitFreshRecaptchaToken')
+    const tokenIdx = submitSlice.indexOf('resolveSubmitCaptchaToken')
     const postIdx = submitSlice.indexOf('postJsonLead')
-    assert.ok(tokenIdx >= 0 && postIdx > tokenIdx, `${name} must mint token before POST`)
+    assert.ok(tokenIdx >= 0 && postIdx > tokenIdx, `${name} must resolve token before POST`)
   }
 
   const box = read('components/ui/RecaptchaBox.jsx')
@@ -399,6 +407,35 @@ async function assertServerDiagnostics() {
         assert.equal(google.reason, 'captcha-google-rejected')
         assert.equal(publicCaptchaErrorCode(google), 'captcha-rejected')
         assert.deepEqual(google.diagnostics.error_codes, ['invalid-input-response'])
+
+        const secretLabels = captchaDiagnosticsFromSiteverify({
+          success: false,
+          'error-codes': [
+            'invalid-input-secret',
+            'missing-input-secret',
+            'not-a-real-provider-code',
+            TOKEN,
+            SECRET,
+          ],
+        })
+        assert.deepEqual(secretLabels.error_codes, ['invalid-input-secret', 'missing-input-secret'])
+        assert.equal(secretLabels.error_codes.includes('not-a-real-provider-code'), false)
+        assert.deepEqual(
+          [...GOOGLE_SITEVERIFY_ERROR_CODES],
+          [
+            'missing-input-secret',
+            'invalid-input-secret',
+            'missing-input-response',
+            'invalid-input-response',
+            'bad-request',
+            'timeout-or-duplicate',
+          ],
+        )
+        const allOfficial = captchaDiagnosticsFromSiteverify({
+          success: false,
+          'error-codes': [...GOOGLE_SITEVERIFY_ERROR_CODES, 'browser-error', TOKEN],
+        })
+        assert.deepEqual(allOfficial.error_codes, [...GOOGLE_SITEVERIFY_ERROR_CODES])
 
         const score = await verifyCaptchaToken(TOKEN, {
           expectedAction: 'unternehmen',
@@ -458,6 +495,26 @@ async function assertServerDiagnostics() {
         const prev = globalThis.fetch
         globalThis.fetch = siteverifyFetch({
           success: false,
+          'error-codes': ['invalid-input-secret', 'not-a-real-provider-code'],
+        })
+        try {
+          const secretRejected = await enforcePublicIntake(
+            jsonRequest({
+              page_source: 'unternehmen',
+              _recaptchaToken: TOKEN,
+              _recaptchaAction: 'career',
+            }),
+            { endpoint: 'leads' },
+          )
+          assert.equal(secretRejected.ok, false)
+          assert.equal(secretRejected.code, 'captcha-rejected')
+        } finally {
+          globalThis.fetch = prev
+        }
+
+        resetRateLimitsForTests()
+        globalThis.fetch = siteverifyFetch({
+          success: false,
           'error-codes': ['timeout-or-duplicate'],
         })
         try {
@@ -501,6 +558,8 @@ async function assertServerDiagnostics() {
   })
 
   assert.match(logs.lines, /captcha-google-rejected|intake\.captcha_rejected/)
+  assert.match(logs.lines, /invalid-input-secret/)
+  assert.doesNotMatch(logs.lines, /not-a-real-provider-code/)
   assertNoSecretOrTokenLeak(logs.lines)
   assert.doesNotMatch(logs.lines, /203\.\d+\.\d+\.\d+/)
 
@@ -525,6 +584,136 @@ async function assertServerDiagnostics() {
   assert.match(captchaSrc, /captcha-hostname-mismatch/)
 
   console.log('P0_RECAPTCHA_SERVER_DIAGNOSTICS=PASS')
+}
+
+async function assertVisibleV2Compatibility() {
+  await withEnv(
+    {
+      NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: SITE_KEY,
+      NEXT_PUBLIC_RECAPTCHA_SITE_KEY: undefined,
+    },
+    async () => {
+      assert.equal(hasVisibleRecaptchaSiteKey(), false)
+      assert.equal(hasStandardV3SiteKey(), true)
+      resetRecaptchaClientForTests()
+      const { scripts } = installBrowserMocks()
+      delete globalThis.grecaptcha
+      const pending = resolveSubmitCaptchaToken('hero_funnel', 'ignored-visible-token-xxxxxxxxxx')
+      const state = readyGrecaptcha()
+      fireScriptLoad(scripts[0])
+      const minted = await pending
+      assert.equal(minted.ok, true)
+      assert.equal(minted.mode, 'v3')
+      assert.match(minted.token, /hero_funnel/)
+      assert.equal(state.executeCalls.length, 1)
+      assert.equal(state.executeCalls[0].opts.action, 'hero_funnel')
+    },
+  )
+
+  await withEnv(
+    {
+      NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: SITE_KEY,
+      NEXT_PUBLIC_RECAPTCHA_SITE_KEY: 'visible-v2-site-key',
+    },
+    async () => {
+      assert.equal(hasVisibleRecaptchaSiteKey(), true)
+      resetRecaptchaClientForTests()
+      installBrowserMocks()
+      const state = readyGrecaptcha()
+      const visible = 'visible-v2-callback-token-xxxxxxxxxx'
+      const resolved = await resolveSubmitCaptchaToken('hero_funnel', visible)
+      assert.equal(resolved.ok, true)
+      assert.equal(resolved.mode, 'visible_v2')
+      assert.equal(resolved.token, visible)
+      assert.equal(state.executeCalls.length, 0, 'visible v2 must not call v3 execute')
+
+      const missing = await resolveSubmitCaptchaToken('hero_funnel', '')
+      assert.equal(missing.ok, false)
+      assert.equal(missing.mode, 'visible_v2')
+      assert.equal(state.executeCalls.length, 0)
+    },
+  )
+
+  const envExample = read('.env.example')
+  assert.doesNotMatch(envExample, /^NEXT_PUBLIC_RECAPTCHA_SITE_KEY=/m)
+  assert.match(envExample, /NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY/)
+  console.log('P0_RECAPTCHA_V2_COMPAT=PASS')
+}
+
+async function assertSiteKeyMatchReuse() {
+  await withEnv({ NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: SITE_KEY }, async () => {
+    assert.equal(
+      isCurrentV3ScriptSrc(`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`, SITE_KEY),
+      true,
+    )
+    assert.equal(
+      isCurrentV3ScriptSrc('https://www.google.com/recaptcha/api.js?render=old-other-key', SITE_KEY),
+      false,
+    )
+    assert.equal(
+      isCurrentV3ScriptSrc('https://www.google.com/recaptcha/api.js?render=explicit', SITE_KEY),
+      false,
+    )
+    assert.equal(
+      isCurrentV3ScriptSrc(`https://www.google.com/recaptcha/enterprise.js?render=${SITE_KEY}`, SITE_KEY),
+      false,
+    )
+    assert.equal(
+      isConflictingV3ScriptSrc('https://www.google.com/recaptcha/api.js?render=old-other-key', SITE_KEY),
+      true,
+    )
+
+    resetRecaptchaClientForTests()
+    const matching = installBrowserMocks()
+    const keep = document.createElement('script')
+    keep.src = `https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`
+    keep.setAttribute('data-recaptcha-v3', '1')
+    document.head.appendChild(keep)
+    readyGrecaptcha()
+    await loadRecaptcha()
+    assert.equal(matching.scripts.length, 1, 'matching site key script must be reused')
+
+    resetRecaptchaClientForTests()
+    const other = installBrowserMocks()
+    const stale = document.createElement('script')
+    stale.src = 'https://www.google.com/recaptcha/api.js?render=old-other-key'
+    stale.setAttribute('data-recaptcha-v3', '1')
+    document.head.appendChild(stale)
+    await assert.rejects(
+      loadRecaptcha(),
+      (err) => err instanceof RecaptchaClientError && err.code === 'recaptcha-script-mismatch',
+    )
+    assert.equal(other.scripts.length, 1, 'mismatched site key script must never be reused or duplicated')
+
+    resetRecaptchaClientForTests()
+    const explicit = installBrowserMocks()
+    const v2 = document.createElement('script')
+    v2.src = 'https://www.google.com/recaptcha/api.js?render=explicit'
+    document.head.appendChild(v2)
+    delete globalThis.grecaptcha
+    const explicitLoad = loadRecaptcha()
+    readyGrecaptcha()
+    fireScriptLoad(explicit.scripts[1])
+    await explicitLoad
+    assert.equal(explicit.scripts.length, 2)
+    assert.match(explicit.scripts[1].src, new RegExp(`render=${SITE_KEY}`))
+    assert.doesNotMatch(explicit.scripts[1].src, /render=explicit/)
+
+    resetRecaptchaClientForTests()
+    const enterprise = installBrowserMocks()
+    const ent = document.createElement('script')
+    ent.src = `https://www.google.com/recaptcha/enterprise.js?render=${SITE_KEY}`
+    document.head.appendChild(ent)
+    delete globalThis.grecaptcha
+    const enterpriseLoad = loadRecaptcha()
+    readyGrecaptcha()
+    fireScriptLoad(enterprise.scripts[1])
+    await enterpriseLoad
+    assert.equal(enterprise.scripts.length, 2)
+    assert.match(enterprise.scripts[1].src, /recaptcha\/api\.js\?render=/)
+    assert.doesNotMatch(enterprise.scripts[1].src, /enterprise\.js/)
+  })
+  console.log('P0_RECAPTCHA_SITE_KEY_MATCH=PASS')
 }
 
 function assertErrorUx() {
@@ -567,6 +756,7 @@ function assertRegressionGuards() {
   assert.match(careersRoute, /enforcePublicIntake/)
 
   assert.doesNotMatch(read('lib/security.js'), /NEXT_PUBLIC_RECAPTCHA_SECRET|RECAPTCHA_SECRET_KEY/)
+  assert.doesNotMatch(envExample, /^NEXT_PUBLIC_RECAPTCHA_SITE_KEY=/m)
   console.log('P0_RECAPTCHA_REGRESSION_GUARDS=PASS')
 }
 
@@ -574,6 +764,8 @@ async function main() {
   await assertLoadRecaptchaContract()
   await assertGetTokenContract()
   await assertFormTokenFlow()
+  await assertVisibleV2Compatibility()
+  await assertSiteKeyMatchReuse()
   await assertServerDiagnostics()
   assertErrorUx()
   assertRegressionGuards()

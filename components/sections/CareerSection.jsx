@@ -12,7 +12,7 @@ import { Input, Textarea, Checkbox } from '@/components/ui/Form'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
 import { careersApiUrl, postJsonLead } from '@/lib/leads/browser-api'
-import { awaitFreshRecaptchaToken, leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage } from '@/lib/leads/form-submit'
+import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
 const KF = `
   @keyframes career-orb1 {
@@ -57,6 +57,7 @@ export function CareerSection({ headingLevel = 'h1' }) {
   const [rateLimitMsg, setRateLimitMsg] = useState('')
   const [honeypot, setHoneypot]         = useState('')
   const [honeypot2, setHoneypot2]       = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState('')
   const [recaptchaError, setRecaptchaError] = useState('')
 
   // Security: record form load time
@@ -78,7 +79,7 @@ export function CareerSection({ headingLevel = 'h1' }) {
     if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s.`); return }
     setLoading(true)
     try {
-      const captcha = await awaitFreshRecaptchaToken('career')
+      const captcha = await resolveSubmitCaptchaToken('career', recaptchaToken)
       if (!captcha.ok) {
         setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
         return
@@ -350,7 +351,7 @@ export function CareerSection({ headingLevel = 'h1' }) {
                         {...register('gdpr')}
                       />
 
-                      <RecaptchaBox theme="dark" action="career" />
+                      <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="career" />
 
                       {recaptchaError && (
                         <p className="text-xs text-center font-body" style={{ color: '#FF6B2B' }} role="alert">{recaptchaError}</p>

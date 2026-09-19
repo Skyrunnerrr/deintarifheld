@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
-import { awaitFreshRecaptchaToken, leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage } from '@/lib/leads/form-submit'
+import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
 // ─── Keyframes via inline style tag ────────────────────────────────
 const KEYFRAMES = `
@@ -145,6 +145,7 @@ export function Hero() {
   })
   const [errors, setErrors] = useState({})
   const [rateLimitMsg, setRateLimitMsg] = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState('')
   const [recaptchaError, setRecaptchaError] = useState('')
   const [sending, setSending] = useState(false)
 
@@ -208,7 +209,7 @@ export function Hero() {
 
     setSending(true)
     try {
-      const captcha = await awaitFreshRecaptchaToken('hero_funnel')
+      const captcha = await resolveSubmitCaptchaToken('hero_funnel', recaptchaToken)
       if (!captcha.ok) {
         setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
         return
@@ -570,7 +571,7 @@ export function Hero() {
                       <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{errors.gdpr}</p>
                     )}
                     <div style={{ marginTop: 10 }}>
-                      <RecaptchaBox theme="dark" action="hero_funnel" />
+                      <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="hero_funnel" />
                     </div>
                     {recaptchaError && (
                       <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{recaptchaError}</p>

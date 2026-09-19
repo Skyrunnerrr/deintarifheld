@@ -21,7 +21,7 @@ import {
 import { BUSINESS_FORM, BUSINESS_TRIGGERS } from '@/lib/business-content'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
-import { awaitFreshRecaptchaToken, leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage } from '@/lib/leads/form-submit'
+import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
 function IconArrow() {
   return (
@@ -60,6 +60,7 @@ function BusinessFormular() {
   const [rateLimitMsg, setRateLimitMsg] = useState('')
   const [honeypot, setHoneypot] = useState('')
   const [honeypot2, setHoneypot2] = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState('')
   const [recaptchaError, setRecaptchaError] = useState('')
   const [validationErrors, setValidationErrors] = useState({})
   const [form, setForm] = useState({
@@ -138,7 +139,7 @@ function BusinessFormular() {
 
     setSending(true)
     try {
-      const captcha = await awaitFreshRecaptchaToken('unternehmen')
+      const captcha = await resolveSubmitCaptchaToken('unternehmen', recaptchaToken)
       if (!captcha.ok) {
         setRecaptchaError(leadSubmitCaptchaClientMessage('formal'))
         return
@@ -573,7 +574,7 @@ function BusinessFormular() {
               </p>
             )}
 
-            <RecaptchaBox theme="light" action="unternehmen" />
+            <RecaptchaBox onToken={setRecaptchaToken} theme="light" action="unternehmen" />
             {recaptchaError && (
               <p role="alert" className="font-body text-[#EF4444] text-xs">{recaptchaError}</p>
             )}

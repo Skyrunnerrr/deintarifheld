@@ -12,7 +12,7 @@ import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { Footer } from '@/components/sections/Footer'
 import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
-import { awaitFreshRecaptchaToken, leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage } from '@/lib/leads/form-submit'
+import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
 // ─── Inline SVG Icons ────────────────────────────────────────────────────────
 
@@ -52,6 +52,7 @@ function B2BFormular() {
   const [rateLimitMsg, setRateLimitMsg] = useState('')
   const [honeypot, setHoneypot] = useState('')
   const [honeypot2, setHoneypot2] = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState('')
   const [recaptchaError, setRecaptchaError] = useState('')
 
   // Security: record form load time
@@ -116,7 +117,7 @@ function B2BFormular() {
 
     setSending(true)
     try {
-      const captcha = await awaitFreshRecaptchaToken('unternehmen')
+      const captcha = await resolveSubmitCaptchaToken('unternehmen', recaptchaToken)
       if (!captcha.ok) {
         setRecaptchaError(leadSubmitCaptchaClientMessage('formal'))
         return
@@ -497,7 +498,7 @@ function B2BFormular() {
               </p>
             )}
 
-            <RecaptchaBox theme="dark" action="unternehmen" />
+            <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="unternehmen" />
 
             {recaptchaError && (
               <p role="alert" className="font-body text-[#EF4444] text-xs">{recaptchaError}</p>

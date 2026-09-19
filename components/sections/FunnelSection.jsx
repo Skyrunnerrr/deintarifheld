@@ -16,7 +16,7 @@ import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { cn } from '@/lib/utils'
 import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
-import { awaitFreshRecaptchaToken, leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage } from '@/lib/leads/form-submit'
+import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
 // ─── Schemas ─────────────────────────────────────────────────────
 
@@ -151,6 +151,7 @@ function Step2({ step1Data, onSuccess }) {
   const [rateLimitMsg, setRateLimitMsg] = useState('')
   const [honeypot, setHoneypot]     = useState('')
   const [honeypot2, setHoneypot2]   = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState('')
   const [recaptchaError, setRecaptchaError] = useState('')
 
   // Security: record form load time
@@ -179,7 +180,7 @@ function Step2({ step1Data, onSuccess }) {
 
     setLoading(true)
     try {
-      const captcha = await awaitFreshRecaptchaToken('main_funnel')
+      const captcha = await resolveSubmitCaptchaToken('main_funnel', recaptchaToken)
       if (!captcha.ok) {
         setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
         return
@@ -288,7 +289,7 @@ function Step2({ step1Data, onSuccess }) {
           {...register('gdpr')}
         />
 
-        <RecaptchaBox theme="dark" action="main_funnel" />
+        <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="main_funnel" />
 
         {recaptchaError && (
           <p className="text-energy text-xs text-center font-body" role="alert">{recaptchaError}</p>
