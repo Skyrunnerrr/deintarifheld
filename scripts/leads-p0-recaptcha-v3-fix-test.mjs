@@ -28,6 +28,8 @@ import {
   isCurrentV3ScriptSrc,
   loadRecaptcha,
   resetRecaptchaClientForTests,
+  sanitizePayload,
+  sanitizeString,
 } from '../lib/security.js'
 import {
   awaitFreshRecaptchaToken,
@@ -415,6 +417,13 @@ async function assertFormTokenFlow() {
     const tokenIdx = submitSlice.indexOf('resolveSubmitCaptchaToken')
     const postIdx = submitSlice.indexOf('postJsonLead')
     assert.ok(tokenIdx >= 0 && postIdx > tokenIdx, `${name} must resolve token before POST`)
+    const sanCall = extractCall(submitSlice, 'sanitizePayload')
+    assert.ok(sanCall, `${name} must sanitize user fields`)
+    assert.doesNotMatch(sanCall, /_recaptchaToken/, `${name} must not put the token through sanitizePayload`)
+    const sanEnd = submitSlice.indexOf(sanCall) + sanCall.length
+    const rawTok = submitSlice.indexOf('_recaptchaToken: captcha.token', sanEnd)
+    assert.ok(rawTok > sanEnd, `${name} must append captcha.token after sanitizePayload`)
+    assert.ok(postIdx > rawTok, `${name} must POST after attaching the raw token`)
   }
 
   const box = read('components/ui/RecaptchaBox.jsx')
@@ -774,6 +783,61 @@ async function assertSiteKeyMatchReuse() {
   console.log('P0_RECAPTCHA_SITE_KEY_MATCH=PASS')
 }
 
+function extractCall(src, name) {
+  const start = src.indexOf(`${name}(`)
+  if (start < 0) return ''
+  let i = start + name.length + 1
+  let depth = 1
+  while (i < src.length && depth > 0) {
+    const ch = src[i]
+    if (ch === '(') depth += 1
+    else if (ch === ')') depth -= 1
+    i += 1
+  }
+  return src.slice(start, i)
+}
+
+async function assertTokenBytePreservation() {
+  const minted = '  <tok>javascript:data:onerror=1-execute-token-xxxxxxxxxx  '
+  assert.notEqual(sanitizeString(minted), minted, 'fixture must be a string sanitizeString would mutate')
+  assert.notEqual(
+    sanitizePayload({ _recaptchaToken: minted })._recaptchaToken,
+    minted,
+    'sanitizePayload would mutate a token if it were included',
+  )
+
+  await withEnv({ NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: SITE_KEY, NEXT_PUBLIC_RECAPTCHA_SITE_KEY: undefined }, async () => {
+    resetRecaptchaClientForTests()
+    const { scripts } = installBrowserMocks()
+    delete globalThis.grecaptcha
+    const pending = resolveSubmitCaptchaToken('hero_funnel', '')
+    readyGrecaptcha({ execute: async () => minted })
+    fireScriptLoad(scripts[0])
+    const resolved = await pending
+    assert.equal(resolved.ok, true)
+    assert.equal(resolved.token, minted, 'token from execute() must be unchanged')
+
+    const posted = {
+      ...sanitizePayload({ email: 'user@example.invalid', _recaptchaAction: 'hero_funnel' }),
+      _recaptchaToken: resolved.token,
+    }
+    assert.equal(posted._recaptchaToken, minted)
+    assert.equal(posted._recaptchaToken, resolved.token)
+    assert.equal(posted.email, 'user@example.invalid')
+  })
+
+  for (const rel of Object.values(FORM_FILES)) {
+    const src = read(rel)
+    const submitAt = src.search(/async function (submitForm|onSubmit)|const handleSubmit = async/)
+    const submitSlice = src.slice(submitAt)
+    const sanCall = extractCall(submitSlice, 'sanitizePayload')
+    assert.doesNotMatch(sanCall, /_recaptchaToken/)
+    assert.match(submitSlice, /\.\.\.sanitizePayload\(/)
+    assert.match(submitSlice, /_recaptchaToken:\s*captcha\.token/)
+  }
+  console.log('P0_RECAPTCHA_TOKEN_BYTE_PRESERVATION=PASS')
+}
+
 function assertErrorUx() {
   assert.equal(isCaptchaPublicCode('captcha-rejected'), true)
   const captcha = mapLeadSubmitUserMessage({ status: 403, code: 'captcha-rejected' }, { tone: 'informal' })
@@ -822,6 +886,7 @@ async function main() {
   await assertLoadRecaptchaContract()
   await assertGetTokenContract()
   await assertFormTokenFlow()
+  await assertTokenBytePreservation()
   await assertVisibleV2Compatibility()
   await assertSiteKeyMatchReuse()
   await assertServerDiagnostics()

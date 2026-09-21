@@ -85,18 +85,20 @@ export function CareerSection({ headingLevel = 'h1' }) {
         return
       }
       recordSubmission('career-form')
-      const payload = sanitizePayload({
-        ...data,
+      const payload = {
+        ...sanitizePayload({
+          ...data,
+          _recaptchaAction: 'career',
+          page_source: 'career',
+          timestamp: new Date().toISOString(),
+          _formLoadedAt: getFormTiming('career-form')._formLoadedAt,
+          form_version: '2.0',
+          source_page: typeof window !== 'undefined' ? window.location.pathname : '/karriere/',
+          website_url: honeypot,
+          company_fax: honeypot2,
+        }),
         _recaptchaToken: captcha.token,
-        _recaptchaAction: 'career',
-        page_source: 'career',
-        timestamp: new Date().toISOString(),
-        _formLoadedAt: getFormTiming('career-form')._formLoadedAt,
-        form_version: '2.0',
-        source_page: typeof window !== 'undefined' ? window.location.pathname : '/karriere/',
-        website_url: honeypot,
-        company_fax: honeypot2,
-      })
+      }
       const { res, json } = await postJsonLead(careersApiUrl(), payload)
       if (!res.ok || !json?.ok) {
         console.error('Career submit error:', json?.code || 'submit-failed', res.status)
