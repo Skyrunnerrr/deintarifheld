@@ -71,10 +71,10 @@ Then repeat 1–12 for the **business** form if the same order includes it.
 ## Rollback (if the authorized test misbehaves)
 
 1. Set `LEADS_MAIL_MODE=mock` on the Production API (stops provider mail).
-2. Do **not** remove `RECAPTCHA_SECRET_KEY` (production fail-closes intake).
+2. Do **not** remove `RECAPTCHA_PROJECT_ID` or `RECAPTCHA_API_KEY` (production fail-closes intake). `RECAPTCHA_SECRET_KEY` is not load-bearing.
 3. Checkdomain: `dth-checkdomain.sh rollback --apply` to last backup.
 4. Do not drop Supabase tables. Do not run `npm audit fix`.
 
 ## Secrets that must never be printed
 
-`RECAPTCHA_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `LEADS_ADMIN_SECRET`, `CRON_SECRET`, `LEADS_INTAKE_SMOKE_SECRET`, `LEADS_RATE_LIMIT_SALT`, `AUDIT_EMAIL_HASH_SALT`, inbox cookie `dth_admin`.
+`RECAPTCHA_API_KEY`, `RECAPTCHA_SECRET_KEY` (legacy/unused), `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `LEADS_ADMIN_SECRET`, `CRON_SECRET`, `LEADS_INTAKE_SMOKE_SECRET`, `LEADS_RATE_LIMIT_SALT`, `AUDIT_EMAIL_HASH_SALT`, inbox cookie `dth_admin`.

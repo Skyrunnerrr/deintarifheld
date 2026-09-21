@@ -67,7 +67,7 @@ Kundenmail wurde **nicht** eingeschaltet, um die AGB anzupassen.
 
 1. **Website-Aufruf.** Browser → Checkdomain. Mögliche Host-Zugriffsdaten (IP, Zeitpunkt, Ressource, User-Agent), soweit der Hoster sie erzeugt. Inhalt: statisches HTML/Assets.
 2. **Formulare (Privat, Unternehmen, Partner).** Pflichtfelder + Kenntnisnahme-Checkbox (keine Einwilligung). Token von Google reCAPTCHA v3 wird erzeugt, sobald das Formular angezeigt wird — **unabhängig** vom Cookie-Banner. POST an die Vercel-API.
-3. **reCAPTCHA.** Browser lädt `https://www.google.com/recaptcha/api.js`. API prüft das Token über `https://www.google.com/recaptcha/api/siteverify` (Token, optional Request-IP, Action, Hostname, Score). CSP erlaubt zusätzlich u. a. `www.gstatic.com`, `www.recaptcha.net`.
+3. **reCAPTCHA.** Browser lädt `https://www.google.com/recaptcha/enterprise.js`. API prüft das Token über `https://recaptchaenterprise.googleapis.com/v1/projects/{PROJECT_ID}/assessments` (Token, Site Key, optional Request-IP/User-Agent, Action, Hostname, Score). CSP erlaubt zusätzlich u. a. `www.gstatic.com`, `www.recaptcha.net`.
 4. **Vercel-API.** Entgegennahme, Origin-/Captcha-/Rate-Limit-Prüfungen, Speicherung, interne Mail, Retention-Cron.
 5. **Supabase.** Leads und Partneranfragen getrennt; Audit-Ereignisse; gehashte Rate-Limit-Buckets. Zugriff nur serverseitig. Datenschutz nennt primäre DB-Region `eu-central-1`; das ist **nicht** unabhängig als Account-Region nachgewiesen.
 6. **Resend.** Bei `internal_live` eine interne Ops-Mail mit Anfrageangaben. **Keine** Bestätigung an die Formular-E-Mail.
@@ -120,7 +120,7 @@ Quelle: `docs/compliance/PROCESSOR_TRANSFER_EVIDENCE.md`.
 | Vercel | DPA DOCUMENT_AVAILABLE (Text: Pro/Enterprise) | ACCOUNT_ACCEPTANCE_UNKNOWN; Plan UNKNOWN | TIA_UNKNOWN | REGION_UNKNOWN |
 | Supabase | DPA DOCUMENT_AVAILABLE | ACCOUNT_ACCEPTANCE_UNKNOWN | TIA_UNKNOWN | REGION_UNKNOWN (Text nennt `eu-central-1`) |
 | Resend | DPA DOCUMENT_AVAILABLE | ACCOUNT_ACCEPTANCE_UNKNOWN | TIA_UNKNOWN | REGION_UNKNOWN |
-| Google reCAPTCHA Standard v3 | Cloud-DPA existiert; gilt **nicht** automatisch für dieses Standard-v3-Konto | ACCOUNT_ACCEPTANCE_UNKNOWN | TIA_UNKNOWN | REGION_UNKNOWN |
+| Google reCAPTCHA Enterprise Assessment | Cloud-DPA existiert; Account-Akzeptanz **nicht** nachgewiesen | ACCOUNT_ACCEPTANCE_UNKNOWN | TIA_UNKNOWN | REGION_UNKNOWN |
 | ProvenExpert | Datenschutzerklärung DOCUMENT_AVAILABLE; kein AVV-URL in der Recherche | ACCOUNT_ACCEPTANCE_UNKNOWN | TIA_UNKNOWN | REGION_UNKNOWN |
 | TELESON / Versorger | — | UNKNOWN | TIA_UNKNOWN | UNKNOWN |
 
@@ -129,7 +129,7 @@ Quelle: `docs/compliance/PROCESSOR_TRANSFER_EVIDENCE.md`.
 ## 8. Prüfbitte an die Beratung (bitte entscheiden / bestätigen)
 
 1. Sind die in § 3 der Datenschutzerklärung genannten Art.-6-Grundlagen für die beschriebenen Vorgänge angemessen?
-2. Ist der Einsatz und die Offenlegung von Standard-reCAPTCHA v3 in dieser Konfiguration (Formularladung ohne Banner-Steuerung, klassisches siteverify) rechtlich tragfähig?
+2. Ist der Einsatz und die Offenlegung von reCAPTCHA v3 Enterprise Assessment in dieser Konfiguration (Formularladung ohne Banner-Steuerung, Assessment-API) rechtlich tragfähig?
 3. Reichen Implementierung und Offenlegung von ProvenExpert (lokal vs. Netzwerkscript nach optionaler Auswahl)?
 4. Sind die Angaben zu `localStorage` / `sessionStorage` und die Benennung TDDDG (zuvor TTDSG) in AGB § 6 angemessen?
 5. Sind die betrieblichen Fristen 90 / 90 / 183 und die Redaktions-/Minimierungsformulierung akzeptabel?

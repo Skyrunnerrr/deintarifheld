@@ -9,11 +9,11 @@ Binding ticket: GitHub Issue #5. Legal copy for F-14 / F-15 / F-16 is **not** in
 
 ## Captcha (F-04 / F-22)
 
-- Production variant: **Standard reCAPTCHA v2/v3 + classic siteverify only**.
-- Enterprise frontend path is disabled. `NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY` is not production-supported.
+- Production variant: **Enterprise reCAPTCHA v3 + Assessment** (`enterprise_v3_assessment`). Single path. Legacy siteverify is not used.
+- Browser loads `enterprise.js` and calls `grecaptcha.enterprise.execute` with `NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY`. `NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY` is ignored.
 - Server derives expected action from endpoint + known `page_source`. Google v3 action for the hero form is `hero_funnel` (no hyphen). `page_source` stays `hero-funnel`. Client `_recaptchaAction` is telemetry only.
-- v3: missing or mismatched `data.action` → reject. Score + hostname are enforced.
-- Production without `RECAPTCHA_SECRET_KEY` fail-closes (`captcha-not-configured`).
+- v3: `tokenProperties.valid` must be true; missing or mismatched `tokenProperties.action` → reject. Score + hostname are enforced.
+- Production without `RECAPTCHA_PROJECT_ID` / `RECAPTCHA_API_KEY` / `NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY` fail-closes (`captcha-not-configured`). `RECAPTCHA_SECRET_KEY` is not load-bearing.
 - LEGAL_REVIEW_REQUIRED for Google as processor / third country remains open (see `docs/compliance/RECAPTCHA_DATA_FLOW.md`).
 
 ## Origin (F-04 / F-05)

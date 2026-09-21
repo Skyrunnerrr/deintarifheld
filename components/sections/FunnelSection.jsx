@@ -186,28 +186,30 @@ function Step2({ step1Data, onSuccess }) {
         return
       }
       recordSubmission('main-funnel')
-      const payload = sanitizePayload({
-        firstName: step1Data.firstName,
-        email: step1Data.email,
-        phone: step1Data.phone,
-        provider: data.provider,
-        usage: data.consumption,
-        consumption: data.consumption,
-        zip: data.zip,
-        type: energyType,
-        gdpr: true,
-        timestamp: new Date().toISOString(),
-        _formLoadedAt: getFormTiming('main-funnel')._formLoadedAt,
+      const payload = {
+        ...sanitizePayload({
+          firstName: step1Data.firstName,
+          email: step1Data.email,
+          phone: step1Data.phone,
+          provider: data.provider,
+          usage: data.consumption,
+          consumption: data.consumption,
+          zip: data.zip,
+          type: energyType,
+          gdpr: true,
+          timestamp: new Date().toISOString(),
+          _formLoadedAt: getFormTiming('main-funnel')._formLoadedAt,
+          _recaptchaAction: 'main_funnel',
+          page_source: 'main_funnel',
+          lead_type: 'private_energy',
+          brand_theme: 'privat',
+          form_version: '2.0',
+          source_page: '/',
+          website_url: '',
+          company_fax: '',
+        }),
         _recaptchaToken: captcha.token,
-        _recaptchaAction: 'main_funnel',
-        page_source: 'main_funnel',
-        lead_type: 'private_energy',
-        brand_theme: 'privat',
-        form_version: '2.0',
-        source_page: '/',
-        website_url: '',
-        company_fax: '',
-      })
+      }
       const { res, json } = await postJsonLead(leadsApiUrl(), payload)
       if (!res.ok || !json?.ok) {
         console.error('Funnel submit error:', json?.code || 'submit-failed', res.status)

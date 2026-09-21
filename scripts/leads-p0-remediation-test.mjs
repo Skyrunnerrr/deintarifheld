@@ -24,7 +24,7 @@ import {
   resetRateLimitsForTests,
   setRateLimitSupabaseForTests,
 } from '../lib/leads/rate-limit-provider.js'
-import { hasRecaptchaEnterpriseSiteKey, getRecaptchaEnterpriseToken } from '../lib/security.js'
+import { hasRecaptchaEnterpriseSiteKey } from '../lib/security.js'
 import {
   acceptOptionalProvenExpertConsent,
   essentialOnlyConsent,
@@ -55,14 +55,29 @@ function withEnv(patch, fn) {
     })
 }
 
-function siteverifyFetch(payload) {
-  return async (url) => {
-    assert.match(String(url), /recaptcha\/api\/siteverify/)
-    assert.doesNotMatch(String(url), /recaptchaenterprise|assessments/)
+const ENTERPRISE_ENV = {
+  RECAPTCHA_PROJECT_ID: 'dth-test-project',
+  RECAPTCHA_API_KEY: 'r-api-key-must-never-appear',
+  NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: 'test-public-site-key',
+}
+
+function assessmentFetch(payload) {
+  return async (url, init = {}) => {
+    assert.match(String(url), /recaptchaenterprise\.googleapis\.com\/v1\/projects\/dth-test-project\/assessments/)
+    assert.doesNotMatch(String(url), /recaptcha\/api\/siteverify/)
+    const body = JSON.parse(String(init.body || '{}'))
+    assert.equal(body.event.siteKey, ENTERPRISE_ENV.NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY)
     return new Response(JSON.stringify(payload), {
       status: 200,
       headers: { 'content-type': 'application/json' },
     })
+  }
+}
+
+function assessmentOk(action = 'unternehmen') {
+  return {
+    tokenProperties: { valid: true, hostname: 'www.deintarifheld.de', action },
+    riskAnalysis: { score: 0.9, reasons: [] },
   }
 }
 
@@ -108,72 +123,52 @@ async function assertServerOwnedActionBinding() {
 
   await withEnv(
     {
-      RECAPTCHA_SECRET_KEY: 'rsecret',
+      ...ENTERPRISE_ENV,
       LEADS_RATE_LIMIT_SALT: 'p0-salt',
       LEADS_RATE_LIMIT_PROVIDER: 'memory',
     },
     async () => {
       const ok = await verifyCaptchaToken(TOKEN, {
         expectedAction: 'unternehmen',
-        fetchImpl: siteverifyFetch({
-          success: true,
-          hostname: 'www.deintarifheld.de',
-          score: 0.9,
-          action: 'unternehmen',
-        }),
+        fetchImpl: assessmentFetch(assessmentOk('unternehmen')),
       })
       assert.equal(ok.ok, true, 'business vs business')
 
       const careerVsBiz = await verifyCaptchaToken(TOKEN, {
         expectedAction: 'unternehmen',
-        fetchImpl: siteverifyFetch({
-          success: true,
-          hostname: 'www.deintarifheld.de',
-          score: 0.9,
-          action: 'career',
-        }),
+        fetchImpl: assessmentFetch(assessmentOk('career')),
       })
       assert.equal(careerVsBiz.ok, false, 'career vs business')
 
       const privateVsCareer = await verifyCaptchaToken(TOKEN, {
         expectedAction: 'hero_funnel',
-        fetchImpl: siteverifyFetch({
-          success: true,
-          hostname: 'www.deintarifheld.de',
-          score: 0.9,
-          action: 'career',
-        }),
+        fetchImpl: assessmentFetch(assessmentOk('career')),
       })
       assert.equal(privateVsCareer.ok, false, 'private vs career')
 
       const missing = await verifyCaptchaToken(TOKEN, {
         expectedAction: 'unternehmen',
-        fetchImpl: siteverifyFetch({
-          success: true,
-          hostname: 'www.deintarifheld.de',
-          score: 0.9,
+        fetchImpl: assessmentFetch({
+          tokenProperties: { valid: true, hostname: 'www.deintarifheld.de' },
+          riskAnalysis: { score: 0.9, reasons: [] },
         }),
       })
       assert.equal(missing.ok, false, 'missing action when action-based')
 
       const host = await verifyCaptchaToken(TOKEN, {
         expectedAction: 'unternehmen',
-        fetchImpl: siteverifyFetch({
-          success: true,
-          hostname: 'evil.example',
-          score: 0.9,
-          action: 'unternehmen',
+        fetchImpl: assessmentFetch({
+          tokenProperties: { valid: true, hostname: 'evil.example', action: 'unternehmen' },
+          riskAnalysis: { score: 0.9, reasons: [] },
         }),
       })
       assert.equal(host.ok, false, 'hostname mismatch')
 
       const score = await verifyCaptchaToken(TOKEN, {
         expectedAction: 'unternehmen',
-        fetchImpl: siteverifyFetch({
-          success: true,
-          hostname: 'www.deintarifheld.de',
-          score: 0.1,
-          action: 'unternehmen',
+        fetchImpl: assessmentFetch({
+          tokenProperties: { valid: true, hostname: 'www.deintarifheld.de', action: 'unternehmen' },
+          riskAnalysis: { score: 0.1, reasons: [] },
         }),
       })
       assert.equal(score.ok, false, 'score below threshold')
@@ -182,19 +177,14 @@ async function assertServerOwnedActionBinding() {
 
   await withEnv(
     {
-      RECAPTCHA_SECRET_KEY: 'rsecret',
+      ...ENTERPRISE_ENV,
       LEADS_RATE_LIMIT_SALT: 'p0-salt',
       LEADS_RATE_LIMIT_PROVIDER: 'memory',
     },
     async () => {
       resetRateLimitsForTests()
       const prev = globalThis.fetch
-      globalThis.fetch = siteverifyFetch({
-        success: true,
-        hostname: 'www.deintarifheld.de',
-        score: 0.9,
-        action: 'unternehmen',
-      })
+      globalThis.fetch = assessmentFetch(assessmentOk('unternehmen'))
       try {
         const result = await enforcePublicIntake(
           jsonRequest({
@@ -217,21 +207,21 @@ async function assertServerOwnedActionBinding() {
 }
 
 async function assertEnterpriseVsStandard() {
-  assert.equal(CAPTCHA_PRODUCTION_VARIANT, 'standard_v2_v3_siteverify')
+  assert.equal(CAPTCHA_PRODUCTION_VARIANT, 'enterprise_v3_assessment')
   assert.equal(hasRecaptchaEnterpriseSiteKey(), false)
-  assert.equal(await getRecaptchaEnterpriseToken('unternehmen'), null)
 
   const box = read('components/ui/RecaptchaBox.jsx')
   assert.doesNotMatch(box, /enterprise\.js|grecaptcha\.enterprise|ENTERPRISE_SITE_KEY/)
   const security = read('lib/security.js')
-  assert.doesNotMatch(security, /recaptcha\/enterprise\.js|grecaptcha\.enterprise\.execute/)
-  assert.match(security, /not a supported DTH production variant/)
+  assert.match(security, /recaptcha\/enterprise\.js/)
+  assert.match(security, /grecaptcha\.enterprise/)
+  assert.doesNotMatch(security, /recaptcha\/api\.js\?render=\$\{/)
   const captcha = read('lib/leads/captcha.js')
-  assert.match(captcha, /siteverify/)
-  assert.match(captcha, /www\.google\.com\/recaptcha\/api\/siteverify/)
-  assert.doesNotMatch(captcha, /recaptchaenterprise\.googleapis\.com/)
+  assert.doesNotMatch(captcha, /www\.google\.com\/recaptcha\/api\/siteverify/)
+  assert.match(captcha, /recaptchaenterprise\.googleapis\.com/)
   const envEx = read('.env.example')
-  assert.match(envEx, /NOT a supported production variant/)
+  assert.match(envEx, /RECAPTCHA_PROJECT_ID/)
+  assert.match(envEx, /RECAPTCHA_API_KEY/)
   console.log('P0_CAPTCHA_PROVIDER=PASS')
 }
 

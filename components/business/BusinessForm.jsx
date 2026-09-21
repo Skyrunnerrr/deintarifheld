@@ -145,19 +145,21 @@ function BusinessFormular() {
         return
       }
       recordSubmission('b2b-form')
-      const payload = sanitizePayload({
-        ...form,
-        page_source: 'unternehmen',
-        lead_type: 'business_energy',
-        form_version: '2.0',
-        source_page: typeof window !== 'undefined' ? window.location.pathname : '/unternehmen-neu/',
-        timestamp: new Date().toISOString(),
-        _formLoadedAt: getFormTiming('b2b-form')._formLoadedAt,
+      const payload = {
+        ...sanitizePayload({
+          ...form,
+          page_source: 'unternehmen',
+          lead_type: 'business_energy',
+          form_version: '2.0',
+          source_page: typeof window !== 'undefined' ? window.location.pathname : '/unternehmen-neu/',
+          timestamp: new Date().toISOString(),
+          _formLoadedAt: getFormTiming('b2b-form')._formLoadedAt,
+          _recaptchaAction: 'unternehmen',
+          [HONEYPOT_FIELD]: honeypot,
+          [HONEYPOT_FIELD_2]: honeypot2,
+        }),
         _recaptchaToken: captcha.token,
-        _recaptchaAction: 'unternehmen',
-        [HONEYPOT_FIELD]: honeypot,
-        [HONEYPOT_FIELD_2]: honeypot2,
-      })
+      }
 
       const { res, json } = await postJsonLead(leadsApiUrl(), payload)
       if (!res.ok || !json?.ok) {

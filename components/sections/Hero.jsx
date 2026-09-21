@@ -217,22 +217,24 @@ export function Hero() {
       recordSubmission('hero-funnel')
       const { [HONEYPOT_FIELD]: _hp, [HONEYPOT_FIELD_2]: _hp2, gdprStep1: _g1, ...rest } = formData
       const { _formLoadedAt } = getFormTiming('hero-funnel')
-      const payload = sanitizePayload({
-        ...rest,
-        firstName: rest.firstName,
-        gdpr: true,
+      const payload = {
+        ...sanitizePayload({
+          ...rest,
+          firstName: rest.firstName,
+          gdpr: true,
+          _recaptchaAction: 'hero_funnel',
+          page_source: 'hero-funnel',
+          lead_type: 'private_energy',
+          brand_theme: 'privat',
+          form_version: '2.0',
+          timestamp: new Date().toISOString(),
+          _formLoadedAt,
+          source_page: '/',
+          website_url: formData[HONEYPOT_FIELD] || '',
+          company_fax: formData[HONEYPOT_FIELD_2] || '',
+        }),
         _recaptchaToken: captcha.token,
-        _recaptchaAction: 'hero_funnel',
-        page_source: 'hero-funnel',
-        lead_type: 'private_energy',
-        brand_theme: 'privat',
-        form_version: '2.0',
-        timestamp: new Date().toISOString(),
-        _formLoadedAt,
-        source_page: '/',
-        website_url: formData[HONEYPOT_FIELD] || '',
-        company_fax: formData[HONEYPOT_FIELD_2] || '',
-      })
+      }
       const { res, json } = await postJsonLead(leadsApiUrl(), payload)
       if (!res.ok || !json?.ok) {
         console.error('Lead submit error:', json?.code || 'submit-failed', res.status)
