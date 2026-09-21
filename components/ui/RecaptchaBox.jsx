@@ -11,10 +11,9 @@ import {
 } from '@/lib/security'
 
 /**
- * Standard reCAPTCHA only (v2 checkbox or v3 execute).
- * Enterprise is not a supported DTH production variant.
- * v3: preload/initialize the library only. Submission tokens are minted by
- * the form submit handler immediately before POST.
+ * Production: Enterprise v3 execute via loadRecaptcha() (fresh token on submit).
+ * Visible v2 checkbox remains available only when NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+ * is set (must stay unset in production).
  * `action` is informational; the server derives expectedAction from
  * endpoint + page_source and ignores client `_recaptchaAction`.
  */

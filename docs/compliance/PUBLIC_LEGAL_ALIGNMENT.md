@@ -30,7 +30,7 @@ appears. It is **not** a merge blocker (`EXTERNAL_LEGAL_REVIEW_REQUIRED_FOR_MERG
 
 | Real flow | In repo `/datenschutz`? | Technical evidence |
 |---|---|---|
-| Google reCAPTCHA on forms (script + classic siteverify; Standard v3; not Enterprise) | YES (9.4) | `docs/compliance/RECAPTCHA_DATA_FLOW.md`, `lib/leads/captcha.js`, `lib/security.js` |
+| Google reCAPTCHA on forms (enterprise.js + Enterprise Assessment; v3) | YES (9.4) | `docs/compliance/RECAPTCHA_DATA_FLOW.md`, `lib/leads/captcha.js`, `lib/security.js` |
 | ProvenExpert network script after optional consent; local badge otherwise | YES (9.5) | `lib/consent/third-party.js`, `components/ui/ProSealWidget.js` |
 | `localStorage th_consent` / `sessionStorage dth_pe_withdraw_reload` | YES (12) | `CookieBanner.jsx`, `provenexpert-runtime.js` |
 | Retention redacts/minimises; `legal_hold` skipped; not legal anonymisation | YES (13) | `app/api/cron/retention/route.js`, `lib/leads/retention-privacy.js` |

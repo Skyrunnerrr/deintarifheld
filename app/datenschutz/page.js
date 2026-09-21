@@ -399,17 +399,17 @@ export default function DatenschutzPage() {
             <p style={{ marginBottom: '0.75rem' }}>
               Auf den privaten Tarifformularen, den Unternehmensformularen und dem
               Partnerformular laden wir zum Schutz vor Missbrauch und automatisierten
-              Eingaben <Highlight>Google reCAPTCHA</Highlight> (Standard, derzeit v3).
-              Enterprise-reCAPTCHA wird nicht eingesetzt. Das Laden erfolgt, sobald das
-              jeweilige Formular angezeigt wird, und ist nicht von der Auswahl im
-              Einwilligungsbanner abhängig.
+              Eingaben <Highlight>Google reCAPTCHA</Highlight> (derzeit v3, Enterprise
+              Assessment). Das Laden erfolgt, sobald das jeweilige Formular angezeigt
+              wird, und ist nicht von der Auswahl im Einwilligungsbanner abhängig.
             </p>
             <p style={{ marginBottom: '0.75rem' }}>
               Der Browser lädt ein Script von Google (unter anderem www.google.com,
               www.gstatic.com, www.recaptcha.net). Es wird ein Token erzeugt und mit der
               Formularanfrage an unsere API übermittelt. Unsere API prüft das Token über
-              Googles klassische siteverify-Schnittstelle. Dabei können insbesondere Token,
-              optionale Anfrage-IP, Action-Name, Hostname und Score beteiligt sein.
+              Googles reCAPTCHA Enterprise Assessment-Schnittstelle. Dabei können
+              insbesondere Token, optionale Anfrage-IP, User-Agent, Action-Name, Hostname
+              und Score beteiligt sein.
             </p>
             <p style={{ margin: 0 }}>
               Weitere Informationen zur Datenverarbeitung durch Google im Zusammenhang mit

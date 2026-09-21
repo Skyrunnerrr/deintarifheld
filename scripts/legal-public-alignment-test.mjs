@@ -22,9 +22,10 @@ function forbid(label, text, re) {
 }
 
 requireMatch('datenschutz reCAPTCHA', datenschutz, /reCAPTCHA/)
-requireMatch('datenschutz Standard v3', datenschutz, /v3/)
-requireMatch('datenschutz no Enterprise claim', datenschutz, /Enterprise-reCAPTCHA wird nicht eingesetzt/)
-requireMatch('datenschutz siteverify / token flow', datenschutz, /siteverify/)
+requireMatch('datenschutz v3', datenschutz, /v3/)
+requireMatch('datenschutz Enterprise Assessment', datenschutz, /Enterprise Assessment/)
+requireMatch('datenschutz assessment / token flow', datenschutz, /Assessment/)
+forbid('datenschutz classic siteverify path', datenschutz, /klassische siteverify/)
 requireMatch('datenschutz ProvenExpert local', datenschutz, /lokales[\s\S]*ProvenExpert|ProvenExpert-Siegel/)
 requireMatch('datenschutz ProvenExpert network', datenschutz, /s\.provenexpert\.net/)
 requireMatch('datenschutz th_consent', datenschutz, /th_consent/)

@@ -26,7 +26,7 @@ blocker. `GDPR_PROCESSOR_EVIDENCE=PARTIAL` is ongoing governance.
 
 | Item | TECH_FLOW_PRESENT | PUBLIC_DISCLOSED | PROCESSOR_EVIDENCE | LEGAL_REVIEW_REQUIRED | Verdict |
 |---|---|---|---|---|---|
-| Google reCAPTCHA (form script + classic siteverify; Standard v3 in production) | YES | YES (`/datenschutz` 9.4 + Dienstleisterliste) | DOCUMENT_AVAILABLE / ACCOUNT_ACCEPTANCE_UNKNOWN | YES | MATCH (disclosure). DPA/SCC/TIA still UNKNOWN for this account |
+| Google reCAPTCHA (enterprise.js + Enterprise Assessment; v3 in production) | YES | YES (`/datenschutz` 9.4 + Dienstleisterliste) | DOCUMENT_AVAILABLE / ACCOUNT_ACCEPTANCE_UNKNOWN | YES | MATCH (disclosure). DPA/SCC/TIA still UNKNOWN for this account |
 | ProvenExpert (optional network script after consent; local badge otherwise) | YES | YES (`/datenschutz` 9.5) | PRIVACY_POLICY_AVAILABLE / DPA_UNKNOWN / ACCOUNT_ACCEPTANCE_UNKNOWN | YES | MATCH (disclosure) |
 | Browser storage: `localStorage th_consent`; `sessionStorage dth_pe_withdraw_reload` (not HTTP-cookies of this site) | YES | YES (`/datenschutz` 12) | N/A | YES | MATCH |
 | Checkdomain static hosting | YES | YES | DOCUMENT_AVAILABLE (AVV in customer area) / ACCOUNT_ACCEPTANCE_UNKNOWN / REGION_UNKNOWN | YES | MATCH (disclosure) / UNKNOWN (account AVV) |

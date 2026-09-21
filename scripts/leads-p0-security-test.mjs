@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Phase 2 P0 security regression — no network to production, no real customer mail,
- * no production lead writes. Google siteverify and Resend are mocked when used.
+ * no production lead writes. Google Assessment and Resend are mocked when used.
  */
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
@@ -80,16 +80,21 @@ function jsonRequest({ origin, referer, body, contentLength, extraHeaders = {} }
 }
 
 async function assertCaptcha() {
-  await withEnv({ RECAPTCHA_SECRET_KEY: undefined, LEADS_RUNTIME_ENV: undefined, VERCEL_ENV: undefined }, async () => {
+  const enterpriseEnv = {
+    RECAPTCHA_PROJECT_ID: 'dth-test-project',
+    RECAPTCHA_API_KEY: 'r-api-key-must-never-appear',
+    NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: 'test-public-site-key',
+  }
+  await withEnv({ RECAPTCHA_SECRET_KEY: 'rsecret', LEADS_RUNTIME_ENV: undefined, VERCEL_ENV: undefined }, async () => {
     assert.equal(captchaRequired(), false)
   })
-  await withEnv({ RECAPTCHA_SECRET_KEY: 'rsecret', LEADS_RUNTIME_ENV: undefined }, async () => {
+  await withEnv({ ...enterpriseEnv, LEADS_RUNTIME_ENV: undefined }, async () => {
     assert.equal(captchaRequired(), true)
     const missing = await verifyCaptchaToken('')
     assert.equal(missing.ok, false)
     assert.equal(missing.code, 'captcha-invalid')
   })
-  await withEnv({ RECAPTCHA_SECRET_KEY: undefined, LEADS_RUNTIME_ENV: 'production' }, async () => {
+  await withEnv({ RECAPTCHA_SECRET_KEY: 'rsecret', LEADS_RUNTIME_ENV: 'production' }, async () => {
     assert.equal(captchaRequired(), true)
     const none = await verifyCaptchaToken('x'.repeat(40))
     assert.equal(none.ok, false)
@@ -99,24 +104,33 @@ async function assertCaptcha() {
   const calls = []
   const fakeFetch = async (url, init) => {
     calls.push({ url: String(url), body: String(init.body) })
-    return new Response(JSON.stringify({ success: true, hostname: 'www.deintarifheld.de', score: 0.9 }), {
+    return new Response(JSON.stringify({
+      tokenProperties: { valid: true, hostname: 'www.deintarifheld.de', action: 'unternehmen' },
+      riskAnalysis: { score: 0.9, reasons: [] },
+    }), {
       status: 200,
       headers: { 'content-type': 'application/json' },
     })
   }
-  await withEnv({ RECAPTCHA_SECRET_KEY: 'rsecret', LEADS_RUNTIME_ENV: 'production' }, async () => {
+  await withEnv({ ...enterpriseEnv, RECAPTCHA_SECRET_KEY: 'rsecret', LEADS_RUNTIME_ENV: 'production' }, async () => {
     const ok = await verifyCaptchaToken('token-from-browser-ok-12345', { fetchImpl: fakeFetch })
     assert.equal(ok.ok, true)
-    assert.match(calls[0].url, /siteverify/)
-    assert.match(calls[0].body, /secret=rsecret/)
+    assert.match(calls[0].url, /recaptchaenterprise\.googleapis\.com\/v1\/projects\/dth-test-project\/assessments/)
+    assert.doesNotMatch(calls[0].url, /siteverify/)
+    const body = JSON.parse(calls[0].body)
+    assert.equal(body.event.siteKey, 'test-public-site-key')
+    assert.equal(body.event.token, 'token-from-browser-ok-12345')
+    assert.equal(body.event.secret, undefined)
   })
 
   const rejectFetch = async () =>
-    new Response(JSON.stringify({ success: false, 'error-codes': ['invalid-input-response'] }), {
+    new Response(JSON.stringify({
+      tokenProperties: { valid: false, invalidReason: 'MALFORMED' },
+    }), {
       status: 200,
       headers: { 'content-type': 'application/json' },
     })
-  await withEnv({ RECAPTCHA_SECRET_KEY: 'rsecret' }, async () => {
+  await withEnv(enterpriseEnv, async () => {
     const bad = await verifyCaptchaToken('token-from-browser-bad-12345', { fetchImpl: rejectFetch })
     assert.equal(bad.ok, false)
     assert.equal(bad.code, 'captcha-rejected')
@@ -124,7 +138,7 @@ async function assertCaptcha() {
 
   await withEnv(
     {
-      RECAPTCHA_SECRET_KEY: 'rsecret',
+      ...enterpriseEnv,
       LEADS_RUNTIME_ENV: undefined,
       LEADS_RATE_LIMIT_SALT: 'p0-salt',
       LEADS_RATE_LIMIT_PROVIDER: 'memory',
