@@ -10,7 +10,7 @@ import { AmbientBg, GridBg } from '@/components/ui/Background'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea, Checkbox } from '@/components/ui/Form'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
-import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
+import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
 import { careersApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
@@ -73,8 +73,6 @@ export function CareerSection({ headingLevel = 'h1' }) {
     if (loading) return
     setRateLimitMsg('')
     setRecaptchaError('')
-    if (isBot(honeypot, honeypot2)) { setSubmitted(true); return }
-    if (isTooFast('career-form')) { setSubmitted(true); return }
     const rl = checkRateLimit('career-form')
     if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s.`); return }
     setLoading(true)
