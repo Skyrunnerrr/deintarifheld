@@ -10,7 +10,7 @@ import { SectionLabel, SectionHeading, TrustIndicators } from '@/components/ui/T
 import { Button } from '@/components/ui/Button'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { Footer } from '@/components/sections/Footer'
-import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
+import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
@@ -104,12 +104,6 @@ function B2BFormular() {
     if (!form.dsgvo) { setDsgvoError(true); errs.dsgvo = true }
     if (Object.keys(errs).length > 0) { setValidationErrors(errs); if (!errs.dsgvo) setDsgvoError(false); return }
     setDsgvoError(false)
-
-    // Honeypot check (dual fields)
-    if (isBot(honeypot, honeypot2)) { setDone(true); return }
-
-    // Timing-based bot detection
-    if (isTooFast('b2b-form')) { setDone(true); return }
 
     // Rate limiting
     const rl = checkRateLimit('b2b-form')

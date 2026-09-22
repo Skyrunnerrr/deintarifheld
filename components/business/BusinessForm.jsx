@@ -9,14 +9,12 @@ import { SectionLabel, SectionHeading } from '@/components/ui/Typography'
 import { Button } from '@/components/ui/Button'
 import {
   sanitizePayload,
-  isBot,
   HONEYPOT_FIELD,
   HONEYPOT_FIELD_2,
   checkRateLimit,
   recordSubmission,
   recordFormLoad,
   getFormTiming,
-  isTooFast,
 } from '@/lib/security'
 import { BUSINESS_FORM, BUSINESS_TRIGGERS } from '@/lib/business-content'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
@@ -120,16 +118,6 @@ function BusinessFormular() {
     setDsgvoError(false)
 
     setRecaptchaError('')
-
-    if (isBot(honeypot, honeypot2)) {
-      setDone(true)
-      return
-    }
-
-    if (isTooFast('b2b-form')) {
-      setDone(true)
-      return
-    }
 
     const rl = checkRateLimit('b2b-form')
     if (!rl.allowed) {

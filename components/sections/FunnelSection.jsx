@@ -14,7 +14,7 @@ import { Section, AmbientBg } from '@/components/ui/Background'
 import { SectionLabel, SectionHeading, VoltText } from '@/components/ui/Typography'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { cn } from '@/lib/utils'
-import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
+import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
@@ -167,12 +167,6 @@ function Step2({ step1Data, onSuccess }) {
     if (loading) return
     setRateLimitMsg('')
     setRecaptchaError('')
-
-    // Honeypot check (dual fields)
-    if (isBot(honeypot, honeypot2)) { onSuccess(); return }
-
-    // Timing-based bot detection
-    if (isTooFast('main-funnel')) { onSuccess(); return }
 
     // Rate limiting
     const rl = checkRateLimit('main-funnel')
