@@ -179,7 +179,6 @@ export function Hero() {
     if (!formData.firstName.trim()) newErrors.firstName = 'Bitte gib deinen Vornamen ein'
     if (!formData.phone.trim() || formData.phone.trim().length < 6) newErrors.phone = 'Bitte gib deine Telefonnummer ein'
     if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) newErrors.email = 'Bitte gib eine gültige E-Mail ein'
-    if (!formData.gdprStep1) newErrors.gdprStep1 = 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.'
     setErrors(newErrors)
     if (Object.keys(newErrors).length === 0) setStep(2)
   }
@@ -215,7 +214,7 @@ export function Hero() {
         return
       }
       recordSubmission('hero-funnel')
-      const { [HONEYPOT_FIELD]: _hp, [HONEYPOT_FIELD_2]: _hp2, gdprStep1: _g1, ...rest } = formData
+      const { [HONEYPOT_FIELD]: _hp, [HONEYPOT_FIELD_2]: _hp2, ...rest } = formData
       const { _formLoadedAt } = getFormTiming('hero-funnel')
       const payload = {
         ...sanitizePayload({
@@ -520,24 +519,6 @@ export function Hero() {
                       <input type="text" name={HONEYPOT_FIELD} value={formData[HONEYPOT_FIELD]} onChange={handleInput(HONEYPOT_FIELD)} autoComplete="off" tabIndex={-1} />
                       <input type="text" name={HONEYPOT_FIELD_2} value={formData[HONEYPOT_FIELD_2]} onChange={handleInput(HONEYPOT_FIELD_2)} autoComplete="off" tabIndex={-1} />
                     </div>
-                    {/* DSGVO Checkbox Step 1 */}
-                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginTop: 10 }}>
-                      <input
-                        type="checkbox"
-                        checked={formData.gdprStep1 || false}
-                        onChange={e => setFormData(prev => ({ ...prev, gdprStep1: e.target.checked }))}
-                        required
-                        style={{ marginTop: 3, flexShrink: 0, width: 15, height: 15, accentColor: '#D4FF3E', cursor: 'pointer' }}
-                      />
-                      <span style={{ fontSize: 12, color: 'var(--text-tertiary, #5A6272)', lineHeight: 1.5 }}>
-                        Ich habe die{' '}
-                        <a href="/datenschutz" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(212,255,62,0.6)', textDecoration: 'underline' }}>Datenschutzerklärung</a>{' '}
-                        zur Kenntnis genommen.*
-                      </span>
-                    </label>
-                    {errors.gdprStep1 && (
-                      <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{errors.gdprStep1}</p>
-                    )}
                     <FunnelCTA onClick={goStep2} style={{ marginTop: 12 }}>Weiter</FunnelCTA>
                     <DsgvoNote />
                   </motion.div>
