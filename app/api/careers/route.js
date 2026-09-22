@@ -84,7 +84,9 @@ export async function POST(request) {
   }
 
   if (isBotLikeSubmit(validated)) {
-    return json(request, { ok: true, bot: true })
+    leadsLog('error', 'intake.honeypot_blocked', { endpoint: 'careers' })
+    await consumeRateLimit(rlKey, 'error')
+    return errorResponse(request, 'request-blocked', 403)
   }
 
   const supabase = getServiceSupabase()
