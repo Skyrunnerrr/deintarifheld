@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { sanitizePayload, isBot, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming, isTooFast } from '@/lib/security'
+import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
@@ -195,12 +195,6 @@ export function Hero() {
     if (!formData.gdpr) newErrors.gdpr = 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.'
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
-
-    // Honeypot check (dual fields)
-    if (isBot(formData[HONEYPOT_FIELD], formData[HONEYPOT_FIELD_2])) { setStep('success'); return }
-
-    // Timing-based bot detection (< 3s = bot)
-    if (isTooFast('hero-funnel')) { setStep('success'); return }
 
     // Rate limiting
     const rl = checkRateLimit('hero-funnel')
