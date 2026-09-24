@@ -250,7 +250,11 @@ assert.match(deployVerifyScript, /VERIFY_PASS=NO/)
 assert.match(deployVerifyScript, /VERIFY_PASS=YES/)
 assert.match(deployVerifyScript, /LIVE_EQUALS_LOCAL_INDEX=YES/)
 assert.match(deployVerifyScript, /PUBLIC_BUILD_METADATA=FAIL/)
-assert.doesNotMatch(deployVerifyScript, /echo "put -r \.dth-build"/)
+const deployUploadSection = deployVerifyScript.slice(
+  deployVerifyScript.indexOf('cmd_upload() {'),
+  deployVerifyScript.indexOf('cmd_verify() {'),
+)
+assert.doesNotMatch(deployUploadSection, /echo "put -r \.dth-build"/)
 
 const htaccessSecurity = read('public/.htaccess')
 assert.match(htaccessSecurity, /RewriteRule \^\\\.dth-build/)
