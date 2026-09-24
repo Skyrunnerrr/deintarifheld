@@ -36,6 +36,17 @@ function errorResponse(request, code, status, headers) {
   return json(request, { ok: false, code }, status, headers)
 }
 
+async function writeAuditObserved(supabase, payload) {
+  const result = await writeAudit(supabase, payload)
+  if (result.error) {
+    leadsLog('error', 'leads.audit_write_failed', {
+      eventType: payload.eventType || 'unknown',
+      code: result.error.code || 'unknown',
+    })
+  }
+  return result
+}
+
 function buildIdempotencyKey(request, data) {
   const header = request.headers.get('idempotency-key')?.trim()
   if (header && header.length >= 8 && header.length <= 128) return header
@@ -108,7 +119,14 @@ export async function POST(request) {
   const leadType = channel === 'private' ? 'private_energy' : 'business_energy'
   const idempotencyKey = buildIdempotencyKey(request, validated.data)
 
-  const { data: existingByKey } = await findLeadByIdempotencyKey(supabase, idempotencyKey)
+  const { data: existingByKey, error: idempotencyError } =
+    await findLeadByIdempotencyKey(supabase, idempotencyKey)
+  if (idempotencyError) {
+    leadsLog('error', 'leads.idempotency_lookup_failed', {
+      code: idempotencyError.code || 'unknown',
+    })
+    return errorResponse(request, 'storage-failed', 500)
+  }
   if (existingByKey) {
     return json(request, {
       ok: true,
@@ -163,7 +181,13 @@ export async function POST(request) {
 
   if (insertError) {
     if (insertError.code === '23505') {
-      const { data: raced } = await findLeadByIdempotencyKey(supabase, idempotencyKey)
+      const { data: raced, error: raceLookupError } =
+        await findLeadByIdempotencyKey(supabase, idempotencyKey)
+      if (raceLookupError) {
+        leadsLog('error', 'leads.idempotency_race_lookup_failed', {
+          code: raceLookupError.code || 'unknown',
+        })
+      }
       if (raced) {
         return json(request, {
           ok: true,
@@ -176,14 +200,14 @@ export async function POST(request) {
       }
     }
     leadsLog('error', 'leads.insert_failed', { code: insertError.code || 'unknown' })
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       eventType: 'lead.insert_failed',
       detail: { code: insertError.code || 'unknown', page_source: pageSource, lead_type: leadType },
     })
     return errorResponse(request, 'storage-failed', 500)
   }
 
-  await writeAudit(supabase, {
+  await writeAuditObserved(supabase, {
     leadId: inserted.id,
     eventType: 'lead.accepted',
     detail: { lead_ref: leadRef, page_source: pageSource, lead_type: leadType },
@@ -196,15 +220,26 @@ export async function POST(request) {
     channel,
   })
 
-  await updateLeadMailMeta(supabase, inserted.id, {
+  const mailMeta = await updateLeadMailMeta(supabase, inserted.id, {
     mailStatus: mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed'),
     mailMode: mailResult.mode || process.env.LEADS_MAIL_MODE || 'mock',
   })
+  if (mailMeta.error) {
+    leadsLog('error', 'leads.mail_meta_update_failed', {
+      leadRef,
+      code: mailMeta.error.code || 'unknown',
+    })
+    await writeAuditObserved(supabase, {
+      leadId: inserted.id,
+      eventType: 'lead.mail_meta_update_failed',
+      detail: { lead_ref: leadRef, code: mailMeta.error.code || 'unknown' },
+    })
+  }
 
   if (!mailResult.ok) {
     const failEvent =
       mailResult.mode === 'internal_live' ? 'lead.internal_mail_failed' : 'lead.mail_failed'
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       leadId: inserted.id,
       eventType: failEvent,
       detail: {
@@ -216,7 +251,7 @@ export async function POST(request) {
       },
     })
     if (mailResult.mode === 'internal_live') {
-      await writeAudit(supabase, {
+      await writeAuditObserved(supabase, {
         leadId: inserted.id,
         eventType: 'lead.customer_confirmation_skipped',
         detail: { lead_ref: leadRef, mode: 'internal_live', reason: 'temporary_internal_mode' },
@@ -243,7 +278,7 @@ export async function POST(request) {
   }
 
   if (mailResult.mode === 'internal_live') {
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       leadId: inserted.id,
       eventType: 'lead.internal_mail_sent',
       detail: {
@@ -254,13 +289,13 @@ export async function POST(request) {
         provider_email_id: mailResult.providerEmailId || null,
       },
     })
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       leadId: inserted.id,
       eventType: 'lead.customer_confirmation_skipped',
       detail: { lead_ref: leadRef, mode: 'internal_live', reason: 'temporary_internal_mode' },
     })
   } else {
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       leadId: inserted.id,
       eventType: 'lead.mail_sent',
       detail: {
