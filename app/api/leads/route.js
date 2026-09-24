@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createHash } from 'crypto'
 import { consumeRateLimit } from '@/lib/leads/abuse-guard'
 import { enforcePublicIntake, isBotLikeSubmit } from '@/lib/leads/intake-guard'
 import { validateUnternehmenPayload } from '@/lib/leads/validate-unternehmen'
 import { isPrivatePageSource, validatePrivatePayload } from '@/lib/leads/validate-private'
 import {
   findLeadByIdempotencyKey,
-  findRecentDuplicate,
   getServiceSupabase,
   insertLead,
   makeLeadRef,
@@ -17,6 +15,7 @@ import { mailFieldsFromStored, sendLeadEmails } from '@/lib/leads/mail'
 import { optionsResponse, withCors } from '@/lib/leads/cors'
 import { leadsLog } from '@/lib/leads/log'
 import { resolveRequestId } from '@/lib/leads/request-id'
+import { buildIdempotencyKey } from '@/lib/leads/idempotency'
 import { publicLeadsHealth } from '@/lib/leads/public-health'
 
 export const runtime = 'nodejs'
@@ -45,16 +44,6 @@ async function writeAuditObserved(supabase, payload) {
     })
   }
   return result
-}
-
-function buildIdempotencyKey(request, data) {
-  const header = request.headers.get('idempotency-key')?.trim()
-  if (header && header.length >= 8 && header.length <= 128) return header
-  const window = Math.floor(Date.now() / 60_000)
-  return createHash('sha256')
-    .update(`${data.page_source}|${data.email}|${window}`)
-    .digest('hex')
-    .slice(0, 48)
 }
 
 function mailFields(mailResult) {
@@ -117,7 +106,7 @@ export async function POST(request) {
 
   const pageSource = validated.data.page_source
   const leadType = channel === 'private' ? 'private_energy' : 'business_energy'
-  const idempotencyKey = buildIdempotencyKey(request, validated.data)
+  const idempotencyKey = buildIdempotencyKey(request, validated.data, { scope: 'lead' })
 
   const { data: existingByKey, error: idempotencyError } =
     await findLeadByIdempotencyKey(supabase, idempotencyKey)
@@ -135,25 +124,6 @@ export async function POST(request) {
       leadId: existingByKey.id,
       leadRef: existingByKey.lead_ref,
       ...mailFieldsFromStored(existingByKey),
-    })
-  }
-
-  const { duplicate, error: dupErr } = await findRecentDuplicate(supabase, {
-    email: validated.data.email,
-    pageSource,
-    withinSeconds: 60,
-  })
-  if (dupErr) {
-    leadsLog('error', 'leads.duplicate_check_failed', { code: 'storage-failed' })
-    return errorResponse(request, 'storage-failed', 500)
-  }
-  if (duplicate) {
-    return json(request, {
-      ok: true,
-      duplicate: true,
-      leadId: duplicate.id,
-      leadRef: duplicate.lead_ref,
-      ...mailFieldsFromStored(duplicate),
     })
   }
 
