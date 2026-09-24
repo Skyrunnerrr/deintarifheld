@@ -340,9 +340,9 @@ export function Hero() {
               marginBottom: 24,
             }}
           >
-            Bis zu 40%*<br />
-            weniger<br />
-            <span style={{ color: 'var(--volt, #D4FF3E)' }}>Energiekosten</span>
+            Energiekosten<br />
+            einfach<br />
+            <span style={{ color: 'var(--volt, #D4FF3E)' }}>optimieren</span>
           </motion.h1>
 
           {/* 3. Lead Text */}
@@ -361,25 +361,10 @@ export function Hero() {
               marginBottom: 32,
             }}
           >
-            Wir analysieren deinen Strom- und Gastarif kostenlos,
-            finden bessere Angebote und übernehmen den kompletten
-            Wechsel für dich.
+            Wir prüfen deinen Strom- und Gastarif kostenlos,
+            vergleichen passende Angebote und begleiten dich auf Wunsch
+            beim Anbieterwechsel.
           </motion.p>
-
-          {/* Disclaimer für 40%-Claim */}
-          <p
-            className="hero-disclaimer"
-            style={{
-              fontFamily: 'var(--font-outfit, "Outfit", sans-serif)',
-              fontSize: 11,
-              color: 'var(--text-tertiary, #5A6272)',
-              lineHeight: 1.5,
-              marginBottom: 28,
-              maxWidth: 460,
-            }}
-          >
-            * Potenzielle Ersparnis basierend auf Kundenbeispielen im Vergleich zum Grundversorgungstarif. Individuelle Ergebnisse variieren.
-          </p>
 
           {/* 4. CTA Row */}
           <AnimatePresence>
