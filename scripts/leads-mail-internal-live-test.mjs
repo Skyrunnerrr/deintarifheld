@@ -7,12 +7,13 @@ import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildInternalOpsMail, parseLeadToAddresses, sendLeadEmails } from '../lib/leads/mail.js'
+import { buildInternalOpsMail, parseLeadToAddresses, resendSendTimeoutMs, sendLeadEmails } from '../lib/leads/mail.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const sends = []
 let failNext = false
 let throwNext = false
+let hangNext = false
 let failRecipient = ''
 let providerIdSeq = 0
 
@@ -30,7 +31,24 @@ globalThis.fetch = async (input, init = {}) => {
     to: body.to,
     subject: body.subject,
     reply_to: body.reply_to || body.replyTo,
+    idempotencyKey: new Headers(init.headers || {}).get('Idempotency-Key'),
+    hasSignal: Boolean(init.signal),
   })
+  if (hangNext) {
+    hangNext = false
+    return new Promise((_resolve, reject) => {
+      const signal = init.signal
+      if (!signal) {
+        reject(new Error('missing_abort_signal'))
+        return
+      }
+      if (signal.aborted) {
+        reject(new Error('aborted'))
+        return
+      }
+      signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true })
+    })
+  }
   if (throwNext) {
     throwNext = false
     throw new Error('forced_transport_failure')
@@ -187,6 +205,8 @@ async function assertInternalLiveChannel(channel, data, leadRef) {
       assert.ok(r.providerEmailId)
       assert.equal(sends.length, 1, `${channel} must send exactly one mail`)
       assert.deepEqual(sends[0].to, ['ops-account@example.invalid'])
+      assert.equal(sends[0].hasSignal, true)
+      assert.equal(sends[0].idempotencyKey, `dth-${leadRef}-internal`)
       assert.match(String(sends[0].from), /onboarding@resend\.dev/)
       assert.notEqual(sends[0].to?.[0], data.email)
     },
@@ -353,13 +373,56 @@ async function assertFailurePath() {
       assert.equal(sends.length, 2)
       assert.deepEqual(sends[0].to, ['ops-account@example.invalid'])
       assert.deepEqual(sends[1].to, [businessData.email])
+      assert.equal(sends[0].idempotencyKey, 'dth-REF-PARTIAL-internal')
+      assert.equal(sends[1].idempotencyKey, 'dth-REF-PARTIAL-customer')
     },
   )
   failRecipient = ''
 
+  await withEnv({ RESEND_SEND_TIMEOUT_MS: undefined }, async () => {
+    assert.equal(resendSendTimeoutMs(), 8000)
+  })
+  await withEnv({ RESEND_SEND_TIMEOUT_MS: '2500' }, async () => {
+    assert.equal(resendSendTimeoutMs(), 2500)
+  })
+  for (const invalid of ['abc', '99', '15001', '100.5']) {
+    await withEnv({ RESEND_SEND_TIMEOUT_MS: invalid }, async () => {
+      assert.equal(resendSendTimeoutMs(), null)
+    })
+  }
+
+  sends.length = 0
+  hangNext = true
+  await withEnv(
+    {
+      LEADS_MAIL_MODE: 'internal_live',
+      RESEND_API_KEY: 're_test_key',
+      LEADS_FROM_EMAIL: 'DeinTarifheld <onboarding@resend.dev>',
+      LEADS_TO_EMAIL: 'ops-account@example.invalid',
+      RESEND_SEND_TIMEOUT_MS: '100',
+    },
+    async () => {
+      const r = await sendLeadEmails({
+        leadRef: 'REF-TIMEOUT',
+        data: businessData,
+        submittedAt: new Date().toISOString(),
+        channel: 'business',
+      })
+      assert.equal(r.ok, false)
+      assert.equal(r.mailStatus, 'failed')
+      assert.equal(r.code, 'mail-send-failed')
+      assert.equal(r.providerErrorCode, 'resend_timeout')
+      assert.equal(sends.length, 1)
+      assert.equal(sends[0].hasSignal, true)
+      assert.equal(sends[0].idempotencyKey, 'dth-REF-TIMEOUT-internal')
+    },
+  )
+
   console.log('MAIL_FAILURE=PASS')
   console.log('MAIL_TRANSPORT_EXCEPTION_CONTAINED=PASS')
   console.log('MAIL_PARTIAL_DELIVERY_TRUTH=PASS')
+  console.log('MAIL_PROVIDER_TIMEOUT=PASS')
+  console.log('MAIL_PROVIDER_IDEMPOTENCY=PASS')
 }
 
 function assertInquiryFieldsInOpsMail() {
