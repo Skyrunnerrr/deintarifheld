@@ -228,6 +228,16 @@ assert.match(adminAuth, /LEADS_ADMIN_SECRET/)
 const staticBuild = read('scripts/build-static-production.sh')
 assert.match(staticBuild, /mv app\/api/)
 
+const deployScript = read('scripts/deploy/checkdomain/dth-checkdomain.sh')
+assert.match(deployScript, /VERIFY_PASS=NO/)
+assert.match(deployScript, /VERIFY_PASS=YES/)
+assert.match(deployScript, /LIVE_EQUALS_LOCAL_INDEX=YES/)
+assert.match(deployScript, /PUBLIC_BUILD_METADATA=FAIL/)
+assert.doesNotMatch(deployScript, /echo "put -r \.dth-build"/)
+
+const htaccess = read('public/.htaccess')
+assert.match(htaccess, /RewriteRule \^\\\.dth-build/)
+
 const htaccess = read('public/.htaccess')
 assert.match(htaccess, /\^\/_next\/static\//)
 assert.match(htaccess, /max-age=31536000, immutable/)
@@ -262,6 +272,9 @@ for (const s of [
 }
 
 assert.ok(existsSync(join(root, '.github/workflows/dth-phase-a-ci.yml')))
+const ciWorkflow = read('.github/workflows/dth-phase-a-ci.yml')
+assert.match(ciWorkflow, /node-version-file: '\.nvmrc'/)
+assert.doesNotMatch(ciWorkflow, /^\s+paths:\s*$/m)
 assert.ok(existsSync(join(root, 'scripts/infra/phase-a/run-all.sh')))
 assert.ok(existsSync(join(root, 'docs/legal/DATENSCHUTZ_PHASE_B_DRAFT.md')))
 assert.ok(existsSync(join(root, 'docs/legal/DATENSCHUTZ_CUTOVER_CANDIDATE.md')))
