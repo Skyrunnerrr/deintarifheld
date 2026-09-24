@@ -4,7 +4,13 @@
  * Env is read at call time in browser-api helpers.
  */
 import assert from 'node:assert/strict'
-import { leadsApiUrl, careersApiUrl, newIdempotencyKey, postJsonLead } from '../lib/leads/browser-api.js'
+import {
+  leadsApiUrl,
+  careersApiUrl,
+  leadPayloadFingerprint,
+  newIdempotencyKey,
+  postJsonLead,
+} from '../lib/leads/browser-api.js'
 
 const origin = 'https://deintarifheld-leads-api.vercel.app'
 
@@ -51,6 +57,74 @@ withEnv({ ORIGIN: `${origin}/`, URL: undefined }, () => {
 withEnv({ ORIGIN: undefined, URL: undefined }, () => {
   assert.equal(leadsApiUrl(), '/api/leads/')
   assert.equal(careersApiUrl(), '/api/careers/')
+})
+
+assert.equal(
+  leadPayloadFingerprint('/api/leads/', {
+    page_source: 'hero-funnel',
+    email: 'same@example.com',
+    timestamp: 'A',
+    _formLoadedAt: 1,
+    _recaptchaToken: 'token-one',
+  }),
+  leadPayloadFingerprint('/api/leads/', {
+    _recaptchaToken: 'token-two',
+    _formLoadedAt: 2,
+    timestamp: 'B',
+    email: 'same@example.com',
+    page_source: 'hero-funnel',
+  }),
+)
+
+await withEnv({ ORIGIN: origin, URL: undefined }, async () => {
+  const prevFetch = globalThis.fetch
+  let firstKey = ''
+  globalThis.fetch = (url, init) => new Promise((resolve, reject) => {
+    firstKey = init.headers['Idempotency-Key']
+    init.signal?.addEventListener('abort', () => {
+      const error = new Error('aborted')
+      error.name = 'AbortError'
+      reject(error)
+    }, { once: true })
+  })
+  try {
+    await assert.rejects(
+      postJsonLead(leadsApiUrl(), {
+        page_source: 'hero-funnel',
+        email: 'retry@example.com',
+        timestamp: 'first',
+        _recaptchaToken: 'token-first',
+      }, { timeoutMs: 10 }),
+      (error) => error?.code === 'request-timeout' && error?.idempotencyKey === firstKey,
+    )
+  } finally {
+    globalThis.fetch = prevFetch
+  }
+
+  const retryCalls = []
+  globalThis.fetch = async (url, init) => {
+    retryCalls.push({ url, init })
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return { ok: true }
+      },
+    }
+  }
+  try {
+    const retry = await postJsonLead(leadsApiUrl(), {
+      page_source: 'hero-funnel',
+      email: 'retry@example.com',
+      timestamp: 'second',
+      _recaptchaToken: 'token-second',
+    })
+    assert.equal(retryCalls.length, 1)
+    assert.equal(retryCalls[0].init.headers['Idempotency-Key'], firstKey)
+    assert.equal(retry.idempotencyKey, firstKey)
+  } finally {
+    globalThis.fetch = prevFetch
+  }
 })
 
 await withEnv({ ORIGIN: origin, URL: undefined }, async () => {
