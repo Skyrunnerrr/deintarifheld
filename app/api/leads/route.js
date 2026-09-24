@@ -49,9 +49,7 @@ function buildIdempotencyKey(request, data) {
 function mailFields(mailResult) {
   const mode = mailResult.mode || (process.env.LEADS_MAIL_MODE || 'mock')
   const mailStatus = mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed')
-  const customerConfirmation =
-    mailResult.customerConfirmation ||
-    (mode === 'internal_live' ? 'skipped' : mode === 'live' ? 'sent' : 'n/a')
+  const customerConfirmation = mailResult.customerConfirmation || 'n/a'
   return {
     mail: Boolean(mailResult.ok),
     mailMode: mode,
