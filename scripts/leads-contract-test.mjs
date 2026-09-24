@@ -219,6 +219,18 @@ assert.match(read('components/sections/CareerSection.jsx'), /id="partneranfrage"
 const sitemapConfig = read('next-sitemap.config.js')
 assert.match(sitemapConfig, /'\/unternehmen-neu', '\/unternehmen-neu\/'/)
 
+const navA11y = read('components/ui/Navbar.jsx')
+assert.match(navA11y, /aria-hidden=\{!menuOpen\}/)
+assert.match(navA11y, /inert=\{menuOpen \? undefined : ''\}/)
+
+const formA11y = read('components/ui/Form.jsx')
+assert.match(formA11y, /aria-describedby=\{error \? `\$\{selectId\}-error` : undefined\}/)
+assert.match(formA11y, /aria-describedby=\{error \? `\$\{textareaId\}-error` : undefined\}/)
+assert.match(formA11y, /aria-describedby=\{error \? `\$\{checkId\}-error` : undefined\}/)
+
+const globalCss = read('app/globals.css')
+assert.match(globalCss, /prefers-reduced-motion:\s*reduce/)
+
 const apply = read('scripts/infra/phase-a/apply.sh')
 assert.doesNotMatch(apply, /checkdomain_api_v1/)
 assert.match(apply, /checkdomain_active.:false|dns_automation.:.skipped/)
