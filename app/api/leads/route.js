@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createHash, randomUUID } from 'crypto'
+import { createHash } from 'crypto'
 import { consumeRateLimit } from '@/lib/leads/abuse-guard'
 import { enforcePublicIntake, isBotLikeSubmit } from '@/lib/leads/intake-guard'
 import { validateUnternehmenPayload } from '@/lib/leads/validate-unternehmen'
@@ -16,16 +16,13 @@ import {
 import { mailFieldsFromStored, sendLeadEmails } from '@/lib/leads/mail'
 import { optionsResponse, withCors } from '@/lib/leads/cors'
 import { leadsLog } from '@/lib/leads/log'
+import { resolveRequestId } from '@/lib/leads/request-id'
 import { publicLeadsHealth } from '@/lib/leads/public-health'
 
 export const runtime = 'nodejs'
 
-function requestId(request) {
-  return request.headers.get('x-request-id')?.trim() || randomUUID()
-}
-
 function json(request, body, status = 200, headers) {
-  const rid = requestId(request)
+  const rid = resolveRequestId(request)
   return withCors(
     request,
     NextResponse.json(
