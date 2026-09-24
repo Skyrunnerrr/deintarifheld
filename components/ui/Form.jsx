@@ -11,7 +11,8 @@ export const Input = forwardRef(function Input(
   { label, error, hint, className, id, required, ...props },
   ref
 ) {
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
+  const generatedId = useId()
+  const inputId = id || `input-${generatedId}`
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -63,7 +64,8 @@ export const Select = forwardRef(function Select(
   { label, options = [], error, className, id, required, placeholder, ...props },
   ref
 ) {
-  const selectId = id || label?.toLowerCase().replace(/\s+/g, '-')
+  const generatedId = useId()
+  const selectId = id || `select-${generatedId}`
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -113,7 +115,8 @@ export const Textarea = forwardRef(function Textarea(
   { label, error, className, id, required, rows = 4, ...props },
   ref
 ) {
-  const textareaId = id || label?.toLowerCase().replace(/\s+/g, '-')
+  const generatedId = useId()
+  const textareaId = id || `textarea-${generatedId}`
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -175,13 +178,13 @@ export const Checkbox = forwardRef(function Checkbox(
           />
           <div className={cn(
             'w-5 h-5 rounded-md border border-white/15 bg-bg-input',
-            'peer-checked:bg-volt peer-checked:border-volt',
+            'peer-checked:bg-volt peer-checked:border-volt peer-checked:[&>svg]:opacity-100',
             'peer-focus-visible:ring-2 peer-focus-visible:ring-volt/30',
             'transition-all duration-200 group-hover:border-white/25',
             className
           )} aria-hidden="true">
             <svg
-              className="w-3 h-3 text-bg-base absolute top-1 left-1 opacity-0 peer-checked:opacity-100 transition-opacity"
+              className="w-3 h-3 text-bg-base absolute top-1 left-1 opacity-0 transition-opacity"
               fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2.5}
               aria-hidden="true"
             >
