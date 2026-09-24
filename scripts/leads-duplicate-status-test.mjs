@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { mailFieldsFromStored } from '../lib/leads/mail.js'
 import { isAdminAuthorized } from '../lib/leads/admin-auth.js'
 import { ADMIN_INBOX_HTML } from '../lib/leads/admin-inbox-html.js'
+import { buildIdempotencyKey } from '../lib/leads/idempotency.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(join(root, p), 'utf8')
@@ -60,9 +61,11 @@ function assertChannelWiring() {
   assert.match(careers, /mailFieldsFromStored/)
   assert.match(supabase, /mail_status, mail_mode, mail_sent_at/)
   assert.match(supabase, /findLeadByIdempotencyKey/)
-  assert.match(supabase, /findRecentDuplicate/)
   assert.match(supabase, /findCareerByIdempotencyKey/)
-  assert.match(supabase, /findRecentCareerDuplicate/)
+  assert.doesNotMatch(supabase, /findRecentDuplicate/)
+  assert.doesNotMatch(supabase, /findRecentCareerDuplicate/)
+  assert.doesNotMatch(leads, /duplicate_check_failed/)
+  assert.doesNotMatch(careers, /duplicate_check_failed/)
   assert.doesNotMatch(leads, /duplicate: true[\s\S]{0,180}mail: true/)
   assert.doesNotMatch(careers, /duplicate: true[\s\S]{0,180}mail: true/)
   assert.doesNotMatch(leads, /duplicate: true[\s\S]{0,220}mailStatus: 'accepted'/)
@@ -70,6 +73,39 @@ function assertChannelWiring() {
   console.log('BUSINESS_DUPLICATE_WIRING=PASS')
   console.log('PRIVATE_DUPLICATE_WIRING=PASS')
   console.log('CAREER_DUPLICATE_WIRING=PASS')
+}
+
+function assertPayloadAwareFallbackIdempotency() {
+  const request = fakeRequest({})
+  const now = 1_800_000
+  const base = {
+    page_source: 'privat',
+    email: 'same@example.invalid',
+    provider: 'Provider A',
+    usage: '3500',
+    _formLoadedAt: 123,
+  }
+  const first = buildIdempotencyKey(request, base, { scope: 'lead', now })
+  const telemetryOnlyChange = buildIdempotencyKey(
+    request,
+    { ...base, _formLoadedAt: 999 },
+    { scope: 'lead', now },
+  )
+  const edited = buildIdempotencyKey(
+    request,
+    { ...base, provider: 'Provider B' },
+    { scope: 'lead', now },
+  )
+  assert.equal(first, telemetryOnlyChange)
+  assert.notEqual(first, edited)
+
+  const explicit = buildIdempotencyKey(
+    fakeRequest({ 'idempotency-key': 'client-key-12345' }),
+    { ...base, provider: 'Provider C' },
+    { scope: 'lead', now },
+  )
+  assert.equal(explicit, 'client-key-12345')
+  console.log('PAYLOAD_AWARE_IDEMPOTENCY=PASS')
 }
 
 function assertAdminIsolation() {
@@ -113,6 +149,7 @@ function assertInboxFailedVisible() {
 
 assertStoredMailMatrix()
 assertChannelWiring()
+assertPayloadAwareFallbackIdempotency()
 assertAdminIsolation()
 assertInboxFailedVisible()
 console.log('DUPLICATE_STATUS_TESTS=PASS')
