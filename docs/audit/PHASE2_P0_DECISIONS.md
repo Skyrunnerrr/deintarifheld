@@ -1,5 +1,7 @@
 # Phase 2 P0 — conservative decisions
 
+> Historical decision record. Superseded where later PRs changed runtime behavior. In particular, PR #15 removed timing-based rejection/false-success behavior; `_formLoadedAt` is now non-blocking telemetry only. Use README.md and the 2026-09-24 full-system audit for current operating guidance.
+
 Binding ticket: GitHub Issue #5. Legal copy for F-14 / F-15 / F-16 is **not** invented here.
 
 ## Runtime
