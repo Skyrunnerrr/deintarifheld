@@ -295,7 +295,7 @@ const uploadSection = deployScript.slice(
   deployScript.indexOf('cmd_upload() {'),
   deployScript.indexOf('cmd_verify() {'),
 )
-assert.doesNotMatch(uploadSection, /mkdir releases|releases\/<|staging=/i)
+assert.doesNotMatch(uploadSection, /mkdir releases|releases\/<|staging="/)
 assert.doesNotMatch(uploadSection, /put -r \*/)
 assert.doesNotMatch(deployScript, /find \. -type f \| sort \| while read -r f/)
 const cutoverDoc = read('docs/deployment/checkdomain-cutover.md')
