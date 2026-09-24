@@ -191,10 +191,7 @@ cmd_upload() {
       echo "put -r $base"
     done
 
-    # Hidden build metadata is operational evidence, not a public route.
-    if [[ -d "${CHECKDOMAIN_LOCAL_OUT}/.dth-build" ]]; then
-      echo "put -r .dth-build"
-    fi
+    # .dth-build stays local as release evidence. Never publish operational metadata.
 
     # Root non-HTML files next. Hidden .htaccess is deliberately held until the end.
     for file in "${CHECKDOMAIN_LOCAL_OUT}"/*; do
@@ -232,17 +229,77 @@ cmd_verify() {
   {
     echo "VERIFY_BASE=$base"
     echo "CHECKS=/ /unternehmen/ /karriere/ /rechner/ /datenschutz/"
-    echo "EXPECT_NO_script.google.com_in_form_chunks"
+    echo "EXPECT_SECURITY_HEADERS=YES"
+    echo "EXPECT_BUILD_METADATA_PUBLIC=NO"
+    echo "EXPECT_HOME_HASH_PARITY=YES_IF_LOCAL_OUT_PRESENT"
     echo "APPLY=$APPLY"
   } | tee "$DTH_CD_EVID/checkdomain-verify-plan.txt"
   if [[ "$APPLY" != "YES" ]]; then
     echo "VERIFY_EXECUTED=NO"
     return 0
   fi
+
+  local failed=0 path code
   for path in / /unternehmen/ /karriere/ /rechner/ /datenschutz/; do
-    code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "${base}${path}" || echo ERR)"
-    echo "LIVE ${path} HTTP_${code}"
+    code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "${base}${path}" || true)"
+    echo "LIVE ${path} HTTP_${code:-ERR}"
+    if [[ "$code" != "200" ]]; then
+      failed=1
+    fi
   done
+
+  local headers_file body_file metadata_code
+  headers_file="$(mktemp)"
+  body_file="$(mktemp)"
+  trap 'rm -f "$headers_file" "$body_file"' RETURN
+
+  code="$(curl -sS -D "$headers_file" -o "$body_file" -w '%{http_code}' --max-time 20 "${base}/" || true)"
+  if [[ "$code" != "200" ]]; then
+    echo "HOME_FETCH=FAIL status=${code:-ERR}"
+    failed=1
+  else
+    echo "HOME_FETCH=PASS"
+  fi
+
+  for header in strict-transport-security x-content-type-options x-frame-options content-security-policy referrer-policy permissions-policy; do
+    if grep -qi "^${header}:" "$headers_file"; then
+      echo "HEADER_${header^^}=PASS"
+    else
+      echo "HEADER_${header^^}=FAIL"
+      failed=1
+    fi
+  done
+
+  metadata_code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "${base}/.dth-build/build-metadata.json" || true)"
+  if [[ "$metadata_code" == "200" ]]; then
+    echo "PUBLIC_BUILD_METADATA=FAIL status=200"
+    failed=1
+  else
+    echo "PUBLIC_BUILD_METADATA=PASS status=${metadata_code:-ERR}"
+  fi
+
+  if [[ -n "${CHECKDOMAIN_LOCAL_OUT:-}" && -f "${CHECKDOMAIN_LOCAL_OUT}/index.html" && "$code" == "200" ]]; then
+    local local_hash live_hash
+    local_hash="$(shasum -a 256 "${CHECKDOMAIN_LOCAL_OUT}/index.html" | awk '{print $1}')"
+    live_hash="$(shasum -a 256 "$body_file" | awk '{print $1}')"
+    if [[ "$local_hash" == "$live_hash" ]]; then
+      echo "LIVE_EQUALS_LOCAL_INDEX=YES"
+    else
+      echo "LIVE_EQUALS_LOCAL_INDEX=NO"
+      failed=1
+    fi
+  else
+    echo "LIVE_EQUALS_LOCAL_INDEX=NOT_CHECKED"
+  fi
+
+  if (( failed != 0 )); then
+    echo "VERIFY_EXECUTED=YES"
+    echo "VERIFY_PASS=NO"
+    return 1
+  fi
+
+  echo "VERIFY_EXECUTED=YES"
+  echo "VERIFY_PASS=YES"
 }
 
 cmd_rollback() {
