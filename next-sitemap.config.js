@@ -11,6 +11,7 @@ module.exports = {
     additionalSitemaps: [],
   },
   exclude: [
+    '/unternehmen-neu', '/unternehmen-neu/',
     '/agb', '/agb/',
     '/datenschutz', '/datenschutz/',
     '/impressum', '/impressum/',
