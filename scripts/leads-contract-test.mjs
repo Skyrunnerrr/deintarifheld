@@ -24,6 +24,7 @@ for (const obsolete of [
   'RECAPTCHA_QUICKSTART.md',
   'RECAPTCHA_SETUP.md',
   'google-apps-script.js',
+  'public/images/tari.png',
 ]) {
   assert.equal(existsSync(join(root, obsolete)), false, `obsolete tracked file returned: ${obsolete}`)
 }
@@ -32,6 +33,7 @@ assert.ok(existsSync(join(root, 'docs/history/legacy-google-apps-script.js')))
 assert.match(read('docs/history/legacy-google-apps-script.js'), /RETIRED HISTORICAL IMPLEMENTATION/)
 assert.match(read('README.md'), /Vercel Next\.js API/)
 assert.match(read('README.md'), /Google Apps Script backend is not part of the production request path/)
+assert.doesNotMatch(read('app/layout.js'), /aggregateRating/)
 
 assert.ok(existsSync(join(root, 'supabase/migrations/001_leads_phase_a.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/002_leads_phase_b.sql')))
@@ -225,6 +227,14 @@ assert.doesNotMatch(adminAuth, /process\.env\.CRON_SECRET/)
 assert.match(adminAuth, /LEADS_ADMIN_SECRET/)
 const staticBuild = read('scripts/build-static-production.sh')
 assert.match(staticBuild, /mv app\/api/)
+
+const htaccess = read('public/.htaccess')
+assert.match(htaccess, /\^\/_next\/static\//)
+assert.match(htaccess, /max-age=31536000, immutable/)
+assert.match(htaccess, /image\/png "access plus 7 days"/)
+assert.match(htaccess, /\.html\?\$"/)
+assert.match(htaccess, /X-XSS-Protection "0"/)
+assert.doesNotMatch(htaccess, /image\/png "access plus 1 year"/)
 
 const pkg = JSON.parse(read('package.json'))
 for (const s of [
