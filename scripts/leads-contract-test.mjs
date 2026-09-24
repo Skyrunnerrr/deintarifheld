@@ -252,8 +252,8 @@ assert.match(deployScript, /LIVE_EQUALS_LOCAL_INDEX=YES/)
 assert.match(deployScript, /PUBLIC_BUILD_METADATA=FAIL/)
 assert.doesNotMatch(deployScript, /echo "put -r \.dth-build"/)
 
-const htaccess = read('public/.htaccess')
-assert.match(htaccess, /RewriteRule \^\\\.dth-build/)
+const htaccessSecurity = read('public/.htaccess')
+assert.match(htaccessSecurity, /RewriteRule \^\\\.dth-build/)
 
 const htaccess = read('public/.htaccess')
 assert.match(htaccess, /\^\/_next\/static\//)
