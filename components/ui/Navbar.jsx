@@ -95,8 +95,19 @@ export function Navbar() {
   // DTH-06 revision: Business preview uses route-local BusinessHeader instead.
   if (isBusinessPreview) return null
 
-  const primaryCtaHref = '#funnel'
-  const primaryCtaTargetId = 'funnel'
+  const isBusinessRoute = pathname?.startsWith('/unternehmen')
+  const isCareerRoute = pathname?.startsWith('/karriere')
+  const primaryCtaTargetId = isBusinessRoute
+    ? 'formular'
+    : isCareerRoute
+      ? 'partneranfrage'
+      : 'funnel'
+  const primaryCtaHref = `#${primaryCtaTargetId}`
+  const primaryCtaLabel = isBusinessRoute
+    ? 'Kostenlos prüfen'
+    : isCareerRoute
+      ? 'Partneranfrage starten'
+      : 'Kostenlos analysieren'
   const brandAccent = '#D4FF3E'
   const brandText = '#F2F4F8'
   const linkColor = '#8E97A8'
@@ -221,7 +232,7 @@ export function Navbar() {
             <a
               href={primaryCtaHref}
               onClick={handlePrimaryCta}
-              aria-label="Kostenlose Tarifanalyse starten"
+              aria-label={primaryCtaLabel}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 padding: '10px 22px',
@@ -250,7 +261,7 @@ export function Navbar() {
               onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.96)' }}
               onMouseUp={e => { e.currentTarget.style.transform = 'translateY(-1px)' }}
             >
-              Kostenlos analysieren
+              {primaryCtaLabel}
               <IconArrow />
             </a>
           </div>
@@ -355,7 +366,7 @@ export function Navbar() {
                 boxShadow: ctaShadow,
               }}
             >
-              Kostenlos analysieren
+              {primaryCtaLabel}
               <IconArrow />
             </a>
           </div>
