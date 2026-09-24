@@ -10,7 +10,7 @@ import { SectionLabel, SectionHeading, TrustIndicators } from '@/components/ui/T
 import { Button } from '@/components/ui/Button'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { Footer } from '@/components/sections/Footer'
-import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
+import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, recordFormLoad, getFormTiming } from '@/lib/security'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
@@ -105,10 +105,6 @@ function B2BFormular() {
     if (Object.keys(errs).length > 0) { setValidationErrors(errs); if (!errs.dsgvo) setDsgvoError(false); return }
     setDsgvoError(false)
 
-    // Rate limiting
-    const rl = checkRateLimit('b2b-form')
-    if (!rl.allowed) { setRateLimitMsg(`Bitte warten Sie ${rl.remainingSeconds}s bevor Sie erneut absenden.`); return }
-
     setSending(true)
     try {
       const captcha = await resolveSubmitCaptchaToken('unternehmen', recaptchaToken)
@@ -116,7 +112,6 @@ function B2BFormular() {
         setRecaptchaError(leadSubmitCaptchaClientMessage('formal'))
         return
       }
-      recordSubmission('b2b-form')
       const payload = {
         ...sanitizePayload({
           ...form,
