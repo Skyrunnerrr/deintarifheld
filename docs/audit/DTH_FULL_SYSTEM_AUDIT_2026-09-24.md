@@ -39,10 +39,11 @@ Lead backend:
 - exact-origin CORS
 - distributed Supabase rate limiting
 
-Production mail behavior has been proven manually:
-- lead stored
-- internal notification delivered
-- customer confirmation delivered
+Production mail evidence currently established:
+- lead storage and the form/API path were proven
+- internal Resend notification was proven Delivered after removing the stale recipient suppression
+- production was then switched to `LEADS_MAIL_MODE=live` with `ALLOW_CUSTOMER_MAIL=YES` and redeployed
+- a final two-message E2E proof (internal + customer confirmation for the same fresh lead) is still required before this audit records customer confirmation as production-verified
 
 ## Findings confirmed so far
 
