@@ -262,4 +262,6 @@ export function RadioToggle({ options = [], value, onChange, name, className }) 
   )
 }
 
-export default { Input, Select, Textarea, Checkbox, ProgressBar, RadioToggle }
+const Form = { Input, Select, Textarea, Checkbox, ProgressBar, RadioToggle }
+
+export default Form
