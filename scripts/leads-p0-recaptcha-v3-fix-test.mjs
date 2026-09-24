@@ -14,6 +14,7 @@ import {
   GOOGLE_ASSESSMENT_RISK_REASONS,
   publicCaptchaErrorCode,
   recaptchaMinScore,
+  recaptchaVerifyTimeoutMs,
   verifyCaptchaToken,
 } from '../lib/leads/captcha.js'
 import { resolveExpectedCaptchaAction } from '../lib/leads/captcha-action.js'
@@ -531,6 +532,61 @@ async function assertServerDiagnostics() {
             assert.equal(called, false, 'invalid threshold must fail before Google request')
           })
         }
+
+        await withEnv({ RECAPTCHA_VERIFY_TIMEOUT_MS: undefined }, async () => {
+          assert.equal(recaptchaVerifyTimeoutMs(), 5000)
+        })
+        await withEnv({ RECAPTCHA_VERIFY_TIMEOUT_MS: '2500' }, async () => {
+          assert.equal(recaptchaVerifyTimeoutMs(), 2500)
+        })
+        for (const invalid of ['abc', '99', '15001', '100.5']) {
+          await withEnv({ RECAPTCHA_VERIFY_TIMEOUT_MS: invalid }, async () => {
+            assert.equal(recaptchaVerifyTimeoutMs(), null)
+            let called = false
+            const invalidConfig = await verifyCaptchaToken(TOKEN, {
+              expectedAction: 'unternehmen',
+              fetchImpl: async () => {
+                called = true
+                throw new Error('must-not-call-google')
+              },
+            })
+            assert.equal(invalidConfig.ok, false)
+            assert.equal(invalidConfig.code, 'captcha-not-configured')
+            assert.equal(called, false, 'invalid timeout must fail before Google request')
+          })
+        }
+
+        await withEnv({ RECAPTCHA_VERIFY_TIMEOUT_MS: '100' }, async () => {
+          let sawSignal = false
+          let aborted = false
+          const timedOut = await verifyCaptchaToken(TOKEN, {
+            expectedAction: 'unternehmen',
+            fetchImpl: async (_url, init = {}) =>
+              new Promise((_resolve, reject) => {
+                const signal = init.signal
+                sawSignal = Boolean(signal)
+                if (!signal) {
+                  reject(new Error('missing-abort-signal'))
+                  return
+                }
+                if (signal.aborted) {
+                  aborted = true
+                  reject(new Error('aborted'))
+                  return
+                }
+                signal.addEventListener('abort', () => {
+                  aborted = true
+                  reject(new Error('aborted'))
+                }, { once: true })
+              }),
+          })
+          assert.equal(sawSignal, true)
+          assert.equal(aborted, true)
+          assert.equal(timedOut.ok, false)
+          assert.equal(timedOut.code, 'captcha-verify-failed')
+          assert.equal(timedOut.reason, 'captcha-verify-failed')
+          assert.equal(timedOut.upstream?.transportError, true)
+        })
 
         const action = await verifyCaptchaToken(TOKEN, {
           expectedAction: 'unternehmen',
