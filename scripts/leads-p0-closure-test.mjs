@@ -47,6 +47,7 @@ import {
   matchAllowlistedFinding,
 } from '../lib/audit/npm-allowlist.js'
 import { processLeadDeletion, runRetention } from '../lib/leads/supabase.js'
+import { resolveRetentionConfig } from '../lib/leads/retention-config.js'
 import {
   planProvenExpertWithdrawal,
   simulateProvenExpertFalseTrueFalse,
@@ -876,6 +877,43 @@ function assertStagingRateLimitGuard() {
   console.log('RATE_LIMIT_ATOMIC_REMOTE_DB=UNKNOWN')
 }
 
+function assertRetentionConfig() {
+  assert.deepEqual(resolveRetentionConfig({}), {
+    ok: true,
+    retentionDays: 90,
+    privateRetentionDays: 90,
+    careerRetentionDays: 183,
+  })
+  assert.deepEqual(resolveRetentionConfig({
+    LEADS_RETENTION_DAYS: '120',
+    LEADS_PRIVATE_RETENTION_DAYS: '60',
+    LEADS_CAREER_RETENTION_DAYS: '365',
+  }), {
+    ok: true,
+    retentionDays: 120,
+    privateRetentionDays: 60,
+    careerRetentionDays: 365,
+  })
+
+  for (const env of [
+    { LEADS_RETENTION_DAYS: 'NaN' },
+    { LEADS_RETENTION_DAYS: '0' },
+    { LEADS_RETENTION_DAYS: '3651' },
+    { LEADS_PRIVATE_RETENTION_DAYS: '1.5' },
+    { LEADS_CAREER_RETENTION_DAYS: '-3' },
+  ]) {
+    const result = resolveRetentionConfig(env)
+    assert.equal(result.ok, false)
+    assert.equal(result.code, 'retention-config-invalid')
+  }
+
+  const inherited = resolveRetentionConfig({ LEADS_RETENTION_DAYS: '45' })
+  assert.equal(inherited.ok, true)
+  assert.equal(inherited.privateRetentionDays, 45)
+
+  console.log('RETENTION_CONFIG_VALIDATION=PASS')
+}
+
 function assertPublicRepoPii() {
   const lit = read('docs/compliance/AI_LITERACY_REGISTER.md')
   assert.doesNotMatch(lit, /wunderland50@gmail\.com/)
@@ -892,6 +930,7 @@ async function main() {
   assertAiRegister()
   assertNpmRegister()
   assertStagingRateLimitGuard()
+  assertRetentionConfig()
   assertPublicRepoPii()
   console.log('P0_CLOSURE_TESTS=PASS')
   console.log('REAL_CUSTOMER_MAIL_SENT=NO')
