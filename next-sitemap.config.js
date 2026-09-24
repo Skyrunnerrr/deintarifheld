@@ -1,5 +1,5 @@
 /** @type {import('next-sitemap').IConfig} */
-module.exports = {
+const config = {
   siteUrl: 'https://www.deintarifheld.de',
   generateRobotsTxt: true,
   outDir: './out',
@@ -37,3 +37,5 @@ module.exports = {
     }
   },
 }
+
+export default config
