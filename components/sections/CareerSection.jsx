@@ -10,7 +10,7 @@ import { AmbientBg, GridBg } from '@/components/ui/Background'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea, Checkbox } from '@/components/ui/Form'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
-import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
+import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, recordFormLoad, getFormTiming } from '@/lib/security'
 import { careersApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
@@ -73,8 +73,6 @@ export function CareerSection({ headingLevel = 'h1' }) {
     if (loading) return
     setRateLimitMsg('')
     setRecaptchaError('')
-    const rl = checkRateLimit('career-form')
-    if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s.`); return }
     setLoading(true)
     try {
       const captcha = await resolveSubmitCaptchaToken('career', recaptchaToken)
@@ -82,7 +80,6 @@ export function CareerSection({ headingLevel = 'h1' }) {
         setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
         return
       }
-      recordSubmission('career-form')
       const payload = {
         ...sanitizePayload({
           ...data,
