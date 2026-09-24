@@ -42,7 +42,7 @@ const schema = z.object({
 })
 
 const BENEFITS = [
-  { icon: <TrendingUp className="w-5 h-5" />, title: '1.400 – 5.500 €', sub: 'monatlich möglich', color: '#0A5ADB' },
+  { icon: <TrendingUp className="w-5 h-5" />, title: 'Provisionsbasiert', sub: 'abhängig von deiner Leistung', color: '#0A5ADB' },
   { icon: <Clock className="w-5 h-5" />,      title: 'Flexibel',         sub: 'Zeit & Ort frei wählen', color: '#217CFF' },
   { icon: <Users className="w-5 h-5" />,      title: 'Quereinsteiger',   sub: 'Keine Vorkenntnisse nötig', color: '#0A5ADB' },
   { icon: <Zap className="w-5 h-5" />,        title: 'Vollausbildung',   sub: 'Persönliche Schulungen inklusive', color: '#217CFF' },
@@ -273,7 +273,7 @@ export function CareerSection({ headingLevel = 'h1' }) {
                     </div>
                     <div>
                       <h3 className="font-display font-bold text-2xl mb-2" style={{ color: '#F0F4FF' }}>Partneranfrage gesendet</h3>
-                      <p className="font-body text-base" style={{ color: 'rgba(180,200,255,0.65)' }}>Wir melden uns innerhalb von 48 Stunden für ein Kennenlerngespräch.</p>
+                      <p className="font-body text-base" style={{ color: 'rgba(180,200,255,0.65)' }}>Wir melden uns für ein persönliches Kennenlerngespräch.</p>
                     </div>
                   </div>
                 ) : (
@@ -370,7 +370,7 @@ export function CareerSection({ headingLevel = 'h1' }) {
                       )}
 
                       <div className="flex items-center justify-center gap-4 pt-1">
-                        {['Kostenlos', 'Unverbindlich', '48h Antwort'].map((t, i) => (
+                        {['Kostenlos', 'Unverbindlich', 'Persönliche Rückmeldung'].map((t, i) => (
                           <span key={i} className="flex items-center gap-1 font-body text-xs" style={{ color: 'rgba(180,200,255,0.45)' }}>
                             <span style={{ color: '#217CFF' }}>✓</span> {t}
                           </span>
