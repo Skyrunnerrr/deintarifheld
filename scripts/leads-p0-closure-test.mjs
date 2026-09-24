@@ -186,6 +186,35 @@ function assertPublicDsgvoClaims() {
   console.log('PUBLIC_DSGVO_CLAIMS=PASS')
 }
 
+function assertPublicMarketingClaims() {
+  const forbidden = [
+    [/Ø\s*480\s*€/i, 'average 480 EUR savings'],
+    [/Bis\s+zu\s+40\s*%|Bis\s+40\s*%/i, 'up to 40 percent savings'],
+    [/über\s+1\.000\s+(?:Strom-\s*und\s*Gastarifen|Tarife)/i, '1000+ tariffs'],
+    [/62\.?356\s*€/i, '2025 total savings'],
+    [/1\.400\s*[–-]\s*5\.500\s*€/i, 'career earnings range'],
+    [/24h\s+(?:Rückmeldung|Antwort)/i, '24h response promise'],
+    [/innerhalb\s+von\s+48\s+Stunden/i, '48h response promise'],
+    [/zum\s+günstigsten\s+Tarif/i, 'cheapest-tariff superlative'],
+    [/findet\s+den\s+besten\s+Tarif/i, 'best-tariff superlative'],
+  ]
+  const fail = []
+  for (const rootName of ['app', 'components', 'lib']) {
+    for (const full of walk(join(root, rootName))) {
+      const rel = relative(root, full)
+      const source = readFileSync(full, 'utf8')
+      for (const [re, label] of forbidden) {
+        if (re.test(source)) fail.push(`${rel}: unsupported public claim: ${label}`)
+      }
+    }
+  }
+  if (fail.length) {
+    console.error(fail.join('\n'))
+    assert.equal(fail.length, 0)
+  }
+  console.log('PUBLIC_MARKETING_CLAIMS=PASS')
+}
+
 function assertLegalAlignmentDocs() {
   const pub = read('docs/compliance/PUBLIC_LEGAL_ALIGNMENT.md')
   assert.match(pub, /PUBLIC_LEGAL_ALIGNMENT=PASS/)
@@ -924,6 +953,7 @@ function assertPublicRepoPii() {
 async function main() {
   assertRecaptchaV3Actions()
   assertPublicDsgvoClaims()
+  assertPublicMarketingClaims()
   assertLegalAlignmentDocs()
   assertProvenExpertWithdrawal()
   await assertDeleteStateMachine()
