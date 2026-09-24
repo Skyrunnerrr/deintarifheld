@@ -149,4 +149,6 @@ export function FloatingChip({ icon, text, className, style }) {
   )
 }
 
-export default { AmbientBg, GridBg, GlowLine, Section, FloatingChip }
+const Background = { AmbientBg, GridBg, GlowLine, Section, FloatingChip }
+
+export default Background
