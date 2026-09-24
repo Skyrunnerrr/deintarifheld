@@ -32,7 +32,10 @@ import {
   shouldLoadProvenExpertScript,
 } from '../lib/consent/third-party.js'
 import { anonymisePayload, ANONYMISED_EMAIL, emailAuditPseudonym } from '../lib/leads/retention-privacy.js'
-import { processLeadDeletion } from '../lib/leads/supabase.js'
+import { makeLeadRef, processLeadDeletion } from '../lib/leads/supabase.js'
+import { validatePrivatePayload } from '../lib/leads/validate-private.js'
+import { validateUnternehmenPayload } from '../lib/leads/validate-unternehmen.js'
+import { validateCareerPayload } from '../lib/leads/validate-career.js'
 import { publicCareersHealth, publicLeadsHealth } from '../lib/leads/public-health.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -459,6 +462,94 @@ async function assertDeletionPrivacy() {
   console.log('P0_DELETE_ANONYMISE=PASS')
 }
 
+function assertValidationBoundaries() {
+  const privateBase = {
+    page_source: 'hero-funnel',
+    firstName: 'Max',
+    email: 'max@example.invalid',
+    phone: '+4915112345678',
+    provider: 'Stadtwerke',
+    usage: '3500',
+    zip: '69115',
+    type: 'strom',
+    gdpr: true,
+    source_page: '/',
+    form_version: '2.0',
+  }
+  assert.equal(validatePrivatePayload(privateBase).ok, true)
+  assert.equal(
+    validatePrivatePayload({ ...privateBase, zip: '691150' }).code,
+    'invalid-message',
+    'overlong PLZ must be rejected, never truncated to a valid PLZ',
+  )
+  assert.equal(
+    validatePrivatePayload({ ...privateBase, name: 'N'.repeat(121), firstName: '' }).code,
+    'invalid-message',
+  )
+  assert.equal(
+    validatePrivatePayload({ ...privateBase, consumption: '9'.repeat(41), usage: '' }).code,
+    'invalid-message',
+  )
+
+  const businessBase = {
+    page_source: 'unternehmen',
+    firma: 'DTH Test GmbH',
+    ansprechpartner: 'Max Muster',
+    email: 'max@example.invalid',
+    telefon: '+4915112345678',
+    plz: '69115',
+    energieart: 'strom',
+    verbrauchStrom: '50000',
+    standorte: '2',
+    versorger: 'Stadtwerke',
+    vertragslaufzeit: '12 Monate',
+    nachricht: 'Bitte prüfen',
+    dsgvo: true,
+    source_page: '/unternehmen/',
+    form_version: '2.0',
+  }
+  assert.equal(validateUnternehmenPayload(businessBase).ok, true)
+  assert.equal(
+    validateUnternehmenPayload({ ...businessBase, plz: '691150' }).code,
+    'invalid-message',
+  )
+  assert.equal(
+    validateUnternehmenPayload({ ...businessBase, standorte: '1'.repeat(41) }).code,
+    'invalid-message',
+  )
+
+  const careerBase = {
+    page_source: 'career',
+    name: 'Max Muster',
+    email: 'max@example.invalid',
+    phone: '+4915112345678',
+    motivation: 'Ich interessiere mich für die Zusammenarbeit.',
+    gdpr: true,
+    source_page: '/karriere/',
+    form_version: '2.0',
+  }
+  assert.equal(validateCareerPayload(careerBase).ok, true)
+  assert.equal(
+    validateCareerPayload({ ...careerBase, telefon: '1'.repeat(41), phone: '' }).code,
+    'invalid-message',
+  )
+  assert.equal(
+    validateCareerPayload({ ...careerBase, source_page: '/' + 'x'.repeat(201) }).code,
+    'invalid-message',
+  )
+
+  const refs = new Set()
+  for (let i = 0; i < 100; i += 1) {
+    const ref = makeLeadRef('unternehmen')
+    assert.match(ref, /^B2B-\d{14}-[A-F0-9]{8}$/)
+    refs.add(ref)
+  }
+  assert.equal(refs.size, 100)
+
+  console.log('P0_VALIDATION_BOUNDARIES=PASS')
+  console.log('LEAD_REF_RANDOMNESS=PASS')
+}
+
 function assertAiAndHealthArtifacts() {
   const guard = read('docs/compliance/AI_ACT_GUARDRAILS.md')
   assert.match(guard, /CUSTOMER_FACING_AI=NO/)
@@ -508,6 +599,7 @@ async function main() {
   await assertEnterpriseVsStandard()
   await assertAtomicRateLimit()
   assertProvenExpertConsent()
+  assertValidationBoundaries()
   await assertDeletionPrivacy()
   assertAiAndHealthArtifacts()
   console.log('P0_REMEDIATION_TESTS=PASS')
