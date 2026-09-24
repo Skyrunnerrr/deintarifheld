@@ -932,6 +932,8 @@ function assertErrorUx() {
   assert.match(storage, /gespeichert|später|Minuten/i)
   const network = mapLeadSubmitUserMessage({ thrown: new TypeError('Failed to fetch') }, { tone: 'informal' })
   assert.match(network, /Verbindung/)
+  const timeout = mapLeadSubmitUserMessage({ thrown: Object.assign(new Error('timeout'), { code: 'request-timeout', name: 'AbortError' }) }, { tone: 'informal' })
+  assert.match(timeout, /Verbindung/)
   const formal = mapLeadSubmitUserMessage({ status: 403, code: 'captcha-rejected' }, { tone: 'formal' })
   assert.match(formal, /Sie|Ihre|Captcha/)
   const generic = mapLeadSubmitUserMessage({ status: 418, code: 'unknown-teapot' }, { tone: 'informal' })
