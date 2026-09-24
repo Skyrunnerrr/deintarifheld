@@ -93,10 +93,18 @@ EOF
   sftp -oBatchMode=yes -i "$CHECKDOMAIN_SSH_IDENTITY" -b "$batch" \
     "${CHECKDOMAIN_USER}@${CHECKDOMAIN_HOST}" 
   rm -f "$batch"
-  (cd "$backup_dir" && find . -type f | sort | while read -r f; do shasum -a 256 "$f"; done) \
-    > "$backup_dir/MANIFEST.sha256"
+  local manifest_tmp
+  manifest_tmp="$(mktemp)"
+  (
+    cd "$backup_dir"
+    find . -type f ! -name 'MANIFEST.sha256' | LC_ALL=C sort | while IFS= read -r f; do
+      shasum -a 256 "$f"
+    done
+  ) > "$manifest_tmp"
+  mv "$manifest_tmp" "$backup_dir/MANIFEST.sha256"
+  [[ -s "$backup_dir/MANIFEST.sha256" ]] || dth_cd_die "backup_manifest_empty"
   echo "$stamp" > "${CHECKDOMAIN_BACKUP_ROOT:-$HOME/.dth-checkdomain-backups}/LATEST"
-  dth_cd_log "REMOTE_BACKUP_EXECUTED=YES stamp=$stamp"
+  dth_cd_log "REMOTE_BACKUP_EXECUTED=YES stamp=$stamp manifest=MANIFEST.sha256"
 }
 
 cmd_upload() {
@@ -196,11 +204,22 @@ cmd_rollback() {
   fi
   [[ -n "$latest" ]] || dth_cd_die "no_backup_ref"
   [[ -n "${CHECKDOMAIN_SSH_IDENTITY:-}" ]] || dth_cd_die "rollback_requires_SSH_IDENTITY"
+  [[ -f "${root_b}/${latest}/.htaccess" ]] || dth_cd_die "rollback_backup_missing_htaccess"
+  [[ -f "${root_b}/${latest}/MANIFEST.sha256" ]] || dth_cd_die "rollback_backup_missing_manifest"
+  (
+    cd "${root_b}/${latest}"
+    shasum -a 256 -c MANIFEST.sha256 >/dev/null
+  ) || dth_cd_die "rollback_backup_manifest_verification_failed"
   local batch
   batch="$(mktemp)"
   {
     echo "cd ${CHECKDOMAIN_REMOTE_BASE}"
     echo "lcd ${root_b}/${latest}"
+    # Hidden routing/security file is never covered by the '*' wildcard.
+    echo "put .htaccess"
+    if [[ -d "${root_b}/${latest}/.dth-build" ]]; then
+      echo "put -r .dth-build"
+    fi
     echo "put -r *"
   } > "$batch"
   sftp -oBatchMode=yes -i "$CHECKDOMAIN_SSH_IDENTITY" -b "$batch" \
