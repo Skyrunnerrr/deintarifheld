@@ -32,7 +32,12 @@ import {
   shouldLoadProvenExpertScript,
 } from '../lib/consent/third-party.js'
 import { anonymisePayload, ANONYMISED_EMAIL, emailAuditPseudonym } from '../lib/leads/retention-privacy.js'
-import { makeLeadRef, processLeadDeletion } from '../lib/leads/supabase.js'
+import {
+  createSupabaseFetch,
+  makeLeadRef,
+  processLeadDeletion,
+  supabaseRequestTimeoutMs,
+} from '../lib/leads/supabase.js'
 import { validatePrivatePayload } from '../lib/leads/validate-private.js'
 import { validateUnternehmenPayload } from '../lib/leads/validate-unternehmen.js'
 import { validateCareerPayload } from '../lib/leads/validate-career.js'
@@ -550,6 +555,33 @@ function assertValidationBoundaries() {
   console.log('LEAD_REF_RANDOMNESS=PASS')
 }
 
+async function assertSupabaseRequestTimeout() {
+  await withEnv({ SUPABASE_REQUEST_TIMEOUT_MS: undefined }, async () => {
+    assert.equal(supabaseRequestTimeoutMs(), 8000)
+  })
+  for (const invalid of ['abc', '249', '20001', 'Infinity']) {
+    await withEnv({ SUPABASE_REQUEST_TIMEOUT_MS: invalid }, async () => {
+      assert.equal(supabaseRequestTimeoutMs(), null)
+    })
+  }
+
+  await withEnv({ SUPABASE_REQUEST_TIMEOUT_MS: '250' }, async () => {
+    let aborted = false
+    const wrapped = createSupabaseFetch((_input, init = {}) => new Promise((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () => {
+        aborted = true
+        const error = new Error('aborted')
+        error.name = 'AbortError'
+        reject(error)
+      }, { once: true })
+    }))
+    await assert.rejects(wrapped('https://example.invalid'))
+    assert.equal(aborted, true)
+  })
+
+  console.log('SUPABASE_REQUEST_TIMEOUT=PASS')
+}
+
 function assertAiAndHealthArtifacts() {
   const guard = read('docs/compliance/AI_ACT_GUARDRAILS.md')
   assert.match(guard, /CUSTOMER_FACING_AI=NO/)
@@ -600,6 +632,7 @@ async function main() {
   await assertAtomicRateLimit()
   assertProvenExpertConsent()
   assertValidationBoundaries()
+  await assertSupabaseRequestTimeout()
   await assertDeletionPrivacy()
   assertAiAndHealthArtifacts()
   console.log('P0_REMEDIATION_TESTS=PASS')
