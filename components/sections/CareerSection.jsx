@@ -277,7 +277,7 @@ export function CareerSection({ headingLevel = 'h1' }) {
                     </div>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                  <form id="partneranfrage" onSubmit={handleSubmit(onSubmit)} noValidate>
                     <div className="mb-7">
                       <div
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-3"
