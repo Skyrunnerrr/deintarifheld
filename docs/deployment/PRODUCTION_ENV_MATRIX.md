@@ -1,5 +1,7 @@
 # Production environment matrix (names only)
 
+> Historical environment snapshot from 2026-09-15. Presence/status fields below are evidence from that date, not a statement of the current production environment. Never use this file to overwrite current Vercel settings. Current release work must re-verify environment names without printing secret values.
+
 ```
 PRODUCTION_ENV_MATRIX_READY=YES
 PRODUCTION_ENV_VERIFIED=PARTIAL
