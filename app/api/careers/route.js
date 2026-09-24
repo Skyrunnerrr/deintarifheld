@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
-import { createHash } from 'crypto'
 import { consumeRateLimit } from '@/lib/leads/abuse-guard'
 import { enforcePublicIntake, isBotLikeSubmit } from '@/lib/leads/intake-guard'
 import { validateCareerPayload } from '@/lib/leads/validate-career'
 import {
   findCareerByIdempotencyKey,
-  findRecentCareerDuplicate,
   getServiceSupabase,
   insertCareerApplication,
   makeLeadRef,
@@ -16,6 +14,7 @@ import { mailFieldsFromStored, sendLeadEmails } from '@/lib/leads/mail'
 import { optionsResponse, withCors } from '@/lib/leads/cors'
 import { leadsLog } from '@/lib/leads/log'
 import { resolveRequestId } from '@/lib/leads/request-id'
+import { buildIdempotencyKey } from '@/lib/leads/idempotency'
 import { publicCareersHealth } from '@/lib/leads/public-health'
 
 export const runtime = 'nodejs'
@@ -44,16 +43,6 @@ async function writeAuditObserved(supabase, payload) {
     })
   }
   return result
-}
-
-function buildIdempotencyKey(request, data) {
-  const header = request.headers.get('idempotency-key')?.trim()
-  if (header && header.length >= 8 && header.length <= 128) return header
-  const window = Math.floor(Date.now() / 60_000)
-  return createHash('sha256')
-    .update(`career|${data.email}|${window}`)
-    .digest('hex')
-    .slice(0, 48)
 }
 
 function mailFields(mailResult) {
@@ -100,7 +89,7 @@ export async function POST(request) {
     return errorResponse(request, 'storage-not-configured', 500)
   }
 
-  const idempotencyKey = buildIdempotencyKey(request, validated.data)
+  const idempotencyKey = buildIdempotencyKey(request, validated.data, { scope: 'career' })
   const { data: existingByKey, error: idempotencyError } =
     await findCareerByIdempotencyKey(supabase, idempotencyKey)
   if (idempotencyError) {
@@ -117,24 +106,6 @@ export async function POST(request) {
       leadId: existingByKey.id,
       leadRef: existingByKey.application_ref,
       ...mailFieldsFromStored(existingByKey),
-    })
-  }
-
-  const { duplicate, error: dupErr } = await findRecentCareerDuplicate(supabase, {
-    email: validated.data.email,
-    withinSeconds: 60,
-  })
-  if (dupErr) {
-    leadsLog('error', 'careers.duplicate_check_failed', { code: 'storage-failed' })
-    return errorResponse(request, 'storage-failed', 500)
-  }
-  if (duplicate) {
-    return json(request, {
-      ok: true,
-      duplicate: true,
-      leadId: duplicate.id,
-      leadRef: duplicate.application_ref,
-      ...mailFieldsFromStored(duplicate),
     })
   }
 
