@@ -35,6 +35,17 @@ function errorResponse(request, code, status, headers) {
   return json(request, { ok: false, code }, status, headers)
 }
 
+async function writeAuditObserved(supabase, payload) {
+  const result = await writeAudit(supabase, payload)
+  if (result.error) {
+    leadsLog('error', 'careers.audit_write_failed', {
+      eventType: payload.eventType || 'unknown',
+      code: result.error.code || 'unknown',
+    })
+  }
+  return result
+}
+
 function buildIdempotencyKey(request, data) {
   const header = request.headers.get('idempotency-key')?.trim()
   if (header && header.length >= 8 && header.length <= 128) return header
@@ -90,7 +101,14 @@ export async function POST(request) {
   }
 
   const idempotencyKey = buildIdempotencyKey(request, validated.data)
-  const { data: existingByKey } = await findCareerByIdempotencyKey(supabase, idempotencyKey)
+  const { data: existingByKey, error: idempotencyError } =
+    await findCareerByIdempotencyKey(supabase, idempotencyKey)
+  if (idempotencyError) {
+    leadsLog('error', 'careers.idempotency_lookup_failed', {
+      code: idempotencyError.code || 'unknown',
+    })
+    return errorResponse(request, 'storage-failed', 500)
+  }
   if (existingByKey) {
     return json(request, {
       ok: true,
@@ -141,7 +159,13 @@ export async function POST(request) {
 
   if (insertError) {
     if (insertError.code === '23505') {
-      const { data: raced } = await findCareerByIdempotencyKey(supabase, idempotencyKey)
+      const { data: raced, error: raceLookupError } =
+        await findCareerByIdempotencyKey(supabase, idempotencyKey)
+      if (raceLookupError) {
+        leadsLog('error', 'careers.idempotency_race_lookup_failed', {
+          code: raceLookupError.code || 'unknown',
+        })
+      }
       if (raced) {
         return json(request, {
           ok: true,
@@ -154,14 +178,14 @@ export async function POST(request) {
       }
     }
     leadsLog('error', 'careers.insert_failed', { code: insertError.code || 'unknown' })
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       eventType: 'career.insert_failed',
       detail: { code: insertError.code || 'unknown' },
     })
     return errorResponse(request, 'storage-failed', 500)
   }
 
-  await writeAudit(supabase, {
+  await writeAuditObserved(supabase, {
     careerId: inserted.id,
     eventType: 'career.accepted',
     detail: { application_ref: leadRef },
@@ -174,15 +198,26 @@ export async function POST(request) {
     channel: 'career',
   })
 
-  await updateCareerMailMeta(supabase, inserted.id, {
+  const mailMeta = await updateCareerMailMeta(supabase, inserted.id, {
     mailStatus: mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed'),
     mailMode: mailResult.mode || process.env.LEADS_MAIL_MODE || 'mock',
   })
+  if (mailMeta.error) {
+    leadsLog('error', 'careers.mail_meta_update_failed', {
+      leadRef,
+      code: mailMeta.error.code || 'unknown',
+    })
+    await writeAuditObserved(supabase, {
+      careerId: inserted.id,
+      eventType: 'career.mail_meta_update_failed',
+      detail: { application_ref: leadRef, code: mailMeta.error.code || 'unknown' },
+    })
+  }
 
   if (!mailResult.ok) {
     const failEvent =
       mailResult.mode === 'internal_live' ? 'career.internal_mail_failed' : 'career.mail_failed'
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       careerId: inserted.id,
       eventType: failEvent,
       detail: {
@@ -193,7 +228,7 @@ export async function POST(request) {
       },
     })
     if (mailResult.mode === 'internal_live') {
-      await writeAudit(supabase, {
+      await writeAuditObserved(supabase, {
         careerId: inserted.id,
         eventType: 'career.customer_confirmation_skipped',
         detail: { application_ref: leadRef, mode: 'internal_live', reason: 'temporary_internal_mode' },
@@ -215,7 +250,7 @@ export async function POST(request) {
   }
 
   if (mailResult.mode === 'internal_live') {
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       careerId: inserted.id,
       eventType: 'career.internal_mail_sent',
       detail: {
@@ -225,13 +260,13 @@ export async function POST(request) {
         provider_email_id: mailResult.providerEmailId || null,
       },
     })
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       careerId: inserted.id,
       eventType: 'career.customer_confirmation_skipped',
       detail: { application_ref: leadRef, mode: 'internal_live', reason: 'temporary_internal_mode' },
     })
   } else {
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       careerId: inserted.id,
       eventType: 'career.mail_sent',
       detail: {
