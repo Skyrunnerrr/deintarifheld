@@ -40,12 +40,13 @@ cmd_plan() {
     echo "REMOTE_BASE=$CHECKDOMAIN_REMOTE_BASE"
     echo "PROTOCOL=$CHECKDOMAIN_PROTOCOL"
     echo "LOCAL_OUT=$CHECKDOMAIN_LOCAL_OUT"
-    echo "PARTIAL_UPLOAD_PROTECTION=YES"
-    echo "HTML_UPLOADED_LAST=YES_IF_NO_ATOMIC_SWITCH"
+    echo "PARTIAL_UPLOAD_PROTECTION=BACKUP_PLUS_ORDERED_OVERLAY"
+    echo "HTML_UPLOADED_LAST=YES"
     echo "REMOTE_DELETE_BEFORE_UPLOAD=NO"
     echo "ROLLBACK_AVAILABLE=YES"
-    echo "UPLOAD_STAGING_DIR=releases/<timestamp>/"
-    echo "SWITCH_METHOD=copy_from_staging_assets_first_html_last"
+    echo "UPLOAD_STAGING_DIR=NONE"
+    echo "SWITCH_METHOD=direct_overlay_assets_routes_root_html_htaccess"
+    echo "FRESH_BACKUP_REQUIRED=YES"
     echo "APPLY=$APPLY"
     echo "CHECKDOMAIN_UPLOAD_EXECUTED=NO"
     if dth_cd_mail_gate_status >/tmp/dth-cd-mail-gate-plan.$$ 2>/dev/null; then
@@ -103,25 +104,31 @@ EOF
   ) > "$manifest_tmp"
   mv "$manifest_tmp" "$backup_dir/MANIFEST.sha256"
   [[ -s "$backup_dir/MANIFEST.sha256" ]] || dth_cd_die "backup_manifest_empty"
+  [[ -f "$backup_dir/.htaccess" ]] || dth_cd_die "backup_missing_htaccess"
+  (
+    cd "$backup_dir"
+    shasum -a 256 -c MANIFEST.sha256 >/dev/null
+  ) || dth_cd_die "backup_manifest_verification_failed"
+  printf 'created_epoch=%s\n' "$(date +%s)" > "${backup_dir}.meta"
+  chmod 600 "${backup_dir}.meta" 2>/dev/null || true
   echo "$stamp" > "${CHECKDOMAIN_BACKUP_ROOT:-$HOME/.dth-checkdomain-backups}/LATEST"
-  dth_cd_log "REMOTE_BACKUP_EXECUTED=YES stamp=$stamp manifest=MANIFEST.sha256"
+  dth_cd_log "REMOTE_BACKUP_EXECUTED=YES stamp=$stamp manifest=MANIFEST.sha256 verified=YES"
 }
 
 cmd_upload() {
   dth_cd_load_config
   dth_cd_require_out
-  local stamp staging
-  stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-  staging="releases/${stamp}"
   {
     echo "UPLOAD_PLAN=YES"
-    echo "STAGING=$staging"
-    echo "ORDER=1_assets(_next,images) 2_html_last"
+    echo "STAGING=NONE"
+    echo "ORDER=1__next 2_images_business 3_other_directories 4_root_non_html 5_root_html 6_htaccess"
     echo "REMOTE_DELETE_BEFORE_UPLOAD=NO"
+    echo "FRESH_BACKUP_REQUIRED=YES"
     echo "APPLY=$APPLY"
     echo "MAIL_MODE=${LEADS_MAIL_MODE}"
     echo "ALLOW_MOCK_MAIL_CUTOVER=${ALLOW_MOCK_MAIL_CUTOVER}"
   } | tee -a "$DTH_CD_EVID/checkdomain-deploy-plan.txt"
+
   if [[ "$APPLY" != "YES" ]]; then
     if ! dth_cd_mail_gate_status >/dev/null; then
       echo "CUSTOMER_TRAFFIC_MAIL_GATE=BLOCK (dry-run; apply would abort)"
@@ -132,41 +139,92 @@ cmd_upload() {
     echo "UPLOAD_EXECUTED=NO"
     return 0
   fi
+
   dth_cd_mail_gate
   [[ -n "${CHECKDOMAIN_SSH_IDENTITY:-}" ]] || dth_cd_die "upload_apply_requires_CHECKDOMAIN_SSH_IDENTITY"
-  # Stage upload then promote: assets first, HTML last. Never wipe live tree first.
-  local batch
+
+  # A live overlay is allowed only after a recent, verified backup of the current site.
+  local root_b latest backup_dir backup_meta created_epoch now_epoch backup_age
+  root_b="${CHECKDOMAIN_BACKUP_ROOT:-$HOME/.dth-checkdomain-backups}"
+  latest="$(cat "$root_b/LATEST" 2>/dev/null || true)"
+  [[ -n "$latest" ]] || dth_cd_die "upload_requires_backup_ref"
+  backup_dir="$root_b/$latest"
+  backup_meta="${backup_dir}.meta"
+  [[ -f "$backup_dir/MANIFEST.sha256" ]] || dth_cd_die "upload_requires_backup_manifest"
+  [[ -f "$backup_dir/.htaccess" ]] || dth_cd_die "upload_requires_backup_htaccess"
+  [[ -f "$backup_meta" ]] || dth_cd_die "upload_requires_backup_metadata"
+  (
+    cd "$backup_dir"
+    shasum -a 256 -c MANIFEST.sha256 >/dev/null
+  ) || dth_cd_die "upload_backup_manifest_verification_failed"
+  created_epoch="$(sed -n 's/^created_epoch=//p' "$backup_meta" | head -1)"
+  [[ "$created_epoch" =~ ^[0-9]+$ ]] || dth_cd_die "upload_backup_timestamp_invalid"
+  now_epoch="$(date +%s)"
+  backup_age=$((now_epoch - created_epoch))
+  if (( backup_age < 0 || backup_age > 14400 )); then
+    dth_cd_die "upload_requires_fresh_backup max_age_seconds=14400 actual=${backup_age}"
+  fi
+  dth_cd_log "backup_gate=PASS ref=$latest age_seconds=$backup_age"
+
+  # Ordered overlay from the already-verified local static build.
+  # There is deliberately no fake remote staging copy: rollback is the verified backup above.
+  local batch dir file base
   batch="$(mktemp)"
   {
     echo "cd ${CHECKDOMAIN_REMOTE_BASE}"
-    echo "mkdir releases"
-    echo "mkdir ${staging}"
     echo "lcd ${CHECKDOMAIN_LOCAL_OUT}"
-    echo "cd ${CHECKDOMAIN_REMOTE_BASE}/${staging}"
-    echo "put -r _next"
-    echo "put -r images"
-    echo "put -r *"
+
+    # Immutable/runtime assets first so newly uploaded HTML never points at missing chunks.
+    for dir in _next images business; do
+      if [[ -d "${CHECKDOMAIN_LOCAL_OUT}/$dir" ]]; then
+        echo "put -r $dir"
+      fi
+    done
+
+    # Remaining route/static directories after core assets.
+    for dir in "${CHECKDOMAIN_LOCAL_OUT}"/*; do
+      [[ -d "$dir" ]] || continue
+      base="$(basename "$dir")"
+      case "$base" in
+        _next|images|business) continue ;;
+      esac
+      echo "put -r $base"
+    done
+
+    # Hidden build metadata is operational evidence, not a public route.
+    if [[ -d "${CHECKDOMAIN_LOCAL_OUT}/.dth-build" ]]; then
+      echo "put -r .dth-build"
+    fi
+
+    # Root non-HTML files next. Hidden .htaccess is deliberately held until the end.
+    for file in "${CHECKDOMAIN_LOCAL_OUT}"/*; do
+      [[ -f "$file" ]] || continue
+      base="$(basename "$file")"
+      case "$base" in
+        *.html) continue ;;
+      esac
+      echo "put $base"
+    done
+
+    # Root HTML last, after every asset/directory it can reference is present.
+    for file in "${CHECKDOMAIN_LOCAL_OUT}"/*.html; do
+      [[ -f "$file" ]] || continue
+      base="$(basename "$file")"
+      echo "put $base"
+    done
+
+    # Routing/security policy changes become active only after content is in place.
+    if [[ -f "${CHECKDOMAIN_LOCAL_OUT}/.htaccess" ]]; then
+      echo "put .htaccess"
+    fi
   } > "$batch"
-  sftp -oBatchMode=yes -i "$CHECKDOMAIN_SSH_IDENTITY" -b "$batch" \
-    "${CHECKDOMAIN_USER}@${CHECKDOMAIN_HOST}"
-  # Promote non-html then html
-  batch="$(mktemp)"
-  {
-    echo "cd ${CHECKDOMAIN_REMOTE_BASE}"
-    echo "lcd ${CHECKDOMAIN_LOCAL_OUT}"
-    # assets
-    echo "put -r _next"
-    echo "put -r images"
-    # html last
-    echo "put .htaccess"
-    echo "put robots.txt"
-    echo "put sitemap.xml"
-    echo "put -r *"
-  } > "$batch"
+
   sftp -oBatchMode=yes -i "$CHECKDOMAIN_SSH_IDENTITY" -b "$batch" \
     "${CHECKDOMAIN_USER}@${CHECKDOMAIN_HOST}"
   rm -f "$batch"
   echo "UPLOAD_EXECUTED=YES"
+  echo "UPLOAD_BACKUP_REF=$latest"
+  echo "UPLOAD_ORDERED_OVERLAY=YES"
 }
 
 cmd_verify() {
