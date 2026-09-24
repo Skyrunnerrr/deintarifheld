@@ -11,8 +11,6 @@ import {
   sanitizePayload,
   HONEYPOT_FIELD,
   HONEYPOT_FIELD_2,
-  checkRateLimit,
-  recordSubmission,
   recordFormLoad,
   getFormTiming,
 } from '@/lib/security'
@@ -119,12 +117,6 @@ function BusinessFormular() {
 
     setRecaptchaError('')
 
-    const rl = checkRateLimit('b2b-form')
-    if (!rl.allowed) {
-      setRateLimitMsg(`Bitte warten Sie ${rl.remainingSeconds}s bevor Sie erneut absenden.`)
-      return
-    }
-
     setSending(true)
     try {
       const captcha = await resolveSubmitCaptchaToken('unternehmen', recaptchaToken)
@@ -132,7 +124,6 @@ function BusinessFormular() {
         setRecaptchaError(leadSubmitCaptchaClientMessage('formal'))
         return
       }
-      recordSubmission('b2b-form')
       const payload = {
         ...sanitizePayload({
           ...form,
