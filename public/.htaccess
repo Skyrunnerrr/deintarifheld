@@ -1,5 +1,9 @@
 # ── HTTPS erzwingen ──────────────────────────────────────────────
 RewriteEngine On
+
+# Internal release evidence must never be served publicly.
+RewriteRule ^\.dth-build(?:/|$) - [F,L]
+
 RewriteCond %{HTTPS} !=on
 RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 
