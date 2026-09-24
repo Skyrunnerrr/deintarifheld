@@ -202,6 +202,23 @@ const staticCareer = read('public/karriere.html')
 assert.doesNotMatch(staticCareer, /script\.google\.com\/macros/)
 assert.match(staticCareer, /\/karriere\//)
 
+const navbar = read('components/ui/Navbar.jsx')
+assert.match(navbar, /isBusinessRoute = pathname\?\.startsWith\('\/unternehmen'\)/)
+assert.match(navbar, /isCareerRoute = pathname\?\.startsWith\('\/karriere'\)/)
+assert.match(navbar, /'partneranfrage'/)
+assert.match(navbar, /'formular'/)
+
+const stickyCta = read('components/ui/StickyMobileCta.jsx')
+assert.match(stickyCta, /pathname === '\/'/)
+assert.match(stickyCta, /startsWith\('\/unternehmen'\)/)
+assert.match(stickyCta, /startsWith\('\/karriere'\)/)
+assert.match(stickyCta, /return null/)
+
+assert.match(read('components/sections/CareerSection.jsx'), /id="partneranfrage"/)
+
+const sitemapConfig = read('next-sitemap.config.js')
+assert.match(sitemapConfig, /'\/unternehmen-neu', '\/unternehmen-neu\/'/)
+
 const apply = read('scripts/infra/phase-a/apply.sh')
 assert.doesNotMatch(apply, /checkdomain_api_v1/)
 assert.match(apply, /checkdomain_active.:false|dns_automation.:.skipped/)
