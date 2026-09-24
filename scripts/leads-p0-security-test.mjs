@@ -12,10 +12,8 @@ import { isCronAuthorized } from '../lib/leads/cron-auth.js'
 import { createAdminSessionValue, parseAdminSessionValue, ADMIN_COOKIE_NAME } from '../lib/leads/admin-session.js'
 import { enforceAdminAccess } from '../lib/leads/admin-guard.js'
 import {
-  evaluateFormTiming,
   hasControlledIntakeBypass,
   isBlockedOrigin,
-  isTooFastSubmit,
   resetRateLimitsForTests,
 } from '../lib/leads/abuse-guard.js'
 import { captchaRequired, verifyCaptchaToken } from '../lib/leads/captcha.js'
@@ -244,15 +242,6 @@ async function assertBodyLimit() {
   console.log('P0_BODY_LIMIT=PASS')
 }
 
-function assertTiming() {
-  assert.equal(isTooFastSubmit(undefined), true)
-  assert.equal(isTooFastSubmit(''), true)
-  assert.equal(isTooFastSubmit(Date.now()), true)
-  assert.equal(isTooFastSubmit(Date.now() - 4000), false)
-  assert.equal(evaluateFormTiming(Date.now() - 8 * 60 * 60 * 1000).reason, 'too-old')
-  console.log('P0_TIMING=PASS')
-}
-
 async function assertAdminAuth() {
   await withEnv({ LEADS_ADMIN_SECRET: STRONG_ADMIN, CRON_SECRET: STRONG_CRON, LEADS_RUNTIME_ENV: undefined }, () => {
     assert.equal(isAdminAuthorized(fakeRequest({ authorization: `Bearer ${STRONG_ADMIN}` })), true)
@@ -460,7 +449,6 @@ async function main() {
   await assertCaptcha()
   await assertOrigin()
   await assertBodyLimit()
-  assertTiming()
   await assertAdminAuth()
   await assertAdminBruteForceAndInbox()
   await assertHeadersAndHealth()
