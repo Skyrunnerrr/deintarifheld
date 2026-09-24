@@ -170,7 +170,11 @@ export function Hero() {
   function openFunnel() {
     setFunnelOpen(true)
     setTimeout(() => {
-      document.getElementById('hero-funnel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      document.getElementById('hero-funnel')?.scrollIntoView({
+        behavior: reduced ? 'auto' : 'smooth',
+        block: 'nearest',
+      })
     }, 100)
   }
 
