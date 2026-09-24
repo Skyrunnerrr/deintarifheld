@@ -12,6 +12,8 @@ import { buildInternalOpsMail, parseLeadToAddresses, sendLeadEmails } from '../l
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const sends = []
 let failNext = false
+let throwNext = false
+let failRecipient = ''
 let providerIdSeq = 0
 
 const originalFetch = globalThis.fetch
@@ -29,6 +31,16 @@ globalThis.fetch = async (input, init = {}) => {
     subject: body.subject,
     reply_to: body.reply_to || body.replyTo,
   })
+  if (throwNext) {
+    throwNext = false
+    throw new Error('forced_transport_failure')
+  }
+  if (failRecipient && Array.isArray(body.to) && body.to.includes(failRecipient)) {
+    return new Response(JSON.stringify({ message: 'forced_recipient_failure', name: 'application_error' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    })
+  }
   if (failNext) {
     failNext = false
     return new Response(JSON.stringify({ message: 'forced_failure', name: 'application_error' }), {
@@ -292,7 +304,62 @@ async function assertFailurePath() {
       assert.equal(r.code, 'mail-not-configured')
     },
   )
+  sends.length = 0
+  throwNext = true
+  await withEnv(
+    {
+      LEADS_MAIL_MODE: 'internal_live',
+      RESEND_API_KEY: 're_test_key',
+      LEADS_FROM_EMAIL: 'DeinTarifheld <onboarding@resend.dev>',
+      LEADS_TO_EMAIL: 'ops-account@example.invalid',
+    },
+    async () => {
+      const r = await sendLeadEmails({
+        leadRef: 'REF-THROW',
+        data: businessData,
+        submittedAt: new Date().toISOString(),
+        channel: 'business',
+      })
+      assert.equal(r.ok, false)
+      assert.equal(r.mailStatus, 'failed')
+      assert.equal(r.customerConfirmation, 'skipped')
+      assert.equal(r.code, 'mail-send-failed')
+      assert.ok(r.providerErrorCode)
+    },
+  )
+
+  sends.length = 0
+  failRecipient = businessData.email
+  await withEnv(
+    {
+      LEADS_MAIL_MODE: 'live',
+      ALLOW_CUSTOMER_MAIL: 'YES',
+      RESEND_API_KEY: 're_test_key',
+      LEADS_FROM_EMAIL: 'DeinTarifheld <onboarding@resend.dev>',
+      LEADS_TO_EMAIL: 'ops-account@example.invalid',
+    },
+    async () => {
+      const r = await sendLeadEmails({
+        leadRef: 'REF-PARTIAL',
+        data: businessData,
+        submittedAt: new Date().toISOString(),
+        channel: 'business',
+      })
+      assert.equal(r.ok, false)
+      assert.equal(r.mailStatus, 'internal_sent')
+      assert.equal(r.internalDelivery, 'sent')
+      assert.equal(r.customerConfirmation, 'failed')
+      assert.ok(r.providerEmailId)
+      assert.equal(sends.length, 2)
+      assert.deepEqual(sends[0].to, ['ops-account@example.invalid'])
+      assert.deepEqual(sends[1].to, [businessData.email])
+    },
+  )
+  failRecipient = ''
+
   console.log('MAIL_FAILURE=PASS')
+  console.log('MAIL_TRANSPORT_EXCEPTION_CONTAINED=PASS')
+  console.log('MAIL_PARTIAL_DELIVERY_TRUTH=PASS')
 }
 
 function assertInquiryFieldsInOpsMail() {
