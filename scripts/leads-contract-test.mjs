@@ -20,9 +20,18 @@ for (const obsolete of [
   'test-backend.mjs',
   'upload.sh',
   'upload-ftp.sh',
+  'INTEGRATION_SUMMARY.md',
+  'RECAPTCHA_QUICKSTART.md',
+  'RECAPTCHA_SETUP.md',
+  'google-apps-script.js',
 ]) {
   assert.equal(existsSync(join(root, obsolete)), false, `obsolete tracked file returned: ${obsolete}`)
 }
+
+assert.ok(existsSync(join(root, 'docs/history/legacy-google-apps-script.js')))
+assert.match(read('docs/history/legacy-google-apps-script.js'), /RETIRED HISTORICAL IMPLEMENTATION/)
+assert.match(read('README.md'), /Vercel Next\.js API/)
+assert.match(read('README.md'), /Google Apps Script backend is not part of the production request path/)
 
 assert.ok(existsSync(join(root, 'supabase/migrations/001_leads_phase_a.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/002_leads_phase_b.sql')))
