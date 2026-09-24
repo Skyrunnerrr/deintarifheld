@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
+import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, recordFormLoad, getFormTiming } from '@/lib/security'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
@@ -196,10 +196,6 @@ export function Hero() {
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
 
-    // Rate limiting
-    const rl = checkRateLimit('hero-funnel')
-    if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s bevor du erneut absendest.`); return }
-
     setSending(true)
     try {
       const captcha = await resolveSubmitCaptchaToken('hero_funnel', recaptchaToken)
@@ -207,7 +203,6 @@ export function Hero() {
         setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
         return
       }
-      recordSubmission('hero-funnel')
       const { [HONEYPOT_FIELD]: _hp, [HONEYPOT_FIELD_2]: _hp2, ...rest } = formData
       const { _formLoadedAt } = getFormTiming('hero-funnel')
       const payload = {
