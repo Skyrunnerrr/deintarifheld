@@ -232,7 +232,7 @@ const htaccess = read('public/.htaccess')
 assert.match(htaccess, /\^\/_next\/static\//)
 assert.match(htaccess, /max-age=31536000, immutable/)
 assert.match(htaccess, /image\/png "access plus 7 days"/)
-assert.match(htaccess, /\.html\?\$"/)
+assert.match(htaccess, /no-cache, max-age=0, must-revalidate/)
 assert.match(htaccess, /X-XSS-Protection "0"/)
 assert.doesNotMatch(htaccess, /image\/png "access plus 1 year"/)
 
