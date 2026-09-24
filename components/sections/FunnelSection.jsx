@@ -14,7 +14,7 @@ import { Section, AmbientBg } from '@/components/ui/Background'
 import { SectionLabel, SectionHeading, VoltText } from '@/components/ui/Typography'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { cn } from '@/lib/utils'
-import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
+import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, recordFormLoad, getFormTiming } from '@/lib/security'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
@@ -168,10 +168,6 @@ function Step2({ step1Data, onSuccess }) {
     setRateLimitMsg('')
     setRecaptchaError('')
 
-    // Rate limiting
-    const rl = checkRateLimit('main-funnel')
-    if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s bevor du erneut absendest.`); return }
-
     setLoading(true)
     try {
       const captcha = await resolveSubmitCaptchaToken('main_funnel', recaptchaToken)
@@ -179,7 +175,6 @@ function Step2({ step1Data, onSuccess }) {
         setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
         return
       }
-      recordSubmission('main-funnel')
       const payload = {
         ...sanitizePayload({
           firstName: step1Data.firstName,
