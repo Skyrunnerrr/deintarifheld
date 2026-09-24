@@ -299,9 +299,10 @@ export function Navbar() {
       {/* ── Mobile Overlay ── */}
       <div
         id="mobile-menu"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Navigation"
+        role="navigation"
+        aria-label="Mobile Navigation"
+        aria-hidden={!menuOpen}
+        inert={menuOpen ? undefined : ''}
         style={{
           position: 'fixed', inset: 0,
           zIndex: 40,
