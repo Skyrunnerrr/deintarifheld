@@ -25,23 +25,35 @@ RewriteRule ^(.*)$ $1.html [L]
   Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "DENY"
-  Header set X-XSS-Protection "1; mode=block"
+  # Disable the obsolete browser XSS auditor; CSP is the actual script policy.
+  Header set X-XSS-Protection "0"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
   Header set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
   # CSP: self + reCAPTCHA + ProvenExpert + Vercel Lead API. No Google Fonts in this build.
   Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://s.provenexpert.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.gstatic.com https://www.google.com https://www.provenexpert.com https://s.provenexpert.net; font-src 'self' data:; connect-src 'self' https://deintarifheld-leads-api.vercel.app https://www.google.com https://www.recaptcha.net https://s.provenexpert.net; frame-src https://www.google.com https://www.recaptcha.net; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
 </IfModule>
 
-# Caching fuer statische Assets
+# Caching: immutable only for content-hashed Next assets.
+# Public images keep stable filenames and must remain refreshable after a release.
+<IfModule mod_setenvif.c>
+  SetEnvIf Request_URI "^/_next/static/" dth_immutable=1
+</IfModule>
+<IfModule mod_headers.c>
+  Header set Cache-Control "public, max-age=31536000, immutable" env=dth_immutable
+  <FilesMatch "\.html?$">
+    Header set Cache-Control "no-cache, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>
 <IfModule mod_expires.c>
   ExpiresActive On
-  ExpiresByType text/css "access plus 1 year"
-  ExpiresByType application/javascript "access plus 1 year"
-  ExpiresByType image/png "access plus 1 year"
-  ExpiresByType image/jpeg "access plus 1 year"
-  ExpiresByType image/svg+xml "access plus 1 year"
-  ExpiresByType image/webp "access plus 1 year"
-  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType text/css "access plus 1 day"
+  ExpiresByType application/javascript "access plus 1 day"
+  ExpiresByType image/png "access plus 7 days"
+  ExpiresByType image/jpeg "access plus 7 days"
+  ExpiresByType image/svg+xml "access plus 7 days"
+  ExpiresByType image/webp "access plus 7 days"
+  ExpiresByType font/woff2 "access plus 30 days"
+  ExpiresByType application/manifest+json "access plus 1 day"
 </IfModule>
 
 # Komprimierung
