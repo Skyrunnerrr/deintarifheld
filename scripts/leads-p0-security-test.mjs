@@ -28,6 +28,7 @@ import { customerMailDualGuardOpen, sendLeadEmails } from '../lib/leads/mail.js'
 import { publicCareersHealth, publicLeadsHealth } from '../lib/leads/public-health.js'
 import { inboxGetResponse } from '../lib/leads/admin-inbox-http.js'
 import { withCors } from '../lib/leads/cors.js'
+import { normalizeRequestId, resolveRequestId } from '../lib/leads/request-id.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const STRONG_ADMIN = 'p0-admin-secret-value-32chars!!'
@@ -430,6 +431,31 @@ async function assertMailGuards() {
   console.log('P0_MAIL_GUARDS=PASS')
 }
 
+function assertRequestIds() {
+  assert.equal(normalizeRequestId('client-123:abc'), 'client-123:abc')
+  assert.equal(normalizeRequestId('  request_42  '), 'request_42')
+  assert.equal(normalizeRequestId('bad value'), '')
+  assert.equal(normalizeRequestId('bad\nvalue'), '')
+  assert.equal(normalizeRequestId('x'.repeat(81)), '')
+
+  const accepted = resolveRequestId(fakeRequest({ 'x-request-id': 'client-safe.123' }))
+  assert.equal(accepted, 'client-safe.123')
+
+  const rejected = resolveRequestId(fakeRequest({ 'x-request-id': 'secret=should not reflect' }))
+  assert.notEqual(rejected, 'secret=should not reflect')
+  assert.match(rejected, /^[0-9a-f-]{36}$/i)
+
+  const response = new Response('{}')
+  withCors(fakeRequest({
+    origin: 'https://www.deintarifheld.de',
+    'x-request-id': 'bad value with spaces',
+  }), response)
+  assert.notEqual(response.headers.get('x-request-id'), 'bad value with spaces')
+  assert.match(response.headers.get('x-request-id') || '', /^[0-9a-f-]{36}$/i)
+
+  console.log('P0_REQUEST_ID_NORMALIZATION=PASS')
+}
+
 async function main() {
   await assertCaptcha()
   await assertOrigin()
@@ -438,6 +464,7 @@ async function main() {
   await assertAdminAuth()
   await assertAdminBruteForceAndInbox()
   await assertHeadersAndHealth()
+  assertRequestIds()
   await assertMailGuards()
   console.log('P0_SECURITY_TESTS=PASS')
   console.log('REAL_CUSTOMER_MAIL_SENT=NO')
