@@ -72,13 +72,6 @@ const JSON_LD_LOCAL_BUSINESS = {
   serviceType: ['Energieberatung', 'Tarifoptimierung', 'Stromanbieter Vergleich', 'Gasanbieter Vergleich', 'B2B Energieberatung', 'Strompreisvergleich', 'Günstiger Strom'],
   priceRange:  'Kostenlos',
   knowsAbout:  ['Strom', 'Erdgas', 'Energie', 'Tarifwechsel', 'Kostenoptimierung', 'Energieberatung', 'günstiger Strom', 'Strompreisvergleich', 'Stromanbieter wechseln', 'Gasanbieter wechseln'],
-  aggregateRating: {
-    '@type':       'AggregateRating',
-    ratingValue:   '4.9',
-    bestRating:    '5',
-    ratingCount:   '127',
-    reviewCount:   '127',
-  },
   hasOfferCatalog: {
     '@type': 'OfferCatalog',
     name: 'Energieberatung & Tarifvergleich',
