@@ -13,6 +13,7 @@ import {
   GOOGLE_ASSESSMENT_INVALID_REASONS,
   GOOGLE_ASSESSMENT_RISK_REASONS,
   publicCaptchaErrorCode,
+  recaptchaMinScore,
   verifyCaptchaToken,
 } from '../lib/leads/captcha.js'
 import { resolveExpectedCaptchaAction } from '../lib/leads/captcha-action.js'
@@ -506,6 +507,30 @@ async function assertServerDiagnostics() {
         assert.equal(score.ok, false)
         assert.equal(score.reason, 'captcha-score-too-low')
         assert.equal(score.code, 'captcha-rejected')
+
+        await withEnv({ RECAPTCHA_MIN_SCORE: undefined }, async () => {
+          assert.equal(recaptchaMinScore(), 0.5)
+        })
+        await withEnv({ RECAPTCHA_MIN_SCORE: '0.7' }, async () => {
+          assert.equal(recaptchaMinScore(), 0.7)
+        })
+        for (const invalid of ['abc', 'NaN', '-0.1', '1.1', 'Infinity']) {
+          await withEnv({ RECAPTCHA_MIN_SCORE: invalid }, async () => {
+            assert.equal(recaptchaMinScore(), null)
+            let called = false
+            const invalidConfig = await verifyCaptchaToken(TOKEN, {
+              expectedAction: 'unternehmen',
+              fetchImpl: async () => {
+                called = true
+                throw new Error('must-not-call-google')
+              },
+            })
+            assert.equal(invalidConfig.ok, false)
+            assert.equal(invalidConfig.code, 'captcha-not-configured')
+            assert.equal(invalidConfig.reason, 'captcha-not-configured')
+            assert.equal(called, false, 'invalid threshold must fail before Google request')
+          })
+        }
 
         const action = await verifyCaptchaToken(TOKEN, {
           expectedAction: 'unternehmen',
