@@ -1,24 +1,23 @@
 import { Hero }              from '@/components/sections/Hero'
 import { TrustBar }          from '@/components/sections/TrustBar'
-import { TrustLogos }        from '@/components/sections/TrustLogos'
 import { HowItWorks }        from '@/components/sections/HowItWorks'
 import { SavingsCalculator } from '@/components/sections/SavingsCalculator'
 import { FAQ_ITEMS }         from '@/lib/constants'
 
 export const metadata = {
-  title:       'Günstiger Strom & Gas 2026 – Bis 40 % sparen | Tarifheld Vergleich',
-  description: 'Günstiger Strom gesucht? Tarifheld findet den besten Tarif — kostenlos, persönlich, Ø 480 € Ersparnis. Stromanbieter wechseln in 2 Minuten. Jetzt Tarif prüfen!',
+  title:       'Strom & Gas vergleichen | DeinTarifheld',
+  description: 'Strom- und Gastarife kostenlos und unverbindlich prüfen lassen. Persönliche Unterstützung beim Tarifvergleich und auf Wunsch beim Wechsel.',
   alternates:  { canonical: 'https://www.deintarifheld.de/' },
   openGraph: {
-    title:       'Günstiger Strom & Gas – Tarifheld | Bis zu 40 % sparen',
-    description: 'Günstigen Strom finden: Kostenloser Vergleich, Ø 480 € Ersparnis. Stromanbieter wechseln ohne Papierkram.',
+    title:       'Strom & Gas vergleichen | DeinTarifheld',
+    description: 'Strom- und Gastarife kostenlos prüfen lassen. Persönliche Beratung und Unterstützung beim Anbieterwechsel.',
     url:         'https://www.deintarifheld.de/',
     images:      [{ url: '/images/og-default.png', width: 1200, height: 630, alt: 'Tarifheld – Günstiger Strom & Gas Vergleich' }],
   },
   twitter: {
     card:        'summary_large_image',
-    title:       'Günstiger Strom & Gas – Tarifheld | Bis zu 40 % sparen',
-    description: 'Günstigen Strom finden: Ø 480 € sparen. Jetzt kostenlos Tarif prüfen!',
+    title:       'Strom & Gas vergleichen | DeinTarifheld',
+    description: 'Strom- und Gastarife kostenlos und unverbindlich prüfen lassen.',
     images:      ['/images/og-default.png'],
   },
 }
@@ -49,7 +48,7 @@ export default function Home() {
     name:       'Kostenloser Strompreisvergleich & Gastarif-Vergleich',
     provider: { '@type': 'LocalBusiness', name: 'Dein Tarifheld', url: 'https://www.deintarifheld.de' },
     serviceType:  'Energieberatung und Tarifvergleich',
-    description:  'Günstiger Strom & Gas: Kostenloser Vergleich von über 1.000 Strom- und Gastarifen für Privat- und Gewerbekunden. Persönliche Beratung, Ø 480 € Ersparnis.',
+    description:  'Kostenlose und unverbindliche Unterstützung beim Vergleich von Strom- und Gastarifen für Privat- und Gewerbekunden.',
     areaServed:   { '@type': 'Country', name: 'Germany' },
     offers: {
       '@type':        'Offer',
