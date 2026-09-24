@@ -11,6 +11,19 @@ import { fileURLToPath } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(join(root, p), 'utf8')
 
+for (const obsolete of [
+  'DEINTARIFHELD',
+  'NEU TARI.jpg',
+  'app/datenschutz/page.js.bak',
+  'build-check.sh',
+  'package-lock.json.old',
+  'test-backend.mjs',
+  'upload.sh',
+  'upload-ftp.sh',
+]) {
+  assert.equal(existsSync(join(root, obsolete)), false, `obsolete tracked file returned: ${obsolete}`)
+}
+
 assert.ok(existsSync(join(root, 'supabase/migrations/001_leads_phase_a.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/002_leads_phase_b.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/003_leads_rate_limits.sql')))
