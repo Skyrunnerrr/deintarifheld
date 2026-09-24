@@ -2,26 +2,6 @@ name: dth-phase-a-ci
 
 on:
   pull_request:
-    paths:
-      - 'app/api/**'
-      - 'lib/leads/**'
-      - 'components/sections/Hero.jsx'
-      - 'components/sections/FunnelSection.jsx'
-      - 'components/sections/CareerSection.jsx'
-      - 'components/business/BusinessForm.jsx'
-      - 'public/.htaccess'
-      - 'next.config.mjs'
-      - 'supabase/**'
-      - 'scripts/**'
-      - 'infra/phase-a/**'
-      - 'docs/legal/**'
-      - 'docs/audit/**'
-      - 'docs/deployment/**'
-      - 'docs/compliance/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'vercel.json'
-      - '.github/workflows/dth-phase-a-ci.yml'
   workflow_dispatch:
     inputs:
       run_preview_smoke:
@@ -42,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version-file: '.nvmrc'
           cache: npm
       - run: npm ci
       - run: npm run lint
@@ -124,7 +104,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version-file: '.nvmrc'
           cache: npm
       - run: npm ci
       - name: Preview smoke
