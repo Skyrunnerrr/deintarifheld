@@ -278,6 +278,41 @@ This audit will verify each externally checkable claim or remove/qualify unsuppo
 
 Static search found multiple `outline: none` usages. Some may have replacement focus styles; each interactive element must be checked before any change.
 
+## Remediation status on the audit branch
+
+The finding descriptions above preserve the state in which each issue was discovered. Current branch status:
+
+- A-01 RESOLVED — validated reCAPTCHA score configuration; malformed/out-of-range values fail closed; regression coverage added.
+- A-02 RESOLVED — Resend transport/provider exceptions are contained after storage and mapped to structured failure.
+- A-03 RESOLVED — internal-sent/customer-failed partial state and provider IDs are preserved; provider idempotency is explicit.
+- A-04 RESOLVED — rollback explicitly restores and verifies `.htaccess`.
+- A-05 RESOLVED — false remote-staging claim removed; deployment is an explicit backup-gated ordered overlay.
+- A-06 RESOLVED — backup manifest is generated outside the tree and verified before it becomes release evidence.
+- A-07 RESOLVED — unsafe absolute-path/editor rsync tasks and disabled host-key verification were removed.
+- A-08 RESOLVED — confirmed obsolete root scripts/backups/duplicates were removed.
+- A-09 RESOLVED — retired GAS/reCAPTCHA setup guidance was removed from the active root and the old implementation archived as history.
+- A-10 RESOLVED — README now documents the real production architecture, release gates and rollback path.
+- A-11 RESOLVED — redundant direct `motion-dom` dependency removed with lockfile/CI verification.
+- A-12 RESOLVED — brittle timing gate/client cooldown removed; remaining timing is non-authoritative telemetry only.
+- A-13 PARTIAL — request-id and idempotency primitives are shared; route-specific business logic remains intentionally explicit instead of being over-abstracted.
+- A-14 RESOLVED — inbound request IDs are bounded/validated and invalid values are replaced by server UUIDs.
+- A-15 RESOLVED — Enterprise reCAPTCHA and Resend have validated, bounded request timeouts.
+- A-16 RESOLVED — browser lead POSTs have a bounded timeout with retry-safe idempotency reuse for uncertain outcomes.
+- A-17 RESOLVED — retention configuration is centrally validated and fails closed on malformed values.
+- A-18 CODE RESOLVED / OPS PENDING — server runtime prefers `SUPABASE_URL` with a backward-compatible fallback; production environment confirmation remains a release-gate item.
+- A-19 SUBSTANTIALLY RESOLVED — unsupported hardcoded savings/rating/earnings/response-time claims were removed from active public content; CI now blocks the audited claim set from returning.
+- A-20 IN PROGRESS — focus/error association, unique form IDs, closed-menu focus isolation and reduced-motion behavior were hardened; image/LCP and final keyboard review remain open.
+
+Additional findings resolved during the same review:
+
+- A-21 RESOLVED — Supabase requests now have a validated per-request timeout instead of being able to stall the intake indefinitely.
+- A-22 RESOLVED — redundant email-window duplicate queries were removed. Fallback idempotency is payload-aware, allowing a deliberately edited submission while still deduplicating the same logical request.
+- A-23 RESOLVED — repository runtime is explicitly Node 22/ESM; machine-specific build aliasing was removed and GitHub Actions were moved to current Node-runtime action majors.
+- A-24 RESOLVED — noindex `/unternehmen-neu/` is excluded from the sitemap and route-specific CTAs point only at real anchors.
+- A-25 OPEN — `public/images/tari-nobg.png` remains approximately 2.49 MB and is used in prominent UI. Binary optimization is required before the performance wave can be closed.
+- A-26 OPEN/DECISION — `/unternehmen/` and `/unternehmen-neu/` still coexist. The preview route is noindex; deletion or promotion requires an explicit product/design decision rather than an audit guess.
+- A-27 CONTROLLED DEBT — current npm audit policy still records reviewed transitive findings and ESLint 8 / `next lint` deprecation. No blind `npm audit fix` or Next-major migration is allowed inside this stabilization PR.
+
 ## Controls already strong — preserve them
 
 Do not regress these:
