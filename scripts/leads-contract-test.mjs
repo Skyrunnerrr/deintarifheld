@@ -243,6 +243,13 @@ assert.match(gate, /internal_live/)
 assert.match(gate, /INTERNAL_NOTIFICATION=LIVE/)
 assert.match(gate, /TEMPORARY_MODE=YES/)
 
+const deployScript = read('scripts/deploy/checkdomain/dth-checkdomain.sh')
+assert.match(deployScript, /put \.htaccess/)
+assert.match(deployScript, /rollback_backup_missing_htaccess/)
+assert.match(deployScript, /MANIFEST\.sha256/)
+assert.match(deployScript, /shasum -a 256 -c MANIFEST\.sha256/)
+assert.doesNotMatch(deployScript, /find \. -type f \| sort \| while read -r f/)
+
 assert.ok(existsSync(join(root, 'scripts/build-static-production.sh')))
 assert.ok(existsSync(join(root, 'scripts/deploy/checkdomain/dth-checkdomain.sh')))
 assert.ok(existsSync(join(root, 'app/rechner/page.js')))
