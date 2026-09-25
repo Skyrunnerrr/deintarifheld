@@ -103,6 +103,7 @@ for (const surface of surfaces) {
   if (surface.name === 'hero') {
     assert.match(source, /newErrors\.type = 'Bitte wähle Strom oder Gas aus'/, 'hero: energy type must be client-validated')
     assert.match(source, /error=\{errors\.type\}/, 'hero: energy type validation must be visible')
+    assert.match(source, /\^\\d\+\$/.source ? /Number\(formData\.usage\) <= 0/ : /Number\(formData\.usage\) <= 0/, 'hero: consumption must be positive before submit')
   }
   const binding = resolveExpectedCaptchaAction({
     endpoint: surface.endpoint,
@@ -173,6 +174,11 @@ for (const sourcePage of ['/unternehmen/', '/unternehmen-neu/']) {
   assert.equal(validateUnternehmenPayload({ ...business, energieart: '' }).code, 'invalid-energy-type')
   assert.equal(validateUnternehmenPayload({ ...business, energieart: 'Wasser' }).code, 'invalid-energy-type')
   assert.equal(validateUnternehmenPayload({ ...business, standorte: '' }).code, 'locations-required')
+  assert.equal(validateUnternehmenPayload({ ...business, standorte: '99' }).code, 'invalid-locations')
+  assert.equal(validateUnternehmenPayload({ ...business, verbrauchStrom: '0' }).code, 'invalid-consumption')
+  assert.equal(validateUnternehmenPayload({ ...business, verbrauchStrom: '12.5' }).code, 'invalid-consumption')
+  assert.equal(validateUnternehmenPayload({ ...business, verbrauchStrom: '1e5' }).code, 'invalid-consumption')
+  assert.equal(validateUnternehmenPayload({ ...business, verbrauchStrom: '' }).ok, true, 'business consumption remains optional')
   assert.equal(validateUnternehmenPayload({ ...business, plz: '' }).code, 'invalid-plz')
   assert.equal(validateUnternehmenPayload({ ...business, website_url: 'bot.example' }).honeypotFilled, true)
   assert.equal(validateUnternehmenPayload({ ...business, company_fax: '123' }).honeypotFilled, true)
