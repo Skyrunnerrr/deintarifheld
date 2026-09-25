@@ -390,6 +390,13 @@ async function assertGetTokenContract() {
       (err) => err instanceof RecaptchaClientError && err.code === 'recaptcha-execute-unavailable',
     )
 
+    let posted = false
+    const minted = await awaitFreshRecaptchaToken('career')
+    assert.equal(minted.ok, false)
+    assert.equal(minted.code, 'recaptcha-execute-unavailable')
+    if (minted.ok) posted = true
+    assert.equal(posted, false, 'execute unavailable must not POST')
+
     await withEnv({ NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: SITE_KEY, RECAPTCHA_READY_TIMEOUT_MS: '40' }, async () => {
       resetRecaptchaClientForTests()
       installBrowserMocks()
@@ -405,12 +412,6 @@ async function assertGetTokenContract() {
       assert.equal(mapped.code, 'recaptcha-execute-timeout')
     })
 
-    let posted = false
-    const minted = await awaitFreshRecaptchaToken('career')
-    assert.equal(minted.ok, false)
-    assert.equal(minted.code, 'recaptcha-execute-unavailable')
-    if (minted.ok) posted = true
-    assert.equal(posted, false, 'execute unavailable must not POST')
   })
   console.log('P0_RECAPTCHA_TOKEN=PASS')
 }
