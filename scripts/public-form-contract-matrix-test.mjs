@@ -103,7 +103,7 @@ for (const surface of surfaces) {
   if (surface.name === 'hero') {
     assert.match(source, /newErrors\.type = 'Bitte wähle Strom oder Gas aus'/, 'hero: energy type must be client-validated')
     assert.match(source, /error=\{errors\.type\}/, 'hero: energy type validation must be visible')
-    assert.match(source, /\^\\d\+\$/.source ? /Number\(formData\.usage\) <= 0/ : /Number\(formData\.usage\) <= 0/, 'hero: consumption must be positive before submit')
+    assert.match(source, /Number\(formData\.usage\) <= 0/, 'hero: consumption must be positive before submit')
   }
   const binding = resolveExpectedCaptchaAction({
     endpoint: surface.endpoint,
