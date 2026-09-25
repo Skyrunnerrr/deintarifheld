@@ -28,6 +28,14 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm run build:static
+      - name: Production static release-parity build + verifier
+        env:
+          NEXT_PUBLIC_LEADS_API_ORIGIN: https://deintarifheld-leads-api.vercel.app
+          NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: ci_public_recaptcha_key_1234567890
+          LEADS_MAIL_MODE: mock
+        run: |
+          npm run build:static:production
+          npm run verify:static:production
       - name: Migration present (001 + 002 + 003 + 004 + 005)
         run: |
           test -f supabase/migrations/001_leads_phase_a.sql
