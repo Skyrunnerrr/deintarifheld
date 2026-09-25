@@ -84,6 +84,7 @@ function B2BFormular() {
     form.plz.trim().length === 5 && /^\d{5}$/.test(form.plz.trim())
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const phoneRegex = /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/
   const step2Valid =
     form.firma.trim().length >= 2 &&
     form.ansprechpartner.trim().length >= 2 &&
@@ -101,6 +102,7 @@ function B2BFormular() {
     if (form.firma.trim().length < 2) errs.firma = 'Bitte gib einen Firmennamen ein'
     if (form.ansprechpartner.trim().length < 2) errs.ansprechpartner = 'Bitte gib einen Ansprechpartner ein'
     if (!emailRegex.test(form.email.trim())) errs.email = 'Bitte gib eine gültige E-Mail ein'
+    if (form.telefon.trim() && !phoneRegex.test(form.telefon.trim())) errs.telefon = 'Bitte gib eine gültige Telefonnummer ein'
     if (!form.dsgvo) { setDsgvoError(true); errs.dsgvo = true }
     if (Object.keys(errs).length > 0) { setValidationErrors(errs); if (!errs.dsgvo) setDsgvoError(false); return }
     setDsgvoError(false)
@@ -391,9 +393,19 @@ function B2BFormular() {
                   type="tel"
                   placeholder="+49 800 000 0000"
                   value={form.telefon}
-                  onChange={e => set('telefon', e.target.value)}
+                  onChange={e => {
+                    set('telefon', e.target.value.slice(0, 40))
+                    setValidationErrors(prev => ({ ...prev, telefon: undefined }))
+                  }}
                   className="w-full px-4 py-3 rounded-2xl bg-bg-input border border-white/10 text-text-primary font-body text-base placeholder:text-text-tertiary focus:outline-none focus:border-[#FF6B2B]/40 transition-colors"
+                  aria-invalid={Boolean(validationErrors.telefon)}
+                  aria-describedby={validationErrors.telefon ? 'telefon-error' : undefined}
                 />
+                {validationErrors.telefon && (
+                  <p role="alert" id="telefon-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    {validationErrors.telefon}
+                  </p>
+                )}
               </div>
             </div>
 
