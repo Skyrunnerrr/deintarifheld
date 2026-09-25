@@ -115,6 +115,7 @@ jobs:
           CONTROLLED_TEST_EMAIL: ${{ secrets.CONTROLLED_TEST_EMAIL }}
           LEADS_ADMIN_SECRET: ${{ secrets.LEADS_ADMIN_SECRET }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          LEADS_INTAKE_SMOKE_SECRET: ${{ secrets.LEADS_INTAKE_SMOKE_SECRET }}
           LEADS_MAIL_MODE: mock
           ALLOW_CUSTOMER_MAIL: NO
         run: npm run infra:phase-a:smoke
