@@ -18,7 +18,7 @@ import {
 } from '../lib/leads/abuse-guard.js'
 import { captchaRequired, verifyCaptchaToken } from '../lib/leads/captcha.js'
 import { enforcePublicIntake } from '../lib/leads/intake-guard.js'
-import { readJsonBody, MAX_LEAD_BODY_BYTES } from '../lib/leads/read-json-body.js'
+import { readBodyText, readJsonBody, MAX_LEAD_BODY_BYTES } from '../lib/leads/read-json-body.js'
 import { allowedOrigins, corsHeaders } from '../lib/leads/cors.js'
 import { API_SECURITY_HEADERS, INBOX_SECURITY_HEADERS } from '../lib/leads/security-headers.js'
 import { isSecretStrong, safeEqualString } from '../lib/leads/secret-compare.js'
@@ -239,6 +239,29 @@ async function assertBodyLimit() {
   )
   assert.equal(missingLen.ok, true)
   assert.equal(missingLen.data.email, 'ok@example.invalid')
+
+  const adminOversized = await readBodyText(
+    new Request('http://local/api/admin/inbox/', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: `secret=${'x'.repeat(5000)}`,
+    }),
+    { maxBytes: 4096 },
+  )
+  assert.equal(adminOversized.ok, false)
+  assert.equal(adminOversized.code, 'payload-too-large')
+  assert.equal(adminOversized.status, 413)
+
+  const adminBody = await readBodyText(
+    new Request('http://local/api/admin/inbox/', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: 'action=login&secret=test',
+    }),
+    { maxBytes: 4096 },
+  )
+  assert.equal(adminBody.ok, true)
+  assert.match(adminBody.text, /secret=test/)
   console.log('P0_BODY_LIMIT=PASS')
 }
 
