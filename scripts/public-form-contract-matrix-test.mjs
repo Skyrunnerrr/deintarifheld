@@ -155,9 +155,28 @@ for (const surface of surfaces) {
     assert.match(source, /error=\{errors\.type\}/, 'hero: energy type validation must be visible')
     assert.match(source, /Number\(formData\.usage\) <= 0/, 'hero: consumption must be positive before submit')
     assert.match(source, /PHONE_INPUT_RE\.test\(formData\.phone\.trim\(\)\)/, 'hero: phone validation must match server boundary')
+    assert.match(source, /firstName\.length > 120/, 'hero: first-name max must mirror server')
+    assert.match(source, /phone\.length > 40/, 'hero: phone max must mirror server')
+    assert.match(source, /email\.length > 180/, 'hero: email max must mirror server')
+    assert.match(source, /provider\.length > 120/, 'hero: provider max must mirror server')
+    assert.match(source, /usage\.length > 40/, 'hero: consumption max must mirror server')
   }
   if (surface.name === 'main-funnel' || surface.name === 'career-home-and-route') {
     assert.match(source, /\(value\) => \/\^\(\?=/, `${surface.name}: phone must be refined before submit`)
+  }
+  if (surface.name === 'main-funnel') {
+    assert.match(source, /Number\(value\) > 0/, 'main-funnel: consumption must be positive before submit')
+    assert.match(source, /max\(120, 'Der Vorname ist zu lang'\)/, 'main-funnel: name max must mirror server')
+    assert.match(source, /max\(180, 'Die E-Mail-Adresse ist zu lang'\)/, 'main-funnel: email max must mirror server')
+    assert.match(source, /max\(40, 'Die Telefonnummer ist zu lang'\)/, 'main-funnel: phone max must mirror server')
+    assert.match(source, /max\(120, 'Der Anbietername ist zu lang'\)/, 'main-funnel: provider max must mirror server')
+    assert.match(source, /max\(40, 'Der Verbrauchswert ist zu lang'\)/, 'main-funnel: consumption max must mirror server')
+  }
+  if (surface.name === 'career-home-and-route') {
+    assert.match(source, /max\(160, 'Der Name ist zu lang'\)/, 'career: name max must mirror server')
+    assert.match(source, /max\(180, 'Die E-Mail-Adresse ist zu lang'\)/, 'career: email max must mirror server')
+    assert.match(source, /max\(40, 'Die Telefonnummer ist zu lang'\)/, 'career: phone max must mirror server')
+    assert.match(source, /max\(4000, 'Deine Nachricht ist zu lang'\)/, 'career: motivation max must mirror server')
   }
   if (surface.name === 'business-live' || surface.name === 'business-preview') {
     assert.match(source, /phoneRegex\.test\(form\.telefon\.trim\(\)\)/, `${surface.name}: optional phone must be validated when present`)
