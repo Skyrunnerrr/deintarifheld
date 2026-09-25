@@ -196,6 +196,7 @@ export function Hero() {
     if (!formData.provider.trim()) newErrors.provider = 'Bitte gib deinen Anbieter ein'
     if (!formData.usage.trim()) newErrors.usage = 'Bitte gib deinen Verbrauch ein'
     if (!formData.zip.trim() || !/^\d{5}$/.test(formData.zip.trim())) newErrors.zip = 'Bitte gib eine gültige 5-stellige PLZ ein'
+    if (!['strom', 'gas'].includes(formData.type)) newErrors.type = 'Bitte wähle Strom oder Gas aus'
     if (!formData.gdpr) newErrors.gdpr = 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.'
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
@@ -511,7 +512,7 @@ export function Hero() {
                     </FunnelInputGrid>
                     <FunnelInputGrid style={{ marginTop: 8 }}>
                       <FunnelInput label="POSTLEITZAHL" id="zip" type="text" placeholder="10115" maxLength={5} value={formData.zip} onChange={handleInput('zip')} error={errors.zip} />
-                      <FunnelSelect label="ART" id="type" value={formData.type} onChange={handleInput('type')} />
+                      <FunnelSelect label="ART" id="type" value={formData.type} onChange={handleInput('type')} error={errors.type} />
                     </FunnelInputGrid>
                     {/* DSGVO Checkbox */}
                     <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginTop: 10 }}>
@@ -908,7 +909,7 @@ function FunnelInput({ label, id, style, error, ...props }) {
   )
 }
 
-function FunnelSelect({ label, id, value, onChange }) {
+function FunnelSelect({ label, id, value, onChange, error }) {
   return (
     <div>
       <label htmlFor={id} style={{
@@ -940,6 +941,9 @@ function FunnelSelect({ label, id, value, onChange }) {
         <option value="strom">Strom</option>
         <option value="gas">Gas</option>
       </select>
+      {error && (
+        <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{error}</p>
+      )}
     </div>
   )
 }
