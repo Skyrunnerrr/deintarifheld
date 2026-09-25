@@ -71,6 +71,16 @@ if [[ "$API_ORIGIN" != "$EXPECTED_API_ORIGIN" ]]; then
   exit 4
 fi
 
+RECAPTCHA_PUBLIC_KEY="${NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY:-}"
+if [[ ! "$RECAPTCHA_PUBLIC_KEY" =~ ^[A-Za-z0-9_-]{20,200}$ ]]; then
+  echo "BUILD_ABORT reason=missing_or_invalid_recaptcha_public_key"
+  exit 5
+fi
+if [[ -n "${NEXT_PUBLIC_RECAPTCHA_SITE_KEY:-}" || -n "${NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY:-}" ]]; then
+  echo "BUILD_ABORT reason=conflicting_legacy_recaptcha_public_env"
+  exit 5
+fi
+
 export NEXT_PUBLIC_LEADS_API_ORIGIN="$API_ORIGIN"
 # Keep legacy var aligned to full trailing-slash endpoint for older helpers
 export NEXT_PUBLIC_LEADS_API_URL="${API_ORIGIN}/api/leads/"
@@ -114,6 +124,8 @@ cat > "$META_DIR/build-metadata.json" <<EOF
   "gitBranch": "${BRANCH:-detached}",
   "buildTimestamp": "$TS",
   "apiOrigin": "$API_ORIGIN",
+  "recaptchaVariant": "enterprise_v3_assessment",
+  "recaptchaPublicKeyConfigured": true,
   "phase": "B",
   "mailOperationalGate": "$MAIL_GATE",
   "staticExport": true,
