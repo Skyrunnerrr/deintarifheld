@@ -68,6 +68,60 @@ function mailFields(mailResult) {
   }
 }
 
+function storedMailNeedsRecovery(row) {
+  const status = typeof row?.mail_status === 'string' ? row.mail_status.trim() : ''
+  return !status || status === 'pending'
+}
+
+async function recoverStoredLeadMail(supabase, row) {
+  if (!storedMailNeedsRecovery(row)) {
+    return { status: 200, fields: mailFieldsFromStored(row) }
+  }
+
+  const data = row?.payload && typeof row.payload === 'object' ? row.payload : null
+  const pageSource = typeof row?.page_source === 'string' ? row.page_source : data?.page_source
+  const channel = pageSource === 'unternehmen' ? 'business' : isPrivatePageSource(pageSource) ? 'private' : null
+
+  if (!data || !channel) {
+    return { status: 200, fields: mailFieldsFromStored(row) }
+  }
+
+  const mailResult = await sendLeadEmails({
+    leadRef: row.lead_ref,
+    data,
+    submittedAt: row.created_at || new Date().toISOString(),
+    channel,
+  })
+
+  const mailStatus = mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed')
+  const mailMode = mailResult.mode || process.env.LEADS_MAIL_MODE || 'mock'
+  const mailMeta = await updateLeadMailMeta(supabase, row.id, { mailStatus, mailMode })
+
+  if (mailMeta.error) {
+    leadsLog('error', 'leads.mail_recovery_meta_update_failed', {
+      leadRef: row.lead_ref,
+      code: mailMeta.error.code || 'unknown',
+    })
+  }
+
+  await writeAuditObserved(supabase, {
+    leadId: row.id,
+    eventType: mailResult.ok ? 'lead.mail_recovered' : 'lead.mail_recovery_failed',
+    detail: {
+      lead_ref: row.lead_ref,
+      mode: mailMode,
+      mail_status: mailStatus,
+      customer_confirmation: mailResult.customerConfirmation || 'n/a',
+    },
+  })
+
+  return {
+    status: mailResult.ok ? 200 : 202,
+    fields: mailFields(mailResult),
+    code: mailResult.ok ? undefined : mailResult.code,
+  }
+}
+
 function resolveValidator(raw) {
   const source = typeof raw?.page_source === 'string' ? raw.page_source.trim() : ''
   if (source === 'unternehmen') {
@@ -127,13 +181,19 @@ export async function POST(request) {
     return errorResponse(request, 'storage-failed', 500)
   }
   if (existingByKey) {
-    return json(request, {
-      ok: true,
-      duplicate: true,
-      idempotent: true,
-      leadRef: existingByKey.lead_ref,
-      ...mailFieldsFromStored(existingByKey),
-    })
+    const recovered = await recoverStoredLeadMail(supabase, existingByKey)
+    return json(
+      request,
+      {
+        ok: true,
+        duplicate: true,
+        idempotent: true,
+        leadRef: existingByKey.lead_ref,
+        ...recovered.fields,
+        ...(recovered.code ? { code: recovered.code } : {}),
+      },
+      recovered.status,
+    )
   }
 
   const leadRef = makeLeadRef(pageSource)
@@ -150,6 +210,8 @@ export async function POST(request) {
     consent_at: submittedAt,
     source_page: validated.data.source_page,
     idempotency_key: idempotencyKey,
+    mail_status: 'pending',
+    mail_mode: process.env.LEADS_MAIL_MODE || 'mock',
     payload: {
       ...payloadFields,
       lead_type: leadType,
@@ -168,13 +230,19 @@ export async function POST(request) {
         })
       }
       if (raced) {
-        return json(request, {
-          ok: true,
-          duplicate: true,
-          idempotent: true,
-          leadRef: raced.lead_ref,
-          ...mailFieldsFromStored(raced),
-        })
+        const recovered = await recoverStoredLeadMail(supabase, raced)
+        return json(
+          request,
+          {
+            ok: true,
+            duplicate: true,
+            idempotent: true,
+            leadRef: raced.lead_ref,
+            ...recovered.fields,
+            ...(recovered.code ? { code: recovered.code } : {}),
+          },
+          recovered.status,
+        )
       }
     }
     leadsLog('error', 'leads.insert_failed', { code: insertError.code || 'unknown' })
