@@ -33,6 +33,7 @@ function assertStoredMailMatrix() {
   const internal = mailFieldsFromStored({ mail_status: 'internal_sent', mail_mode: 'internal_live' })
   assert.equal(internal.mail, true)
   assert.equal(internal.mailStatus, 'internal_sent')
+  assert.equal(internal.customerConfirmation, 'skipped')
 
   const partial = mailFieldsFromStored({ mail_status: 'partial_failed', mail_mode: 'live' })
   assert.equal(partial.mail, true)
@@ -42,6 +43,14 @@ function assertStoredMailMatrix() {
   const accepted = mailFieldsFromStored({ mail_status: 'accepted', mail_mode: 'mock' })
   assert.equal(accepted.mail, true)
   assert.equal(accepted.mailStatus, 'accepted')
+
+  const liveAccepted = mailFieldsFromStored({ mail_status: 'accepted', mail_mode: 'live' })
+  assert.equal(liveAccepted.mail, true)
+  assert.equal(liveAccepted.customerConfirmation, 'sent')
+
+  const liveBlocked = mailFieldsFromStored({ mail_status: 'internal_sent', mail_mode: 'live' })
+  assert.equal(liveBlocked.mail, true)
+  assert.equal(liveBlocked.customerConfirmation, 'blocked')
 
   const legacy = mailFieldsFromStored({ mail_status: null, mail_mode: null })
   assert.equal(legacy.mail, false)
