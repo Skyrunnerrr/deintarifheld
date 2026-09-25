@@ -59,7 +59,7 @@
       const ref = item.lead_ref || item.application_ref || ''
       const extra = rowsFromPayload(item.payload)
       const status = mailStatusOf(item)
-      const failed = status === 'failed'
+      const failed = status === 'failed' || status === 'partial_failed'
       return '<article class="card' + (failed ? ' mail-failed' : '') + '"><h2>' + esc(titleOf(item)) + '</h2>' +
         '<p class="meta' + (failed ? ' badge-failed' : '') + '">' + esc(ref) + ' · ' + esc(when(item.created_at)) + ' · Mail ' + esc(status) + '</p>' +
         '<table>' +
