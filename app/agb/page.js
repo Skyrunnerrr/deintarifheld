@@ -179,7 +179,7 @@ export default function AGBPage() {
           <ul style={{ paddingLeft: '1.25rem', margin: '0.5rem 0' }}>
             <li style={{ marginBottom: '0.25rem' }}>seines aktuellen Energieverbrauchs (Jahresverbrauch in kWh)</li>
             <li style={{ marginBottom: '0.25rem' }}>seines derzeitigen Energieanbieters</li>
-            <li style={{ marginBottom: '0.25rem' }}>seiner Postleitzahl und der Energieart (Strom, Gas oder beides)</li>
+            <li style={{ marginBottom: '0.25rem' }}>seiner Postleitzahl und der Energieart (Strom oder Gas)</li>
             <li style={{ marginBottom: '0.25rem' }}>seiner Kontaktdaten (Name, E-Mail-Adresse, Telefonnummer)</li>
           </ul>
           <p style={{ marginBottom: '0.75rem' }}>
