@@ -25,7 +25,15 @@ function json(request, body, status = 200, headers) {
     request,
     NextResponse.json(
       { ...body, requestId: body.requestId || rid },
-      { status, headers: { 'x-request-id': rid, ...(headers || {}) } },
+      {
+        status,
+        headers: {
+          'cache-control': 'no-store',
+          'x-content-type-options': 'nosniff',
+          'x-request-id': rid,
+          ...(headers || {}),
+        },
+      },
     ),
   )
 }
