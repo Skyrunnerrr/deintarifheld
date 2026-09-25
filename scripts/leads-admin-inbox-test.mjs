@@ -106,6 +106,8 @@ function assertHtmlAndRoutes() {
   assert.match(ADMIN_INBOX_HTML, /\/ops\/inbox\.js/)
   const inboxJs = readFileSync(join(root, 'public/ops/inbox.js'), 'utf8')
   assert.match(inboxJs, /mail-failed/)
+  assert.match(inboxJs, /partial_failed/)
+  assert.match(inboxJs, /Partneranfragen/)
   assert.match(inboxJs, /\/api\/admin\/leads\//)
   assert.match(inboxJs, /credentials: 'same-origin'/)
   assert.doesNotMatch(ADMIN_INBOX_HTML, /sessionStorage/)
