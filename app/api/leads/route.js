@@ -207,6 +207,30 @@ export async function POST(request) {
   }
 
   if (!mailResult.ok) {
+    if (mailResult.internalDelivery === 'sent') {
+      await writeAuditObserved(supabase, {
+        leadId: inserted.id,
+        eventType: 'lead.internal_mail_sent',
+        detail: {
+          lead_ref: leadRef,
+          mode: mailResult.mode || 'live',
+          provider_email_id: mailResult.providerEmailId || null,
+          outcome: 'partial_success',
+        },
+      })
+      if (mailResult.customerConfirmation === 'failed') {
+        await writeAuditObserved(supabase, {
+          leadId: inserted.id,
+          eventType: 'lead.customer_confirmation_failed',
+          detail: {
+            lead_ref: leadRef,
+            mode: mailResult.mode || 'live',
+            provider_error_code: mailResult.providerErrorCode || null,
+          },
+        })
+      }
+    }
+
     const failEvent =
       mailResult.mode === 'internal_live' ? 'lead.internal_mail_failed' : 'lead.mail_failed'
     await writeAuditObserved(supabase, {
