@@ -59,6 +59,18 @@ withEnv({ ORIGIN: undefined, URL: undefined }, () => {
   assert.equal(careersApiUrl(), '/api/careers/')
 })
 
+withEnv({ ORIGIN: `${origin}/api/leads`, URL: undefined }, () => {
+  assert.throws(() => leadsApiUrl(), /Invalid NEXT_PUBLIC_LEADS_API_ORIGIN/)
+})
+
+withEnv({ ORIGIN: `${origin}?bad=1`, URL: undefined }, () => {
+  assert.throws(() => careersApiUrl(), /Invalid NEXT_PUBLIC_LEADS_API_ORIGIN/)
+})
+
+withEnv({ ORIGIN: undefined, URL: `${origin}/api/leads/extra` }, () => {
+  assert.throws(() => leadsApiUrl(), /Invalid NEXT_PUBLIC_LEADS_API_URL/)
+})
+
 assert.equal(
   leadPayloadFingerprint('/api/leads/', {
     page_source: 'hero-funnel',
