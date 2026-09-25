@@ -100,6 +100,10 @@ for (const surface of surfaces) {
   for (const re of surface.honeypotExprs) {
     assert.match(source, re, `${surface.name}: honeypot must be transported, not discarded`)
   }
+  if (surface.name === 'hero') {
+    assert.match(source, /newErrors\.type = 'Bitte wähle Strom oder Gas aus'/, 'hero: energy type must be client-validated')
+    assert.match(source, /error=\{errors\.type\}/, 'hero: energy type validation must be visible')
+  }
   const binding = resolveExpectedCaptchaAction({
     endpoint: surface.endpoint,
     pageSource: surface.pageSource,
@@ -130,6 +134,13 @@ for (const [name, payload] of [['hero', privateHero], ['main-funnel', privateFun
   assert.equal(ok.ok, true, `${name}: representative UI payload must validate`)
   assert.equal(ok.honeypotFilled, false)
   assert.equal(validatePrivatePayload({ ...payload, gdpr: false }).code, 'privacy-required')
+  assert.equal(validatePrivatePayload({ ...payload, phone: '' }).code, 'invalid-phone')
+  assert.equal(validatePrivatePayload({ ...payload, provider: '' }).code, 'provider-required')
+  assert.equal(validatePrivatePayload({ ...payload, usage: '' }).code, 'invalid-usage')
+  assert.equal(validatePrivatePayload({ ...payload, usage: '0' }).code, 'invalid-usage')
+  assert.equal(validatePrivatePayload({ ...payload, zip: '' }).code, 'invalid-plz')
+  assert.equal(validatePrivatePayload({ ...payload, type: '' }).code, 'invalid-energy-type')
+  assert.equal(validatePrivatePayload({ ...payload, type: 'water' }).code, 'invalid-energy-type')
   assert.equal(validatePrivatePayload({ ...payload, website_url: 'bot.example' }).honeypotFilled, true)
   assert.equal(validatePrivatePayload({ ...payload, company_fax: '123' }).honeypotFilled, true)
 }
@@ -159,6 +170,10 @@ for (const sourcePage of ['/unternehmen/', '/unternehmen-neu/']) {
   assert.equal(ok.ok, true, `business ${sourcePage}: representative UI payload must validate`)
   assert.equal(ok.honeypotFilled, false)
   assert.equal(validateUnternehmenPayload({ ...business, dsgvo: false }).code, 'privacy-required')
+  assert.equal(validateUnternehmenPayload({ ...business, energieart: '' }).code, 'invalid-energy-type')
+  assert.equal(validateUnternehmenPayload({ ...business, energieart: 'Wasser' }).code, 'invalid-energy-type')
+  assert.equal(validateUnternehmenPayload({ ...business, standorte: '' }).code, 'locations-required')
+  assert.equal(validateUnternehmenPayload({ ...business, plz: '' }).code, 'invalid-plz')
   assert.equal(validateUnternehmenPayload({ ...business, website_url: 'bot.example' }).honeypotFilled, true)
   assert.equal(validateUnternehmenPayload({ ...business, company_fax: '123' }).honeypotFilled, true)
 }
@@ -179,6 +194,9 @@ const careerOk = validateCareerPayload(career)
 assert.equal(careerOk.ok, true, 'career: representative UI payload must validate')
 assert.equal(careerOk.honeypotFilled, false)
 assert.equal(validateCareerPayload({ ...career, gdpr: false }).code, 'privacy-required')
+assert.equal(validateCareerPayload({ ...career, phone: '' }).code, 'invalid-phone')
+assert.equal(validateCareerPayload({ ...career, motivation: '' }).code, 'motivation-required')
+assert.equal(validateCareerPayload({ ...career, motivation: 'zu kurz' }).code, 'motivation-required')
 assert.equal(validateCareerPayload({ ...career, website_url: 'bot.example' }).honeypotFilled, true)
 assert.equal(validateCareerPayload({ ...career, company_fax: '123' }).honeypotFilled, true)
 assert.equal(validateCareerPayload({ ...career, file: 'resume.pdf' }).code, 'file-upload-not-supported')
@@ -202,6 +220,7 @@ console.log('FORM_ENDPOINT_MATRIX=PASS')
 console.log('FORM_CAPTCHA_ACTION_MATRIX=PASS')
 console.log('FORM_HONEYPOT_TRANSPORT=PASS')
 console.log('FORM_VALIDATOR_UI_PARITY=PASS')
+console.log('FORM_REQUIRED_FIELD_SERVER_PARITY=PASS')
 console.log('FORM_DOUBLE_SUBMIT_GUARDS=PASS')
 console.log('FORM_SUCCESS_RESPONSE_GUARDS=PASS')
 console.log('PUBLIC_FORM_CONTRACT_MATRIX=PASS')
