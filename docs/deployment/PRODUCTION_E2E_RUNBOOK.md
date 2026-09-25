@@ -1,5 +1,7 @@
 # Production E2E runbook (do not execute from PR #6)
 
+> Historical PR #6 runbook. Do not use this as the current mail or reCAPTCHA operating procedure. The production architecture and release sequence are maintained in README.md; current audit state is in docs/audit/DTH_FULL_SYSTEM_AUDIT_2026-09-24.md.
+
 ```
 PRODUCTION_E2E_RUNBOOK_READY=YES
 PRODUCTION_E2E_EXECUTED=NO

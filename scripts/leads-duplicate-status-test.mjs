@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { mailFieldsFromStored } from '../lib/leads/mail.js'
 import { isAdminAuthorized } from '../lib/leads/admin-auth.js'
 import { ADMIN_INBOX_HTML } from '../lib/leads/admin-inbox-html.js'
+import { buildIdempotencyKey } from '../lib/leads/idempotency.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(join(root, p), 'utf8')
@@ -32,10 +33,24 @@ function assertStoredMailMatrix() {
   const internal = mailFieldsFromStored({ mail_status: 'internal_sent', mail_mode: 'internal_live' })
   assert.equal(internal.mail, true)
   assert.equal(internal.mailStatus, 'internal_sent')
+  assert.equal(internal.customerConfirmation, 'skipped')
+
+  const partial = mailFieldsFromStored({ mail_status: 'partial_failed', mail_mode: 'live' })
+  assert.equal(partial.mail, true)
+  assert.equal(partial.mailStatus, 'partial_failed')
+  assert.equal(partial.customerConfirmation, 'failed')
 
   const accepted = mailFieldsFromStored({ mail_status: 'accepted', mail_mode: 'mock' })
   assert.equal(accepted.mail, true)
   assert.equal(accepted.mailStatus, 'accepted')
+
+  const liveAccepted = mailFieldsFromStored({ mail_status: 'accepted', mail_mode: 'live' })
+  assert.equal(liveAccepted.mail, true)
+  assert.equal(liveAccepted.customerConfirmation, 'sent')
+
+  const liveBlocked = mailFieldsFromStored({ mail_status: 'internal_sent', mail_mode: 'live' })
+  assert.equal(liveBlocked.mail, true)
+  assert.equal(liveBlocked.customerConfirmation, 'blocked')
 
   const legacy = mailFieldsFromStored({ mail_status: null, mail_mode: null })
   assert.equal(legacy.mail, false)
@@ -48,6 +63,7 @@ function assertStoredMailMatrix() {
 
   console.log('DUPLICATE_STATUS_FAILED=PASS')
   console.log('DUPLICATE_STATUS_INTERNAL_SENT=PASS')
+  console.log('DUPLICATE_STATUS_PARTIAL_FAILED=PASS')
   console.log('DUPLICATE_STATUS_ACCEPTED=PASS')
   console.log('DUPLICATE_STATUS_LEGACY_NULL=PASS')
 }
@@ -58,11 +74,23 @@ function assertChannelWiring() {
   const supabase = read('lib/leads/supabase.js')
   assert.match(leads, /mailFieldsFromStored/)
   assert.match(careers, /mailFieldsFromStored/)
+  assert.match(leads, /partial_failed/)
+  assert.match(careers, /partial_failed/)
   assert.match(supabase, /mail_status, mail_mode, mail_sent_at/)
   assert.match(supabase, /findLeadByIdempotencyKey/)
-  assert.match(supabase, /findRecentDuplicate/)
   assert.match(supabase, /findCareerByIdempotencyKey/)
-  assert.match(supabase, /findRecentCareerDuplicate/)
+  assert.match(supabase, /page_source, payload, mail_status/)
+  assert.match(supabase, /application_ref, created_at, status, payload, mail_status/)
+  assert.match(leads, /recoverStoredLeadMail/)
+  assert.match(careers, /recoverStoredCareerMail/)
+  assert.match(leads, /mail_status: 'pending'/)
+  assert.match(careers, /mail_status: 'pending'/)
+  assert.match(leads, /lead\.mail_recovered/)
+  assert.match(careers, /career\.mail_recovered/)
+  assert.doesNotMatch(supabase, /findRecentDuplicate/)
+  assert.doesNotMatch(supabase, /findRecentCareerDuplicate/)
+  assert.doesNotMatch(leads, /duplicate_check_failed/)
+  assert.doesNotMatch(careers, /duplicate_check_failed/)
   assert.doesNotMatch(leads, /duplicate: true[\s\S]{0,180}mail: true/)
   assert.doesNotMatch(careers, /duplicate: true[\s\S]{0,180}mail: true/)
   assert.doesNotMatch(leads, /duplicate: true[\s\S]{0,220}mailStatus: 'accepted'/)
@@ -70,6 +98,39 @@ function assertChannelWiring() {
   console.log('BUSINESS_DUPLICATE_WIRING=PASS')
   console.log('PRIVATE_DUPLICATE_WIRING=PASS')
   console.log('CAREER_DUPLICATE_WIRING=PASS')
+}
+
+function assertPayloadAwareFallbackIdempotency() {
+  const request = fakeRequest({})
+  const now = 1_800_000
+  const base = {
+    page_source: 'privat',
+    email: 'same@example.invalid',
+    provider: 'Provider A',
+    usage: '3500',
+    _formLoadedAt: 123,
+  }
+  const first = buildIdempotencyKey(request, base, { scope: 'lead', now })
+  const telemetryOnlyChange = buildIdempotencyKey(
+    request,
+    { ...base, _formLoadedAt: 999 },
+    { scope: 'lead', now },
+  )
+  const edited = buildIdempotencyKey(
+    request,
+    { ...base, provider: 'Provider B' },
+    { scope: 'lead', now },
+  )
+  assert.equal(first, telemetryOnlyChange)
+  assert.notEqual(first, edited)
+
+  const explicit = buildIdempotencyKey(
+    fakeRequest({ 'idempotency-key': 'client-key-12345' }),
+    { ...base, provider: 'Provider C' },
+    { scope: 'lead', now },
+  )
+  assert.equal(explicit, 'client-key-12345')
+  console.log('PAYLOAD_AWARE_IDEMPOTENCY=PASS')
 }
 
 function assertAdminIsolation() {
@@ -103,6 +164,8 @@ function assertInboxFailedVisible() {
   assert.match(ADMIN_INBOX_HTML, /Nur Mail fehlgeschlagen/)
   const inboxJs = read('public/ops/inbox.js')
   assert.match(inboxJs, /mail-failed/)
+  assert.match(inboxJs, /status === 'pending' \|\| status === 'failed' \|\| status === 'partial_failed'/)
+  assert.match(inboxJs, /\['pending', 'failed', 'partial_failed'\]/)
   assert.match(inboxJs, /badge-failed/)
   assert.match(inboxJs, /unknown/)
   assert.doesNotMatch(ADMIN_INBOX_HTML, /LEADS_ADMIN_SECRET=/)
@@ -113,6 +176,7 @@ function assertInboxFailedVisible() {
 
 assertStoredMailMatrix()
 assertChannelWiring()
+assertPayloadAwareFallbackIdempotency()
 assertAdminIsolation()
 assertInboxFailedVisible()
 console.log('DUPLICATE_STATUS_TESTS=PASS')

@@ -1,5 +1,10 @@
 # DeinTarifheld — Production Readiness Master Gate
 
+HISTORICAL_SNAPSHOT=YES  
+SUPERSEDED_BY=docs/deployment/CURRENT_PRODUCTION_RELEASE_GATE.md  
+DO_NOT_USE_FOR_CURRENT_PRODUCTION_CONFIGURATION=YES  
+
+
 Release-governance snapshot after factual privacy alignment.  
 PR: https://github.com/Skyrunnerrr/deintarifheld/pull/6  
 This pass does **not** merge, deploy, rerun migrations, or enable customer mail.

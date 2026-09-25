@@ -1,10 +1,11 @@
-import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
 import { nextConfigApiHeaders, nextConfigInboxHeaders } from './lib/leads/security-headers.js'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
+import { assertProductionApiEnv } from './lib/leads/production-env-preflight.js'
 
 const staticExport = process.env.STATIC_EXPORT === '1'
+
+if (!staticExport && process.env.VERCEL_ENV === 'production') {
+  assertProductionApiEnv(process.env)
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -29,11 +30,6 @@ const nextConfig = {
         headers: nextConfigInboxHeaders(),
       },
     ]
-  },
-  webpack: (config) => {
-    // motion-utils ESM files are iCloud-evicted; redirect to working CJS build
-    config.resolve.alias['motion-utils'] = join(__dirname, 'node_modules/motion-utils/dist/cjs/index.js')
-    return config
   },
 }
 

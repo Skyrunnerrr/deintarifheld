@@ -2,26 +2,6 @@ name: dth-phase-a-ci
 
 on:
   pull_request:
-    paths:
-      - 'app/api/**'
-      - 'lib/leads/**'
-      - 'components/sections/Hero.jsx'
-      - 'components/sections/FunnelSection.jsx'
-      - 'components/sections/CareerSection.jsx'
-      - 'components/business/BusinessForm.jsx'
-      - 'public/.htaccess'
-      - 'next.config.mjs'
-      - 'supabase/**'
-      - 'scripts/**'
-      - 'infra/phase-a/**'
-      - 'docs/legal/**'
-      - 'docs/audit/**'
-      - 'docs/deployment/**'
-      - 'docs/compliance/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'vercel.json'
-      - '.github/workflows/dth-phase-a-ci.yml'
   workflow_dispatch:
     inputs:
       run_preview_smoke:
@@ -39,15 +19,23 @@ jobs:
       LEADS_MAIL_MODE: mock
       ALLOW_CUSTOMER_MAIL: NO
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version-file: '.nvmrc'
           cache: npm
       - run: npm ci
       - run: npm run lint
       - run: npm run build
       - run: npm run build:static
+      - name: Production static release-parity build + verifier
+        env:
+          NEXT_PUBLIC_LEADS_API_ORIGIN: https://deintarifheld-leads-api.vercel.app
+          NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: ci_public_recaptcha_key_1234567890
+          LEADS_MAIL_MODE: mock
+        run: |
+          npm run build:static:production
+          npm run verify:static:production
       - name: Migration present (001 + 002 + 003 + 004 + 005)
         run: |
           test -f supabase/migrations/001_leads_phase_a.sql
@@ -102,6 +90,8 @@ jobs:
         run: npm run browser-api:test
       - name: Form intercept (no GAS)
         run: npm run forms:intercept:test
+      - name: Full public form contract matrix
+        run: npm run forms:contract-matrix:test
       - name: Phase B verify
         run: npm run phase-b:verify
       - name: npm audit allowlist gate (no fix)
@@ -121,10 +111,10 @@ jobs:
     needs: contract
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version-file: '.nvmrc'
           cache: npm
       - run: npm ci
       - name: Preview smoke
@@ -133,6 +123,7 @@ jobs:
           CONTROLLED_TEST_EMAIL: ${{ secrets.CONTROLLED_TEST_EMAIL }}
           LEADS_ADMIN_SECRET: ${{ secrets.LEADS_ADMIN_SECRET }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          LEADS_INTAKE_SMOKE_SECRET: ${{ secrets.LEADS_INTAKE_SMOKE_SECRET }}
           LEADS_MAIL_MODE: mock
           ALLOW_CUSTOMER_MAIL: NO
         run: npm run infra:phase-a:smoke

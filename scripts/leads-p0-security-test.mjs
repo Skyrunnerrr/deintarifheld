@@ -10,17 +10,16 @@ import { fileURLToPath } from 'node:url'
 import { isAdminAuthorized } from '../lib/leads/admin-auth.js'
 import { isCronAuthorized } from '../lib/leads/cron-auth.js'
 import { createAdminSessionValue, parseAdminSessionValue, ADMIN_COOKIE_NAME } from '../lib/leads/admin-session.js'
-import { enforceAdminAccess } from '../lib/leads/admin-guard.js'
+import { adminRateLimitKey, enforceAdminAccess } from '../lib/leads/admin-guard.js'
 import {
-  evaluateFormTiming,
   hasControlledIntakeBypass,
+  hasJsonContentType,
   isBlockedOrigin,
-  isTooFastSubmit,
   resetRateLimitsForTests,
 } from '../lib/leads/abuse-guard.js'
 import { captchaRequired, verifyCaptchaToken } from '../lib/leads/captcha.js'
-import { enforcePublicIntake } from '../lib/leads/intake-guard.js'
-import { readJsonBody, MAX_LEAD_BODY_BYTES } from '../lib/leads/read-json-body.js'
+import { enforcePublicIntake, intakeRateLimitKey } from '../lib/leads/intake-guard.js'
+import { readBodyText, readJsonBody, MAX_LEAD_BODY_BYTES } from '../lib/leads/read-json-body.js'
 import { allowedOrigins, corsHeaders } from '../lib/leads/cors.js'
 import { API_SECURITY_HEADERS, INBOX_SECURITY_HEADERS } from '../lib/leads/security-headers.js'
 import { isSecretStrong, safeEqualString } from '../lib/leads/secret-compare.js'
@@ -28,6 +27,9 @@ import { customerMailDualGuardOpen, sendLeadEmails } from '../lib/leads/mail.js'
 import { publicCareersHealth, publicLeadsHealth } from '../lib/leads/public-health.js'
 import { inboxGetResponse } from '../lib/leads/admin-inbox-http.js'
 import { withCors } from '../lib/leads/cors.js'
+import { normalizeRequestId, resolveRequestId } from '../lib/leads/request-id.js'
+import { sanitizeLogFields } from '../lib/leads/log.js'
+import { assertProductionApiEnv, productionApiEnvProblems, productionPublicIntakeEnvProblems } from '../lib/leads/production-env-preflight.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const STRONG_ADMIN = 'p0-admin-secret-value-32chars!!'
@@ -148,7 +150,7 @@ async function assertCaptcha() {
       const result = await enforcePublicIntake(
         jsonRequest({
           origin: 'https://www.deintarifheld.de',
-          body: { email: 'x@example.invalid' },
+          body: { page_source: 'unternehmen', email: 'x@example.invalid' },
         }),
       )
       assert.equal(result.ok, false)
@@ -160,8 +162,10 @@ async function assertCaptcha() {
 }
 
 async function assertOrigin() {
-  await withEnv({ LEADS_RUNTIME_ENV: 'production', LEADS_ALLOWED_ORIGINS: 'http://localhost:3000' }, () => {
+  await withEnv({ LEADS_RUNTIME_ENV: 'production', LEADS_ALLOWED_ORIGINS: 'http://localhost:3000,https://evil.example' }, () => {
     assert.equal(allowedOrigins().includes('http://localhost:3000'), false)
+    assert.equal(allowedOrigins().includes('https://evil.example'), false)
+    assert.deepEqual(allowedOrigins().sort(), ['https://deintarifheld.de', 'https://www.deintarifheld.de'].sort())
     assert.equal(allowedOrigins().includes('https://www.deintarifheld.de'), true)
     assert.equal(
       isBlockedOrigin(fakeRequest({})),
@@ -194,6 +198,32 @@ async function assertOrigin() {
 
   await withEnv(
     {
+      LEADS_RUNTIME_ENV: undefined,
+      VERCEL_ENV: undefined,
+      LEADS_ALLOW_SMOKE_BYPASS: 'YES',
+      LEADS_INTAKE_SMOKE_SECRET: 'smoke-secret-16ch',
+      LEADS_RATE_LIMIT_SALT: 'p0-smoke-bypass-salt',
+      LEADS_RATE_LIMIT_PROVIDER: 'memory',
+    },
+    async () => {
+      resetRateLimitsForTests()
+      for (let i = 0; i < 8; i += 1) {
+        const result = await enforcePublicIntake(
+          jsonRequest({
+            body: { page_source: 'unternehmen', email: `smoke-${i}@example.invalid` },
+            extraHeaders: {
+              'x-dth-intake-smoke': 'smoke-secret-16ch',
+              'x-forwarded-for': '203.0.113.77',
+            },
+          }),
+        )
+        assert.equal(result.ok, true, 'secret non-production smoke must not self-rate-limit')
+      }
+    },
+  )
+
+  await withEnv(
+    {
       LEADS_RUNTIME_ENV: 'production',
       LEADS_ALLOW_SMOKE_BYPASS: 'YES',
       LEADS_INTAKE_SMOKE_SECRET: 'smoke-secret-16ch',
@@ -207,6 +237,15 @@ async function assertOrigin() {
     },
   )
   console.log('P0_ORIGIN=PASS')
+  console.log('P0_NONPROD_SMOKE_QUOTA_BYPASS=PASS')
+}
+
+function assertJsonContentTypeBoundary() {
+  assert.equal(hasJsonContentType(fakeRequest({ 'content-type': 'application/json' })), true)
+  assert.equal(hasJsonContentType(fakeRequest({ 'content-type': 'application/json; charset=utf-8' })), true)
+  assert.equal(hasJsonContentType(fakeRequest({ 'content-type': 'text/plain' })), false)
+  assert.equal(hasJsonContentType(fakeRequest({ 'content-type': 'application/json-extra' })), false)
+  console.log('P0_JSON_CONTENT_TYPE_BOUNDARY=PASS')
 }
 
 async function assertBodyLimit() {
@@ -240,16 +279,187 @@ async function assertBodyLimit() {
   )
   assert.equal(missingLen.ok, true)
   assert.equal(missingLen.data.email, 'ok@example.invalid')
+
+  const adminOversized = await readBodyText(
+    new Request('http://local/api/admin/inbox/', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: `secret=${'x'.repeat(5000)}`,
+    }),
+    { maxBytes: 4096 },
+  )
+  assert.equal(adminOversized.ok, false)
+  assert.equal(adminOversized.code, 'payload-too-large')
+  assert.equal(adminOversized.status, 413)
+
+  const adminBody = await readBodyText(
+    new Request('http://local/api/admin/inbox/', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: 'action=login&secret=test',
+    }),
+    { maxBytes: 4096 },
+  )
+  assert.equal(adminBody.ok, true)
+  assert.match(adminBody.text, /secret=test/)
   console.log('P0_BODY_LIMIT=PASS')
 }
 
-function assertTiming() {
-  assert.equal(isTooFastSubmit(undefined), true)
-  assert.equal(isTooFastSubmit(''), true)
-  assert.equal(isTooFastSubmit(Date.now()), true)
-  assert.equal(isTooFastSubmit(Date.now() - 4000), false)
-  assert.equal(evaluateFormTiming(Date.now() - 8 * 60 * 60 * 1000).reason, 'too-old')
-  console.log('P0_TIMING=PASS')
+function assertProductionEnvPreflight() {
+  const valid = {
+    SUPABASE_URL: 'https://example.supabase.co',
+    SUPABASE_SERVICE_ROLE_KEY: 'service-role-test-only',
+    RECAPTCHA_PROJECT_ID: 'dth-project',
+    RECAPTCHA_API_KEY: 'recaptcha-api-key-test-only',
+    NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: 'ci_public_recaptcha_key_1234567890',
+    LEADS_ADMIN_SECRET: 'admin-secret-012345678901234567890123456789',
+    CRON_SECRET: 'cron-secret-0123456789012345678901234567890',
+    LEADS_RATE_LIMIT_SALT: 'rate-salt-012345678901234567890123',
+    AUDIT_EMAIL_HASH_SALT: 'audit-salt-01234567890123456789012',
+    LEADS_RATE_LIMIT_PROVIDER: 'supabase',
+    LEADS_ALLOW_MEMORY_RATE_LIMIT: 'NO',
+    LEADS_ALLOW_SMOKE_BYPASS: 'NO',
+    LEADS_MAIL_MODE: 'live',
+    ALLOW_CUSTOMER_MAIL: 'YES',
+    RESEND_API_KEY: 're_test_only_not_real',
+    LEADS_FROM_EMAIL: 'DeinTarifheld <kontakt@deintarifheld.de>',
+    LEADS_TO_EMAIL: 'kontakt@deintarifheld.de',
+  }
+  assert.deepEqual(productionApiEnvProblems(valid), [])
+  assert.equal(assertProductionApiEnv(valid), true)
+
+  const badRecipients = productionApiEnvProblems({
+    ...valid,
+    LEADS_TO_EMAIL: 'kontakt@deintarifheld.de,office@example.invalid',
+  })
+  assert.ok(badRecipients.includes('LEADS_TO_EMAIL'))
+
+  const badMail = productionApiEnvProblems({ ...valid, LEADS_MAIL_MODE: 'mock' })
+  assert.ok(badMail.includes('LEADS_MAIL_MODE'))
+
+  const mailOnlyBrokenAtRuntime = productionPublicIntakeEnvProblems({
+    ...valid,
+    LEADS_MAIL_MODE: 'mock',
+    ALLOW_CUSTOMER_MAIL: 'NO',
+    RESEND_API_KEY: '',
+    LEADS_FROM_EMAIL: '',
+    LEADS_TO_EMAIL: '',
+  })
+  assert.deepEqual(
+    mailOnlyBrokenAtRuntime,
+    [],
+    'runtime intake must stay storage-first when mail configuration is temporarily broken',
+  )
+
+  const widenedOrigins = productionApiEnvProblems({
+    ...valid,
+    LEADS_ALLOWED_ORIGINS: 'https://deintarifheld.de,https://www.deintarifheld.de,https://evil.example',
+  })
+  assert.ok(widenedOrigins.includes('LEADS_ALLOWED_ORIGINS'))
+
+  const canonicalOrigins = productionApiEnvProblems({
+    ...valid,
+    LEADS_ALLOWED_ORIGINS: 'https://www.deintarifheld.de,https://deintarifheld.de',
+  })
+  assert.equal(canonicalOrigins.includes('LEADS_ALLOWED_ORIGINS'), false)
+
+  const reusedSalt = productionApiEnvProblems({
+    ...valid,
+    AUDIT_EMAIL_HASH_SALT: valid.LEADS_RATE_LIMIT_SALT,
+  })
+  assert.ok(reusedSalt.includes('AUDIT_RATE_SALT_REUSE'))
+
+  assert.throws(
+    () => assertProductionApiEnv({ ...valid, ALLOW_CUSTOMER_MAIL: 'NO' }),
+    /ALLOW_CUSTOMER_MAIL/,
+  )
+  console.log('P0_PRODUCTION_ENV_PREFLIGHT=PASS')
+}
+
+async function assertProductionIntakeFailsClosedOnBrokenEnv() {
+  await withEnv(
+    {
+      LEADS_RUNTIME_ENV: 'production',
+      VERCEL_ENV: undefined,
+      SUPABASE_URL: undefined,
+      NEXT_PUBLIC_SUPABASE_URL: undefined,
+      SUPABASE_SERVICE_ROLE_KEY: undefined,
+      RECAPTCHA_PROJECT_ID: undefined,
+      RECAPTCHA_API_KEY: undefined,
+      NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: undefined,
+      LEADS_RATE_LIMIT_SALT: undefined,
+      LEADS_MAIL_MODE: 'mock',
+      ALLOW_CUSTOMER_MAIL: 'NO',
+      RESEND_API_KEY: undefined,
+      LEADS_FROM_EMAIL: undefined,
+      LEADS_TO_EMAIL: undefined,
+    },
+    async () => {
+      const problems = productionPublicIntakeEnvProblems()
+      assert.ok(problems.includes('SUPABASE_URL'))
+      assert.equal(problems.includes('LEADS_MAIL_MODE'), false)
+      assert.equal(problems.includes('RESEND_API_KEY'), false)
+      const result = await enforcePublicIntake(
+        jsonRequest({
+          origin: 'https://www.deintarifheld.de',
+          body: { page_source: 'unternehmen' },
+        }),
+      )
+      assert.equal(result.ok, false)
+      assert.equal(result.code, 'service-not-configured')
+      assert.equal(result.status, 503)
+    },
+  )
+  console.log('P0_PRODUCTION_INTAKE_CONFIG_FAIL_CLOSED=PASS')
+}
+
+function assertRateLimitIdentityResistsUserAgentRotation() {
+  const prevSalt = process.env.LEADS_RATE_LIMIT_SALT
+  const prevRuntime = process.env.LEADS_RUNTIME_ENV
+  process.env.LEADS_RATE_LIMIT_SALT = 'p0-rate-limit-identity-salt'
+  delete process.env.LEADS_RUNTIME_ENV
+  try {
+    const a = fakeRequest({ 'x-forwarded-for': '203.0.113.44', 'user-agent': 'rotated-a' })
+    const b = fakeRequest({ 'x-forwarded-for': '203.0.113.44', 'user-agent': 'rotated-b' })
+    assert.equal(intakeRateLimitKey(a), intakeRateLimitKey(b))
+    assert.equal(adminRateLimitKey(a), adminRateLimitKey(b))
+
+    const otherIp = fakeRequest({ 'x-forwarded-for': '203.0.113.45', 'user-agent': 'rotated-a' })
+    assert.notEqual(intakeRateLimitKey(a), intakeRateLimitKey(otherIp))
+    assert.notEqual(adminRateLimitKey(a), adminRateLimitKey(otherIp))
+  } finally {
+    if (prevSalt === undefined) delete process.env.LEADS_RATE_LIMIT_SALT
+    else process.env.LEADS_RATE_LIMIT_SALT = prevSalt
+    if (prevRuntime === undefined) delete process.env.LEADS_RUNTIME_ENV
+    else process.env.LEADS_RUNTIME_ENV = prevRuntime
+  }
+  console.log('P0_RATE_LIMIT_UA_ROTATION_RESISTANCE=PASS')
+}
+
+function assertLogAllowlist() {
+  const safe = sanitizeLogFields({
+    code: 'storage-failed',
+    leadRef: 'LED-TEST-123',
+    score: 0.9,
+    email: 'person@example.invalid',
+    name: 'Max Mustermann',
+    firma: 'Example GmbH',
+    plz: '68159',
+    ip: '203.0.113.5',
+    telefon: '012345',
+    payload: { secret: 'nope' },
+  })
+  assert.equal(safe.code, 'storage-failed')
+  assert.equal(safe.leadRef, 'LED-TEST-123')
+  assert.equal(safe.score, 0.9)
+  assert.equal(safe.email, undefined)
+  assert.equal(safe.name, undefined)
+  assert.equal(safe.firma, undefined)
+  assert.equal(safe.plz, undefined)
+  assert.equal(safe.ip, undefined)
+  assert.equal(safe.telefon, undefined)
+  assert.equal(safe.payload, undefined)
+  console.log('P0_LOG_ALLOWLIST=PASS')
 }
 
 async function assertAdminAuth() {
@@ -430,14 +640,43 @@ async function assertMailGuards() {
   console.log('P0_MAIL_GUARDS=PASS')
 }
 
+function assertRequestIds() {
+  assert.equal(normalizeRequestId('client-123:abc'), 'client-123:abc')
+  assert.equal(normalizeRequestId('  request_42  '), 'request_42')
+  assert.equal(normalizeRequestId('bad value'), '')
+  assert.equal(normalizeRequestId('bad\nvalue'), '')
+  assert.equal(normalizeRequestId('x'.repeat(81)), '')
+
+  const accepted = resolveRequestId(fakeRequest({ 'x-request-id': 'client-safe.123' }))
+  assert.equal(accepted, 'client-safe.123')
+
+  const rejected = resolveRequestId(fakeRequest({ 'x-request-id': 'secret=should not reflect' }))
+  assert.notEqual(rejected, 'secret=should not reflect')
+  assert.match(rejected, /^[0-9a-f-]{36}$/i)
+
+  const response = new Response('{}')
+  withCors(fakeRequest({
+    origin: 'https://www.deintarifheld.de',
+    'x-request-id': 'bad value with spaces',
+  }), response)
+  assert.notEqual(response.headers.get('x-request-id'), 'bad value with spaces')
+  assert.match(response.headers.get('x-request-id') || '', /^[0-9a-f-]{36}$/i)
+
+  console.log('P0_REQUEST_ID_NORMALIZATION=PASS')
+}
+
 async function main() {
-  await assertCaptcha()
+  assertProductionEnvPreflight()
+assertRateLimitIdentityResistsUserAgentRotation()
+assertLogAllowlist()
+assertJsonContentTypeBoundary()
+await assertCaptcha()
   await assertOrigin()
   await assertBodyLimit()
-  assertTiming()
   await assertAdminAuth()
   await assertAdminBruteForceAndInbox()
   await assertHeadersAndHealth()
+  assertRequestIds()
   await assertMailGuards()
   console.log('P0_SECURITY_TESTS=PASS')
   console.log('REAL_CUSTOMER_MAIL_SENT=NO')

@@ -27,16 +27,58 @@ if [[ -z "$ORIGIN_RAW" && -z "$URL_RAW" ]]; then
   exit 3
 fi
 
-# Normalize to origin (no trailing slash, no /api/leads)
+# Normalize and validate to a true HTTPS origin. A canonical ORIGIN value
+# must never contain a path/query/hash; otherwise browser-api would append
+# /api/leads to an already-pathful base and silently build a broken endpoint.
 if [[ -n "$ORIGIN_RAW" ]]; then
-  API_ORIGIN="${ORIGIN_RAW%/}"
+  API_ORIGIN="$(node -e '
+    try {
+      const raw = process.argv[1]
+      const u = new URL(raw)
+      if (
+        u.protocol !== "https:" ||
+        u.username ||
+        u.password ||
+        (u.pathname && u.pathname !== "/") ||
+        u.search ||
+        u.hash
+      ) process.exit(2)
+      process.stdout.write(u.origin)
+    } catch { process.exit(2) }
+  ' "$ORIGIN_RAW")" || {
+    echo "BUILD_ABORT reason=invalid_api_origin value_redacted"
+    exit 4
+  }
 else
-  API_ORIGIN="$(printf '%s' "$URL_RAW" | sed -E 's#/api/leads/?$##; s#/$##')"
+  API_ORIGIN="$(node -e '
+    try {
+      const raw = process.argv[1]
+      const u = new URL(raw)
+      if (u.protocol !== "https:" || u.username || u.password || u.search || u.hash) process.exit(2)
+      const path = u.pathname.replace(/\/+$/, "")
+      if (path && path !== "/api/leads") process.exit(2)
+      process.stdout.write(u.origin)
+    } catch { process.exit(2) }
+  ' "$URL_RAW")" || {
+    echo "BUILD_ABORT reason=invalid_legacy_api_url value_redacted"
+    exit 4
+  }
 fi
 
-if [[ ! "$API_ORIGIN" =~ ^https://[A-Za-z0-9._-]+ ]]; then
-  echo "BUILD_ABORT reason=invalid_api_origin value_redacted"
+EXPECTED_API_ORIGIN="${DTH_EXPECTED_API_ORIGIN:-https://deintarifheld-leads-api.vercel.app}"
+if [[ "$API_ORIGIN" != "$EXPECTED_API_ORIGIN" ]]; then
+  echo "BUILD_ABORT reason=unexpected_api_origin expected=$EXPECTED_API_ORIGIN actual_redacted"
   exit 4
+fi
+
+RECAPTCHA_PUBLIC_KEY="${NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY:-}"
+if [[ ! "$RECAPTCHA_PUBLIC_KEY" =~ ^[A-Za-z0-9_-]{20,200}$ ]]; then
+  echo "BUILD_ABORT reason=missing_or_invalid_recaptcha_public_key"
+  exit 5
+fi
+if [[ -n "${NEXT_PUBLIC_RECAPTCHA_SITE_KEY:-}" || -n "${NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY:-}" ]]; then
+  echo "BUILD_ABORT reason=conflicting_legacy_recaptcha_public_env"
+  exit 5
 fi
 
 export NEXT_PUBLIC_LEADS_API_ORIGIN="$API_ORIGIN"
@@ -82,6 +124,8 @@ cat > "$META_DIR/build-metadata.json" <<EOF
   "gitBranch": "${BRANCH:-detached}",
   "buildTimestamp": "$TS",
   "apiOrigin": "$API_ORIGIN",
+  "recaptchaVariant": "enterprise_v3_assessment",
+  "recaptchaPublicKeyConfigured": true,
   "phase": "B",
   "mailOperationalGate": "$MAIL_GATE",
   "staticExport": true,

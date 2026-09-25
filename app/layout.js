@@ -6,17 +6,17 @@ import { StickyMobileCta } from '@/components/ui/StickyMobileCta'
 
 export const metadata = {
   title: {
-    default:  'Günstiger Strom & Gas – Bis zu 40 % sparen | Tarifheld Vergleich 2026',
-    template: '%s | Tarifheld – Günstiger Strom & Gas',
+    default:  'Strom & Gas vergleichen | DeinTarifheld',
+    template: '%s | DeinTarifheld',
   },
-  description: 'Günstiger Strom & Gas gesucht? Tarifheld vergleicht kostenlos über 1.000 Tarife — Ø 480 € Ersparnis. Persönliche Beratung, kein Papierkram. In 2 Minuten zum günstigsten Tarif.',
+  description: 'Kostenlose und unverbindliche Unterstützung beim Vergleich von Strom- und Gastarifen. Persönliche Beratung für Privat- und Gewerbekunden.',
   keywords: 'günstiger Strom, Strom günstig, Stromanbieter wechseln, Strompreisvergleich, Strom vergleichen, günstiger Gasanbieter, Gas vergleichen, Stromtarif wechseln, billiger Strom, Strom sparen, günstige Stromtarife, Gasanbieter wechseln, Energiekosten senken, kostenloser Tarifvergleich, Energieberater, B2B Energieberatung, Stromvergleich 2026, Gastarif optimieren, Strom Anbieter Vergleich, Energiekosten Unternehmen',
   authors:    [{ name: 'Dein Tarifheld', url: 'https://www.deintarifheld.de' }],
   metadataBase: new URL('https://www.deintarifheld.de'),
   category: 'Energie & Utilities',
   openGraph: {
-    title:       'Günstiger Strom & Gas – Tarifheld | Bis zu 40 % sparen',
-    description: 'Günstigen Strom & Gas finden: Kostenloser Tarifvergleich, persönliche Beratung, Ø 480 € Ersparnis. In 2 Min. zum besten Tarif.',
+    title:       'Strom & Gas vergleichen | DeinTarifheld',
+    description: 'Strom- und Gastarife kostenlos und unverbindlich prüfen lassen. Persönliche Unterstützung für Privat- und Gewerbekunden.',
     url:         'https://www.deintarifheld.de',
     siteName:    'Dein Tarifheld',
     locale:      'de_DE',
@@ -25,8 +25,8 @@ export const metadata = {
   },
   twitter: {
     card:        'summary_large_image',
-    title:       'Günstiger Strom & Gas – Tarifheld | Bis zu 40 % sparen',
-    description: 'Günstigen Strom & Gas finden: Kostenloser Vergleich, Ø 480 € Ersparnis. Jetzt in 2 Min. prüfen.',
+    title:       'Strom & Gas vergleichen | DeinTarifheld',
+    description: 'Strom- und Gastarife kostenlos und unverbindlich prüfen lassen. Persönliche Beratung durch DeinTarifheld.',
     images:      ['/images/og-default.png'],
   },
   robots: {
@@ -48,7 +48,7 @@ const JSON_LD_LOCAL_BUSINESS = {
   '@context':  'https://schema.org',
   '@type':     ['LocalBusiness', 'ProfessionalService'],
   name:        'Dein Tarifheld',
-  description: 'Günstiger Strom und Gas: Kostenloser Tarifvergleich und Optimierung für Privat- und Gewerbekunden. Persönliche Beratung, Ø 480 € Ersparnis, 100 % unverbindlich.',
+  description: 'Kostenlose und unverbindliche Unterstützung beim Vergleich von Strom- und Gastarifen für Privat- und Gewerbekunden.',
   url:         'https://www.deintarifheld.de',
   email:       'kontakt@deintarifheld.de',
   telephone:   '+49 6221 8688877',
@@ -72,13 +72,6 @@ const JSON_LD_LOCAL_BUSINESS = {
   serviceType: ['Energieberatung', 'Tarifoptimierung', 'Stromanbieter Vergleich', 'Gasanbieter Vergleich', 'B2B Energieberatung', 'Strompreisvergleich', 'Günstiger Strom'],
   priceRange:  'Kostenlos',
   knowsAbout:  ['Strom', 'Erdgas', 'Energie', 'Tarifwechsel', 'Kostenoptimierung', 'Energieberatung', 'günstiger Strom', 'Strompreisvergleich', 'Stromanbieter wechseln', 'Gasanbieter wechseln'],
-  aggregateRating: {
-    '@type':       'AggregateRating',
-    ratingValue:   '4.9',
-    bestRating:    '5',
-    ratingCount:   '127',
-    reviewCount:   '127',
-  },
   hasOfferCatalog: {
     '@type': 'OfferCatalog',
     name: 'Energieberatung & Tarifvergleich',
@@ -98,7 +91,7 @@ const JSON_LD_WEBSITE = {
   '@type':    'WebSite',
   name:       'Dein Tarifheld',
   url:        'https://www.deintarifheld.de',
-  description: 'Günstiger Strom & Gas: Kostenloser Tarifvergleich für Privat- und Gewerbekunden in Deutschland. Ø 480 € Ersparnis.',
+  description: 'Kostenlose und unverbindliche Unterstützung beim Strom- und Gastarifvergleich für Privat- und Gewerbekunden in Deutschland.',
   inLanguage: 'de-DE',
   publisher: {
     '@type': 'Organization',

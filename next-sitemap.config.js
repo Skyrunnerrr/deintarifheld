@@ -1,5 +1,5 @@
 /** @type {import('next-sitemap').IConfig} */
-module.exports = {
+const config = {
   siteUrl: 'https://www.deintarifheld.de',
   generateRobotsTxt: true,
   outDir: './out',
@@ -11,6 +11,7 @@ module.exports = {
     additionalSitemaps: [],
   },
   exclude: [
+    '/unternehmen-neu', '/unternehmen-neu/',
     '/agb', '/agb/',
     '/datenschutz', '/datenschutz/',
     '/impressum', '/impressum/',
@@ -36,3 +37,5 @@ module.exports = {
     }
   },
 }
+
+export default config

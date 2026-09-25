@@ -3,11 +3,15 @@ import { isCronAuthorized } from '@/lib/leads/cron-auth'
 import { getServiceSupabase, runRetention } from '@/lib/leads/supabase'
 import { leadsLog } from '@/lib/leads/log'
 import { applySecurityHeaders } from '@/lib/leads/security-headers'
+import { resolveRetentionConfig } from '@/lib/leads/retention-config'
 
 export const runtime = 'nodejs'
 
 function json(body, status = 200) {
-  const response = NextResponse.json(body, { status })
+  const response = NextResponse.json(body, {
+    status,
+    headers: { 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow, noarchive' },
+  })
   applySecurityHeaders(response.headers)
   return response
 }
@@ -17,15 +21,21 @@ async function handle(request) {
     return json({ ok: false, code: 'unauthorized' }, 401)
   }
 
+  const config = resolveRetentionConfig()
+  if (!config.ok) {
+    leadsLog('error', 'retention.config_invalid', { code: config.code })
+    return json({ ok: false, code: config.code }, 500)
+  }
+
   const supabase = getServiceSupabase()
   if (!supabase) {
     return json({ ok: false, code: 'storage-not-configured' }, 500)
   }
 
   const result = await runRetention(supabase, {
-    retentionDays: Number(process.env.LEADS_RETENTION_DAYS || 90),
-    privateRetentionDays: Number(process.env.LEADS_PRIVATE_RETENTION_DAYS || process.env.LEADS_RETENTION_DAYS || 90),
-    careerRetentionDays: Number(process.env.LEADS_CAREER_RETENTION_DAYS || 183),
+    retentionDays: config.retentionDays,
+    privateRetentionDays: config.privateRetentionDays,
+    careerRetentionDays: config.careerRetentionDays,
   })
 
   if (result.error) {

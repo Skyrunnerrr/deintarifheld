@@ -33,10 +33,12 @@ Credentials: `infra/checkdomain/config.env` (gitignored, mode `0600`). Prefer SS
 
 ## Partial upload protection
 
-- No remote wipe before upload
-- Stage under `releases/<timestamp>/` when applying
-- Promote `_next`/images first, HTML last
-- Rollback restores the previous local backup tree via SFTP
+- No remote wipe before upload.
+- `upload --apply` requires a verified backup created within the previous four hours.
+- The backup must contain `.htaccess` and pass its SHA-256 manifest before upload starts.
+- Upload is a single ordered overlay from the verified local `out/`: `_next` first, then image/business assets, remaining route directories, root non-HTML files, root HTML, and finally `.htaccess`.
+- There is no redundant remote staging copy. The verified local backup is the rollback source.
+- Rollback verifies the backup manifest again and restores `.htaccess` explicitly.
 
 ## Mail gate
 

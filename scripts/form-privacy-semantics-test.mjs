@@ -12,7 +12,6 @@ const FORM_FILES = [
   'components/sections/Hero.jsx',
   'components/sections/FunnelSection.jsx',
   'components/sections/CareerSection.jsx',
-  'components/sections/SavingsCalculator.jsx',
   'components/business/BusinessForm.jsx',
   'lib/business-content.js',
   'app/unternehmen/page.js',
@@ -67,6 +66,14 @@ for (const f of FORM_FILES) {
   if (/Bitte stimme der Datenschutzerklärung zu|Bitte stimmen Sie der Datenschutzerklärung zu/.test(text)) {
     FAIL.push(`${f}: legacy consent error message`)
   }
+}
+
+const calculator = read('components/sections/SavingsCalculator.jsx')
+if (/calcDsgvo|id="calc-dsgvo"|Bitte bestätige, dass du die Datenschutzerklärung/.test(calculator)) {
+  FAIL.push('components/sections/SavingsCalculator.jsx: calculator must not collect privacy acknowledgement before any submission')
+}
+if (!/document\.getElementById\('funnel'\)\?\.scrollIntoView/.test(calculator)) {
+  FAIL.push('components/sections/SavingsCalculator.jsx: calculator CTA must route to the actual submission funnel')
 }
 
 for (const [f, field] of [

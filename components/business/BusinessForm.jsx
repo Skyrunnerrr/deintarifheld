@@ -11,8 +11,6 @@ import {
   sanitizePayload,
   HONEYPOT_FIELD,
   HONEYPOT_FIELD_2,
-  checkRateLimit,
-  recordSubmission,
   recordFormLoad,
   getFormTiming,
 } from '@/lib/security'
@@ -83,16 +81,28 @@ function BusinessFormular() {
 
   const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }))
 
+  const activeConsumption =
+    form.energieart === 'Strom' ? form.verbrauchStrom :
+    form.energieart === 'Gas' ? form.verbrauchGas :
+    ''
+  const activeConsumptionValid =
+    !activeConsumption || (/^\d+$/.test(activeConsumption) && Number(activeConsumption) > 0)
+
   const step1Valid =
     form.energieart !== '' &&
     form.standorte !== '' &&
     form.plz.trim().length === 5 &&
-    /^\d{5}$/.test(form.plz.trim())
+    /^\d{5}$/.test(form.plz.trim()) &&
+    activeConsumptionValid
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const phoneRegex = /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/
   const step2Valid =
     form.firma.trim().length >= 2 &&
+    form.firma.trim().length <= 160 &&
     form.ansprechpartner.trim().length >= 2 &&
+    form.ansprechpartner.trim().length <= 120 &&
+    form.email.trim().length <= 180 &&
     emailRegex.test(form.email.trim())
 
   const handleSubmit = async (e) => {
@@ -103,9 +113,14 @@ function BusinessFormular() {
     setValidationErrors({})
 
     const errs = {}
-    if (form.firma.trim().length < 2) errs.firma = 'Bitte geben Sie einen Firmennamen ein'
-    if (form.ansprechpartner.trim().length < 2) errs.ansprechpartner = 'Bitte geben Sie einen Ansprechpartner ein'
-    if (!emailRegex.test(form.email.trim())) errs.email = 'Bitte geben Sie eine gültige E-Mail ein'
+    const firma = form.firma.trim()
+    const ansprechpartner = form.ansprechpartner.trim()
+    const email = form.email.trim()
+    const telefon = form.telefon.trim()
+    if (firma.length < 2 || firma.length > 160) errs.firma = 'Bitte geben Sie einen gültigen Firmennamen ein'
+    if (ansprechpartner.length < 2 || ansprechpartner.length > 120) errs.ansprechpartner = 'Bitte geben Sie einen gültigen Ansprechpartner ein'
+    if (email.length > 180 || !emailRegex.test(email)) errs.email = 'Bitte geben Sie eine gültige E-Mail ein'
+    if (telefon && (telefon.length > 40 || !phoneRegex.test(telefon))) errs.telefon = 'Bitte geben Sie eine gültige Telefonnummer ein'
     if (!form.dsgvo) {
       setDsgvoError(true)
       errs.dsgvo = true
@@ -119,12 +134,6 @@ function BusinessFormular() {
 
     setRecaptchaError('')
 
-    const rl = checkRateLimit('b2b-form')
-    if (!rl.allowed) {
-      setRateLimitMsg(`Bitte warten Sie ${rl.remainingSeconds}s bevor Sie erneut absenden.`)
-      return
-    }
-
     setSending(true)
     try {
       const captcha = await resolveSubmitCaptchaToken('unternehmen', recaptchaToken)
@@ -132,7 +141,6 @@ function BusinessFormular() {
         setRecaptchaError(leadSubmitCaptchaClientMessage('formal'))
         return
       }
-      recordSubmission('b2b-form')
       const payload = {
         ...sanitizePayload({
           ...form,
@@ -170,6 +178,10 @@ function BusinessFormular() {
       const errs = {}
       if (!form.energieart) errs.energieart = 'Bitte wählen Sie eine Energieart'
       if (!form.standorte) errs.standorte = 'Bitte wählen Sie die Anzahl der Standorte'
+      if (!activeConsumptionValid) {
+        if (form.energieart === 'Strom') errs.verbrauchStrom = 'Bitte geben Sie einen Verbrauch größer als 0 kWh ein'
+        if (form.energieart === 'Gas') errs.verbrauchGas = 'Bitte geben Sie einen Verbrauch größer als 0 kWh ein'
+      }
       if (form.plz.trim().length !== 5 || !/^\d{5}$/.test(form.plz.trim())) {
         errs.plz = 'Bitte geben Sie eine gültige 5-stellige Postleitzahl ein'
       }
@@ -252,7 +264,12 @@ function BusinessFormular() {
                     key={opt}
                     active={form.energieart === opt}
                     onClick={() => {
-                      set('energieart', opt)
+                      setForm((prev) => ({
+                        ...prev,
+                        energieart: opt,
+                        verbrauchStrom: opt === 'Strom' ? prev.verbrauchStrom : '',
+                        verbrauchGas: opt === 'Gas' ? prev.verbrauchGas : '',
+                      }))
                       setValidationErrors((prev) => ({ ...prev, energieart: undefined }))
                     }}
                   >
@@ -278,9 +295,20 @@ function BusinessFormular() {
                   min="0"
                   placeholder="z. B. 80000"
                   value={form.verbrauchStrom}
-                  onChange={(e) => set('verbrauchStrom', e.target.value)}
+                  inputMode="numeric"
+                  onChange={(e) => {
+                    set('verbrauchStrom', e.target.value.replace(/\D/g, '').slice(0, 40))
+                    setValidationErrors((prev) => ({ ...prev, verbrauchStrom: undefined }))
+                  }}
                   className={inputClass}
+                  aria-invalid={Boolean(validationErrors.verbrauchStrom)}
+                  aria-describedby={validationErrors.verbrauchStrom ? 'bneu-verbrauchStrom-error' : undefined}
                 />
+                {validationErrors.verbrauchStrom && (
+                  <p role="alert" id="bneu-verbrauchStrom-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    {validationErrors.verbrauchStrom}
+                  </p>
+                )}
               </div>
             )}
 
@@ -295,9 +323,20 @@ function BusinessFormular() {
                   min="0"
                   placeholder="z. B. 150000"
                   value={form.verbrauchGas}
-                  onChange={(e) => set('verbrauchGas', e.target.value)}
+                  inputMode="numeric"
+                  onChange={(e) => {
+                    set('verbrauchGas', e.target.value.replace(/\D/g, '').slice(0, 40))
+                    setValidationErrors((prev) => ({ ...prev, verbrauchGas: undefined }))
+                  }}
                   className={inputClass}
+                  aria-invalid={Boolean(validationErrors.verbrauchGas)}
+                  aria-describedby={validationErrors.verbrauchGas ? 'bneu-verbrauchGas-error' : undefined}
                 />
+                {validationErrors.verbrauchGas && (
+                  <p role="alert" id="bneu-verbrauchGas-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    {validationErrors.verbrauchGas}
+                  </p>
+                )}
               </div>
             )}
 
@@ -383,6 +422,7 @@ function BusinessFormular() {
               <input
                 id="bneu-firma"
                 type="text"
+                maxLength={160}
                 placeholder="Ihre Firma GmbH"
                 value={form.firma}
                 onChange={(e) => set('firma', e.target.value)}
@@ -405,6 +445,7 @@ function BusinessFormular() {
               <input
                 id="bneu-ansprechpartner"
                 type="text"
+                maxLength={120}
                 placeholder="Vor- und Nachname"
                 value={form.ansprechpartner}
                 onChange={(e) => set('ansprechpartner', e.target.value)}
@@ -428,6 +469,7 @@ function BusinessFormular() {
                 <input
                   id="bneu-email"
                   type="email"
+                  maxLength={180}
                   placeholder="ihre@firma.de"
                   value={form.email}
                   onChange={(e) => set('email', e.target.value)}
@@ -449,11 +491,22 @@ function BusinessFormular() {
                 <input
                   id="bneu-telefon"
                   type="tel"
+                  maxLength={40}
                   placeholder="+49 6221 8688877"
                   value={form.telefon}
-                  onChange={(e) => set('telefon', e.target.value)}
+                  onChange={(e) => {
+                    set('telefon', e.target.value.slice(0, 40))
+                    setValidationErrors((prev) => ({ ...prev, telefon: undefined }))
+                  }}
                   className={inputClass}
+                  aria-invalid={Boolean(validationErrors.telefon)}
+                  aria-describedby={validationErrors.telefon ? 'bneu-telefon-error' : undefined}
                 />
+                {validationErrors.telefon && (
+                  <p role="alert" id="bneu-telefon-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    {validationErrors.telefon}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -465,6 +518,7 @@ function BusinessFormular() {
                 <input
                   id="bneu-versorger"
                   type="text"
+                  maxLength={120}
                   placeholder="z. B. aktueller Versorger"
                   value={form.versorger}
                   onChange={(e) => set('versorger', e.target.value)}
@@ -496,6 +550,7 @@ function BusinessFormular() {
               <textarea
                 id="bneu-nachricht"
                 rows={3}
+                maxLength={2000}
                 placeholder="Standorte, Verbrauchsschwerpunkte oder offene Fragen..."
                 value={form.nachricht}
                 onChange={(e) => set('nachricht', e.target.value)}

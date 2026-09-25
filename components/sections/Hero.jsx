@@ -3,12 +3,14 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
+import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, recordFormLoad, getFormTiming } from '@/lib/security'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
 // ─── Keyframes via inline style tag ────────────────────────────────
+const PHONE_INPUT_RE = /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/
+
 const KEYFRAMES = `
   @keyframes orbFloat {
     0%, 100% { transform: translateY(0) scale(1); }
@@ -170,15 +172,22 @@ export function Hero() {
   function openFunnel() {
     setFunnelOpen(true)
     setTimeout(() => {
-      document.getElementById('hero-funnel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      document.getElementById('hero-funnel')?.scrollIntoView({
+        behavior: reduced ? 'auto' : 'smooth',
+        block: 'nearest',
+      })
     }, 100)
   }
 
   function goStep2() {
     const newErrors = {}
-    if (!formData.firstName.trim()) newErrors.firstName = 'Bitte gib deinen Vornamen ein'
-    if (!formData.phone.trim() || formData.phone.trim().length < 6) newErrors.phone = 'Bitte gib deine Telefonnummer ein'
-    if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) newErrors.email = 'Bitte gib eine gültige E-Mail ein'
+    const firstName = formData.firstName.trim()
+    const phone = formData.phone.trim()
+    const email = formData.email.trim()
+    if (!firstName || firstName.length > 120) newErrors.firstName = 'Bitte gib einen gültigen Vornamen ein'
+    if (phone.length > 40 || !PHONE_INPUT_RE.test(phone)) newErrors.phone = 'Bitte gib eine gültige Telefonnummer ein'
+    if (!email || email.length > 180 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Bitte gib eine gültige E-Mail ein'
     setErrors(newErrors)
     if (Object.keys(newErrors).length === 0) setStep(2)
   }
@@ -189,16 +198,17 @@ export function Hero() {
     setRateLimitMsg('')
     setRecaptchaError('')
     const newErrors = {}
-    if (!formData.provider.trim()) newErrors.provider = 'Bitte gib deinen Anbieter ein'
-    if (!formData.usage.trim()) newErrors.usage = 'Bitte gib deinen Verbrauch ein'
+    const provider = formData.provider.trim()
+    const usage = formData.usage.trim()
+    if (!provider || provider.length > 120) newErrors.provider = 'Bitte gib einen gültigen Anbieter ein'
+    if (usage.length > 40 || !/^\d+$/.test(usage) || Number(usage) <= 0) {
+      newErrors.usage = 'Bitte gib einen gültigen Verbrauch in ganzen kWh ein'
+    }
     if (!formData.zip.trim() || !/^\d{5}$/.test(formData.zip.trim())) newErrors.zip = 'Bitte gib eine gültige 5-stellige PLZ ein'
+    if (!['strom', 'gas'].includes(formData.type)) newErrors.type = 'Bitte wähle Strom oder Gas aus'
     if (!formData.gdpr) newErrors.gdpr = 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.'
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
-
-    // Rate limiting
-    const rl = checkRateLimit('hero-funnel')
-    if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s bevor du erneut absendest.`); return }
 
     setSending(true)
     try {
@@ -207,7 +217,6 @@ export function Hero() {
         setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
         return
       }
-      recordSubmission('hero-funnel')
       const { [HONEYPOT_FIELD]: _hp, [HONEYPOT_FIELD_2]: _hp2, ...rest } = formData
       const { _formLoadedAt } = getFormTiming('hero-funnel')
       const payload = {
@@ -345,9 +354,9 @@ export function Hero() {
               marginBottom: 24,
             }}
           >
-            Bis zu 40%*<br />
-            weniger<br />
-            <span style={{ color: 'var(--volt, #D4FF3E)' }}>Energiekosten</span>
+            Energiekosten<br />
+            einfach<br />
+            <span style={{ color: 'var(--volt, #D4FF3E)' }}>optimieren</span>
           </motion.h1>
 
           {/* 3. Lead Text */}
@@ -366,25 +375,10 @@ export function Hero() {
               marginBottom: 32,
             }}
           >
-            Wir analysieren deinen Strom- und Gastarif kostenlos,
-            finden bessere Angebote und übernehmen den kompletten
-            Wechsel für dich.
+            Wir prüfen deinen Strom- und Gastarif kostenlos,
+            vergleichen passende Angebote und begleiten dich auf Wunsch
+            beim Anbieterwechsel.
           </motion.p>
-
-          {/* Disclaimer für 40%-Claim */}
-          <p
-            className="hero-disclaimer"
-            style={{
-              fontFamily: 'var(--font-outfit, "Outfit", sans-serif)',
-              fontSize: 11,
-              color: 'var(--text-tertiary, #5A6272)',
-              lineHeight: 1.5,
-              marginBottom: 28,
-              maxWidth: 460,
-            }}
-          >
-            * Potenzielle Ersparnis basierend auf Kundenbeispielen im Vergleich zum Grundversorgungstarif. Individuelle Ergebnisse variieren.
-          </p>
 
           {/* 4. CTA Row */}
           <AnimatePresence>
@@ -504,10 +498,10 @@ export function Hero() {
                 {step === 1 && (
                   <motion.div key="s1" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.25 }}>
                     <FunnelInputGrid>
-                      <FunnelInput label="VORNAME" id="fn" type="text" placeholder="Max" value={formData.firstName} onChange={handleInput('firstName')} error={errors.firstName} />
-                      <FunnelInput label="TELEFON" id="ph" type="tel" placeholder="+49 170 …" value={formData.phone} onChange={handleInput('phone')} error={errors.phone} />
+                      <FunnelInput label="VORNAME" id="fn" type="text" placeholder="Max" maxLength={120} value={formData.firstName} onChange={handleInput('firstName')} error={errors.firstName} />
+                      <FunnelInput label="TELEFON" id="ph" type="tel" placeholder="+49 170 …" maxLength={40} value={formData.phone} onChange={handleInput('phone')} error={errors.phone} />
                     </FunnelInputGrid>
-                    <FunnelInput label="E-MAIL" id="em" type="email" placeholder="max@beispiel.de" value={formData.email} onChange={handleInput('email')} style={{ marginTop: 8 }} error={errors.email} />
+                    <FunnelInput label="E-MAIL" id="em" type="email" placeholder="max@beispiel.de" maxLength={180} value={formData.email} onChange={handleInput('email')} style={{ marginTop: 8 }} error={errors.email} />
                     {/* Honeypot — unsichtbar für echte Nutzer */}
                     <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true" tabIndex={-1}>
                       <input type="text" name={HONEYPOT_FIELD} value={formData[HONEYPOT_FIELD]} onChange={handleInput(HONEYPOT_FIELD)} autoComplete="off" tabIndex={-1} />
@@ -522,12 +516,12 @@ export function Hero() {
                 {step === 2 && (
                   <motion.div key="s2" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.25 }}>
                     <FunnelInputGrid>
-                      <FunnelInput label="AKTUELLER ANBIETER" id="prov" type="text" placeholder="E.ON, Vattenfall …" value={formData.provider} onChange={handleInput('provider')} error={errors.provider} />
-                      <FunnelInput label="JAHRESVERBRAUCH (KWH)" id="usage" type="number" placeholder="3500" value={formData.usage} onChange={handleInput('usage')} error={errors.usage} />
+                      <FunnelInput label="AKTUELLER ANBIETER" id="prov" type="text" placeholder="E.ON, Vattenfall …" maxLength={120} value={formData.provider} onChange={handleInput('provider')} error={errors.provider} />
+                      <FunnelInput label="JAHRESVERBRAUCH (KWH)" id="usage" type="number" placeholder="3500" inputMode="numeric" value={formData.usage} onChange={handleInput('usage')} error={errors.usage} />
                     </FunnelInputGrid>
                     <FunnelInputGrid style={{ marginTop: 8 }}>
                       <FunnelInput label="POSTLEITZAHL" id="zip" type="text" placeholder="10115" maxLength={5} value={formData.zip} onChange={handleInput('zip')} error={errors.zip} />
-                      <FunnelSelect label="ART" id="type" value={formData.type} onChange={handleInput('type')} />
+                      <FunnelSelect label="ART" id="type" value={formData.type} onChange={handleInput('type')} error={errors.type} />
                     </FunnelInputGrid>
                     {/* DSGVO Checkbox */}
                     <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginTop: 10 }}>
@@ -924,7 +918,7 @@ function FunnelInput({ label, id, style, error, ...props }) {
   )
 }
 
-function FunnelSelect({ label, id, value, onChange }) {
+function FunnelSelect({ label, id, value, onChange, error }) {
   return (
     <div>
       <label htmlFor={id} style={{
@@ -956,6 +950,9 @@ function FunnelSelect({ label, id, value, onChange }) {
         <option value="strom">Strom</option>
         <option value="gas">Gas</option>
       </select>
+      {error && (
+        <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{error}</p>
+      )}
     </div>
   )
 }

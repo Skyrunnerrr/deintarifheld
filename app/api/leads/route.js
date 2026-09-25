@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createHash, randomUUID } from 'crypto'
 import { consumeRateLimit } from '@/lib/leads/abuse-guard'
 import { enforcePublicIntake, isBotLikeSubmit } from '@/lib/leads/intake-guard'
 import { validateUnternehmenPayload } from '@/lib/leads/validate-unternehmen'
 import { isPrivatePageSource, validatePrivatePayload } from '@/lib/leads/validate-private'
 import {
   findLeadByIdempotencyKey,
-  findRecentDuplicate,
   getServiceSupabase,
   insertLead,
   makeLeadRef,
@@ -16,21 +14,27 @@ import {
 import { mailFieldsFromStored, sendLeadEmails } from '@/lib/leads/mail'
 import { optionsResponse, withCors } from '@/lib/leads/cors'
 import { leadsLog } from '@/lib/leads/log'
+import { resolveRequestId } from '@/lib/leads/request-id'
+import { buildIdempotencyKey } from '@/lib/leads/idempotency'
 import { publicLeadsHealth } from '@/lib/leads/public-health'
 
 export const runtime = 'nodejs'
 
-function requestId(request) {
-  return request.headers.get('x-request-id')?.trim() || randomUUID()
-}
-
 function json(request, body, status = 200, headers) {
-  const rid = requestId(request)
+  const rid = resolveRequestId(request)
   return withCors(
     request,
     NextResponse.json(
       { ...body, requestId: body.requestId || rid },
-      { status, headers: { 'x-request-id': rid, ...(headers || {}) } },
+      {
+        status,
+        headers: {
+          'cache-control': 'no-store',
+          'x-content-type-options': 'nosniff',
+          'x-request-id': rid,
+          ...(headers || {}),
+        },
+      },
     ),
   )
 }
@@ -39,33 +43,88 @@ function errorResponse(request, code, status, headers) {
   return json(request, { ok: false, code }, status, headers)
 }
 
-function buildIdempotencyKey(request, data) {
-  const header = request.headers.get('idempotency-key')?.trim()
-  if (header && header.length >= 8 && header.length <= 128) return header
-  const window = Math.floor(Date.now() / 60_000)
-  return createHash('sha256')
-    .update(`${data.page_source}|${data.email}|${window}`)
-    .digest('hex')
-    .slice(0, 48)
+async function writeAuditObserved(supabase, payload) {
+  const result = await writeAudit(supabase, payload)
+  if (result.error) {
+    leadsLog('error', 'leads.audit_write_failed', {
+      eventType: payload.eventType || 'unknown',
+      code: result.error.code || 'unknown',
+    })
+  }
+  return result
 }
 
 function mailFields(mailResult) {
   const mode = mailResult.mode || (process.env.LEADS_MAIL_MODE || 'mock')
   const mailStatus = mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed')
-  const customerConfirmation =
-    mailResult.customerConfirmation ||
-    (mode === 'internal_live' ? 'skipped' : mode === 'live' ? 'sent' : 'n/a')
+  const customerConfirmation = mailResult.customerConfirmation || 'n/a'
   return {
-    mail: Boolean(mailResult.ok),
+    // "mail" means at least one intended operational mail was accepted. The
+    // customerConfirmation field carries the separate customer-delivery truth.
+    mail: ['accepted', 'internal_sent', 'partial_failed'].includes(mailStatus),
     mailMode: mode,
     mailStatus,
     customerConfirmation,
   }
 }
 
+function storedMailNeedsRecovery(row) {
+  const status = typeof row?.mail_status === 'string' ? row.mail_status.trim() : ''
+  return !status || status === 'pending'
+}
+
+async function recoverStoredLeadMail(supabase, row) {
+  if (!storedMailNeedsRecovery(row)) {
+    return { status: 200, fields: mailFieldsFromStored(row) }
+  }
+
+  const data = row?.payload && typeof row.payload === 'object' ? row.payload : null
+  const pageSource = typeof row?.page_source === 'string' ? row.page_source : data?.page_source
+  const channel = pageSource === 'unternehmen' ? 'business' : isPrivatePageSource(pageSource) ? 'private' : null
+
+  if (!data || !channel) {
+    return { status: 200, fields: mailFieldsFromStored(row) }
+  }
+
+  const mailResult = await sendLeadEmails({
+    leadRef: row.lead_ref,
+    data,
+    submittedAt: row.created_at || new Date().toISOString(),
+    channel,
+  })
+
+  const mailStatus = mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed')
+  const mailMode = mailResult.mode || process.env.LEADS_MAIL_MODE || 'mock'
+  const mailMeta = await updateLeadMailMeta(supabase, row.id, { mailStatus, mailMode })
+
+  if (mailMeta.error) {
+    leadsLog('error', 'leads.mail_recovery_meta_update_failed', {
+      leadRef: row.lead_ref,
+      code: mailMeta.error.code || 'unknown',
+    })
+  }
+
+  await writeAuditObserved(supabase, {
+    leadId: row.id,
+    eventType: mailResult.ok ? 'lead.mail_recovered' : 'lead.mail_recovery_failed',
+    detail: {
+      lead_ref: row.lead_ref,
+      mode: mailMode,
+      mail_status: mailStatus,
+      customer_confirmation: mailResult.customerConfirmation || 'n/a',
+    },
+  })
+
+  return {
+    status: mailResult.ok ? 200 : 202,
+    fields: mailFields(mailResult),
+    code: mailResult.ok ? undefined : mailResult.code,
+  }
+}
+
 function resolveValidator(raw) {
   const source = typeof raw?.page_source === 'string' ? raw.page_source.trim() : ''
-  if (!source || source === 'unternehmen') {
+  if (source === 'unternehmen') {
     return { channel: 'business', validated: validateUnternehmenPayload(raw) }
   }
   if (isPrivatePageSource(source)) {
@@ -111,37 +170,30 @@ export async function POST(request) {
 
   const pageSource = validated.data.page_source
   const leadType = channel === 'private' ? 'private_energy' : 'business_energy'
-  const idempotencyKey = buildIdempotencyKey(request, validated.data)
+  const idempotencyKey = buildIdempotencyKey(request, validated.data, { scope: 'lead' })
 
-  const { data: existingByKey } = await findLeadByIdempotencyKey(supabase, idempotencyKey)
-  if (existingByKey) {
-    return json(request, {
-      ok: true,
-      duplicate: true,
-      idempotent: true,
-      leadId: existingByKey.id,
-      leadRef: existingByKey.lead_ref,
-      ...mailFieldsFromStored(existingByKey),
+  const { data: existingByKey, error: idempotencyError } =
+    await findLeadByIdempotencyKey(supabase, idempotencyKey)
+  if (idempotencyError) {
+    leadsLog('error', 'leads.idempotency_lookup_failed', {
+      code: idempotencyError.code || 'unknown',
     })
-  }
-
-  const { duplicate, error: dupErr } = await findRecentDuplicate(supabase, {
-    email: validated.data.email,
-    pageSource,
-    withinSeconds: 60,
-  })
-  if (dupErr) {
-    leadsLog('error', 'leads.duplicate_check_failed', { code: 'storage-failed' })
     return errorResponse(request, 'storage-failed', 500)
   }
-  if (duplicate) {
-    return json(request, {
-      ok: true,
-      duplicate: true,
-      leadId: duplicate.id,
-      leadRef: duplicate.lead_ref,
-      ...mailFieldsFromStored(duplicate),
-    })
+  if (existingByKey) {
+    const recovered = await recoverStoredLeadMail(supabase, existingByKey)
+    return json(
+      request,
+      {
+        ok: true,
+        duplicate: true,
+        idempotent: true,
+        leadRef: existingByKey.lead_ref,
+        ...recovered.fields,
+        ...(recovered.code ? { code: recovered.code } : {}),
+      },
+      recovered.status,
+    )
   }
 
   const leadRef = makeLeadRef(pageSource)
@@ -158,6 +210,8 @@ export async function POST(request) {
     consent_at: submittedAt,
     source_page: validated.data.source_page,
     idempotency_key: idempotencyKey,
+    mail_status: 'pending',
+    mail_mode: process.env.LEADS_MAIL_MODE || 'mock',
     payload: {
       ...payloadFields,
       lead_type: leadType,
@@ -168,27 +222,38 @@ export async function POST(request) {
 
   if (insertError) {
     if (insertError.code === '23505') {
-      const { data: raced } = await findLeadByIdempotencyKey(supabase, idempotencyKey)
-      if (raced) {
-        return json(request, {
-          ok: true,
-          duplicate: true,
-          idempotent: true,
-          leadId: raced.id,
-          leadRef: raced.lead_ref,
-          ...mailFieldsFromStored(raced),
+      const { data: raced, error: raceLookupError } =
+        await findLeadByIdempotencyKey(supabase, idempotencyKey)
+      if (raceLookupError) {
+        leadsLog('error', 'leads.idempotency_race_lookup_failed', {
+          code: raceLookupError.code || 'unknown',
         })
+      }
+      if (raced) {
+        const recovered = await recoverStoredLeadMail(supabase, raced)
+        return json(
+          request,
+          {
+            ok: true,
+            duplicate: true,
+            idempotent: true,
+            leadRef: raced.lead_ref,
+            ...recovered.fields,
+            ...(recovered.code ? { code: recovered.code } : {}),
+          },
+          recovered.status,
+        )
       }
     }
     leadsLog('error', 'leads.insert_failed', { code: insertError.code || 'unknown' })
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       eventType: 'lead.insert_failed',
       detail: { code: insertError.code || 'unknown', page_source: pageSource, lead_type: leadType },
     })
     return errorResponse(request, 'storage-failed', 500)
   }
 
-  await writeAudit(supabase, {
+  await writeAuditObserved(supabase, {
     leadId: inserted.id,
     eventType: 'lead.accepted',
     detail: { lead_ref: leadRef, page_source: pageSource, lead_type: leadType },
@@ -201,15 +266,50 @@ export async function POST(request) {
     channel,
   })
 
-  await updateLeadMailMeta(supabase, inserted.id, {
+  const mailMeta = await updateLeadMailMeta(supabase, inserted.id, {
     mailStatus: mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed'),
     mailMode: mailResult.mode || process.env.LEADS_MAIL_MODE || 'mock',
   })
+  if (mailMeta.error) {
+    leadsLog('error', 'leads.mail_meta_update_failed', {
+      leadRef,
+      code: mailMeta.error.code || 'unknown',
+    })
+    await writeAuditObserved(supabase, {
+      leadId: inserted.id,
+      eventType: 'lead.mail_meta_update_failed',
+      detail: { lead_ref: leadRef, code: mailMeta.error.code || 'unknown' },
+    })
+  }
 
   if (!mailResult.ok) {
+    if (mailResult.internalDelivery === 'sent') {
+      await writeAuditObserved(supabase, {
+        leadId: inserted.id,
+        eventType: 'lead.internal_mail_sent',
+        detail: {
+          lead_ref: leadRef,
+          mode: mailResult.mode || 'live',
+          provider_email_id: mailResult.providerEmailId || null,
+          outcome: 'partial_success',
+        },
+      })
+      if (mailResult.customerConfirmation === 'failed') {
+        await writeAuditObserved(supabase, {
+          leadId: inserted.id,
+          eventType: 'lead.customer_confirmation_failed',
+          detail: {
+            lead_ref: leadRef,
+            mode: mailResult.mode || 'live',
+            provider_error_code: mailResult.providerErrorCode || null,
+          },
+        })
+      }
+    }
+
     const failEvent =
       mailResult.mode === 'internal_live' ? 'lead.internal_mail_failed' : 'lead.mail_failed'
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       leadId: inserted.id,
       eventType: failEvent,
       detail: {
@@ -221,7 +321,7 @@ export async function POST(request) {
       },
     })
     if (mailResult.mode === 'internal_live') {
-      await writeAudit(supabase, {
+      await writeAuditObserved(supabase, {
         leadId: inserted.id,
         eventType: 'lead.customer_confirmation_skipped',
         detail: { lead_ref: leadRef, mode: 'internal_live', reason: 'temporary_internal_mode' },
@@ -236,7 +336,6 @@ export async function POST(request) {
       request,
       {
         ok: true,
-        leadId: inserted.id,
         leadRef,
         duplicate: false,
         idempotent: false,
@@ -248,7 +347,7 @@ export async function POST(request) {
   }
 
   if (mailResult.mode === 'internal_live') {
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       leadId: inserted.id,
       eventType: 'lead.internal_mail_sent',
       detail: {
@@ -259,13 +358,13 @@ export async function POST(request) {
         provider_email_id: mailResult.providerEmailId || null,
       },
     })
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       leadId: inserted.id,
       eventType: 'lead.customer_confirmation_skipped',
       detail: { lead_ref: leadRef, mode: 'internal_live', reason: 'temporary_internal_mode' },
     })
   } else {
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       leadId: inserted.id,
       eventType: 'lead.mail_sent',
       detail: {
@@ -281,7 +380,6 @@ export async function POST(request) {
 
   return json(request, {
     ok: true,
-    leadId: inserted.id,
     leadRef,
     duplicate: false,
     idempotent: false,

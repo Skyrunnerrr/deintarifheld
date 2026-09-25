@@ -10,7 +10,7 @@ import { AmbientBg, GridBg } from '@/components/ui/Background'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea, Checkbox } from '@/components/ui/Form'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
-import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
+import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, recordFormLoad, getFormTiming } from '@/lib/security'
 import { careersApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
@@ -34,15 +34,20 @@ const KF = `
 `
 
 const schema = z.object({
-  name:       z.string().min(2, 'Bitte gib deinen Namen ein'),
-  email:      z.string().email('Bitte gib eine gültige E-Mail ein'),
-  phone:      z.string().min(6, 'Bitte gib deine Telefonnummer ein'),
-  motivation: z.string().min(10, 'Bitte schreib uns kurz, warum dich das interessiert'),
+  name:       z.string().min(2, 'Bitte gib deinen Namen ein').max(160, 'Der Name ist zu lang'),
+  email:      z.string().max(180, 'Die E-Mail-Adresse ist zu lang').email('Bitte gib eine gültige E-Mail ein'),
+  phone:      z.string().max(40, 'Die Telefonnummer ist zu lang').refine(
+    (value) => /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/.test(value.trim()),
+    'Bitte gib eine gültige Telefonnummer ein',
+  ),
+  motivation: z.string()
+    .min(10, 'Bitte schreib uns kurz, warum dich das interessiert')
+    .max(4000, 'Deine Nachricht ist zu lang'),
   gdpr:       z.literal(true, { errorMap: () => ({ message: 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.' }) }),
 })
 
 const BENEFITS = [
-  { icon: <TrendingUp className="w-5 h-5" />, title: '1.400 – 5.500 €', sub: 'monatlich möglich', color: '#0A5ADB' },
+  { icon: <TrendingUp className="w-5 h-5" />, title: 'Provisionsbasiert', sub: 'abhängig von deiner Leistung', color: '#0A5ADB' },
   { icon: <Clock className="w-5 h-5" />,      title: 'Flexibel',         sub: 'Zeit & Ort frei wählen', color: '#217CFF' },
   { icon: <Users className="w-5 h-5" />,      title: 'Quereinsteiger',   sub: 'Keine Vorkenntnisse nötig', color: '#0A5ADB' },
   { icon: <Zap className="w-5 h-5" />,        title: 'Vollausbildung',   sub: 'Persönliche Schulungen inklusive', color: '#217CFF' },
@@ -73,8 +78,6 @@ export function CareerSection({ headingLevel = 'h1' }) {
     if (loading) return
     setRateLimitMsg('')
     setRecaptchaError('')
-    const rl = checkRateLimit('career-form')
-    if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s.`); return }
     setLoading(true)
     try {
       const captcha = await resolveSubmitCaptchaToken('career', recaptchaToken)
@@ -82,7 +85,6 @@ export function CareerSection({ headingLevel = 'h1' }) {
         setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
         return
       }
-      recordSubmission('career-form')
       const payload = {
         ...sanitizePayload({
           ...data,
@@ -276,11 +278,11 @@ export function CareerSection({ headingLevel = 'h1' }) {
                     </div>
                     <div>
                       <h3 className="font-display font-bold text-2xl mb-2" style={{ color: '#F0F4FF' }}>Partneranfrage gesendet</h3>
-                      <p className="font-body text-base" style={{ color: 'rgba(180,200,255,0.65)' }}>Wir melden uns innerhalb von 48 Stunden für ein Kennenlerngespräch.</p>
+                      <p className="font-body text-base" style={{ color: 'rgba(180,200,255,0.65)' }}>Wir melden uns für ein persönliches Kennenlerngespräch.</p>
                     </div>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                  <form id="partneranfrage" onSubmit={handleSubmit(onSubmit)} noValidate>
                     <div className="mb-7">
                       <div
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-3"
@@ -373,7 +375,7 @@ export function CareerSection({ headingLevel = 'h1' }) {
                       )}
 
                       <div className="flex items-center justify-center gap-4 pt-1">
-                        {['Kostenlos', 'Unverbindlich', '48h Antwort'].map((t, i) => (
+                        {['Kostenlos', 'Unverbindlich', 'Persönliche Rückmeldung'].map((t, i) => (
                           <span key={i} className="flex items-center gap-1 font-body text-xs" style={{ color: 'rgba(180,200,255,0.45)' }}>
                             <span style={{ color: '#217CFF' }}>✓</span> {t}
                           </span>

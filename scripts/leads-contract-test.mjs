@@ -11,11 +11,38 @@ import { fileURLToPath } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(join(root, p), 'utf8')
 
+for (const obsolete of [
+  'DEINTARIFHELD',
+  'NEU TARI.jpg',
+  'app/datenschutz/page.js.bak',
+  'build-check.sh',
+  'package-lock.json.old',
+  'test-backend.mjs',
+  'upload.sh',
+  'upload-ftp.sh',
+  'INTEGRATION_SUMMARY.md',
+  'RECAPTCHA_QUICKSTART.md',
+  'RECAPTCHA_SETUP.md',
+  'google-apps-script.js',
+  'public/images/tari.png',
+]) {
+  assert.equal(existsSync(join(root, obsolete)), false, `obsolete tracked file returned: ${obsolete}`)
+}
+
+assert.ok(existsSync(join(root, 'docs/history/legacy-google-apps-script.js')))
+assert.match(read('docs/history/legacy-google-apps-script.js'), /RETIRED HISTORICAL IMPLEMENTATION/)
+assert.match(read('README.md'), /Vercel Next\.js API/)
+assert.match(read('README.md'), /Google Apps Script backend is not part of the production request path/)
+assert.doesNotMatch(read('app/layout.js'), /aggregateRating/)
+
 assert.ok(existsSync(join(root, 'supabase/migrations/001_leads_phase_a.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/002_leads_phase_b.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/003_leads_rate_limits.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/004_consume_rate_limit.sql')))
 assert.ok(existsSync(join(root, 'supabase/migrations/005_legal_hold_and_rate_limit_invoker.sql')))
+assert.match(read('app/api/admin/leads/delete/route.js'), /'cache-control': 'no-store'/)
+assert.match(read('app/api/cron/retention/route.js'), /'cache-control': 'no-store'/)
+
 assert.ok(existsSync(join(root, 'app/api/leads/route.js')))
 assert.ok(existsSync(join(root, 'app/api/careers/route.js')))
 assert.ok(existsSync(join(root, 'lib/leads/mail.js')))
@@ -33,6 +60,10 @@ assert.match(route, /mailMode/)
 assert.match(route, /mailStatus/)
 assert.match(route, /private_energy|validatePrivatePayload/)
 assert.match(route, /publicLeadsHealth/)
+assert.match(route, /idempotency_lookup_failed/)
+assert.match(route, /mail_meta_update_failed/)
+assert.match(route, /audit_write_failed/)
+assert.match(route, /'cache-control': 'no-store'/)
 const publicHealth = read('lib/leads/public-health.js')
 assert.match(publicHealth, /phase: 'B'/)
 assert.doesNotMatch(publicHealth, /mailModeDefault/)
@@ -44,6 +75,10 @@ assert.match(careers, /publicCareersHealth/)
 assert.match(publicHealth, /fileUploads: false/)
 assert.match(read('lib/leads/validate-career.js'), /file-upload-not-supported/)
 assert.match(careers, /mailMode/)
+assert.match(careers, /idempotency_lookup_failed/)
+assert.match(careers, /mail_meta_update_failed/)
+assert.match(careers, /audit_write_failed/)
+assert.match(careers, /'cache-control': 'no-store'/)
 
 const mail = read('lib/leads/mail.js')
 assert.match(mail, /LEADS_MAIL_MODE/)
@@ -62,9 +97,14 @@ assert.match(mail, /Verbrauch Strom/)
 assert.match(mail, /Neue Unternehmensanfrage/)
 assert.match(mail, /customerConfirmation: 'skipped'/)
 assert.match(mail, /mailStatus: 'internal_sent'/)
+assert.match(mail, /mailStatus: 'partial_failed'/)
 assert.match(mail, /MAIL_TEMPLATE_IDS/)
 assert.match(route, /lead\.internal_mail_sent|customer_confirmation_skipped/)
 assert.match(careers, /career\.internal_mail_sent|customer_confirmation_skipped/)
+assert.match(route, /mailResult\.internalDelivery === 'sent'/)
+assert.match(route, /lead\.customer_confirmation_failed/)
+assert.match(careers, /mailResult\.internalDelivery === 'sent'/)
+assert.match(careers, /career\.customer_confirmation_failed/)
 
 const cors = read('lib/leads/cors.js')
 assert.match(cors, /Access-Control-Allow-Origin/)
@@ -172,6 +212,39 @@ const staticCareer = read('public/karriere.html')
 assert.doesNotMatch(staticCareer, /script\.google\.com\/macros/)
 assert.match(staticCareer, /\/karriere\//)
 
+const navbar = read('components/ui/Navbar.jsx')
+assert.match(navbar, /isBusinessRoute = pathname\?\.startsWith\('\/unternehmen'\)/)
+assert.match(navbar, /isCareerRoute = pathname\?\.startsWith\('\/karriere'\)/)
+assert.match(navbar, /'partneranfrage'/)
+assert.match(navbar, /'formular'/)
+
+const stickyCta = read('components/ui/StickyMobileCta.jsx')
+assert.match(stickyCta, /pathname === '\/'/)
+assert.match(stickyCta, /startsWith\('\/unternehmen'\)/)
+assert.match(stickyCta, /startsWith\('\/karriere'\)/)
+assert.match(stickyCta, /return null/)
+
+assert.match(read('components/sections/CareerSection.jsx'), /id="partneranfrage"/)
+
+const sitemapConfig = read('next-sitemap.config.js')
+assert.match(sitemapConfig, /'\/unternehmen-neu', '\/unternehmen-neu\/'/)
+
+const navA11y = read('components/ui/Navbar.jsx')
+assert.match(navA11y, /aria-hidden=\{!menuOpen\}/)
+assert.match(navA11y, /inert=\{menuOpen \? undefined : ''\}/)
+
+const formA11y = read('components/ui/Form.jsx')
+assert.match(formA11y, /aria-describedby=\{error \? `\$\{selectId\}-error` : undefined\}/)
+assert.match(formA11y, /aria-describedby=\{error \? `\$\{textareaId\}-error` : undefined\}/)
+assert.match(formA11y, /aria-describedby=\{error \? `\$\{checkId\}-error` : undefined\}/)
+assert.match(formA11y, /const inputId = id \|\| `input-\$\{generatedId\}`/)
+assert.match(formA11y, /const selectId = id \|\| `select-\$\{generatedId\}`/)
+assert.match(formA11y, /const textareaId = id \|\| `textarea-\$\{generatedId\}`/)
+assert.match(formA11y, /peer-checked:\[&>svg\]:opacity-100/)
+
+const globalCss = read('app/globals.css')
+assert.match(globalCss, /prefers-reduced-motion:\s*reduce/)
+
 const apply = read('scripts/infra/phase-a/apply.sh')
 assert.doesNotMatch(apply, /checkdomain_api_v1/)
 assert.match(apply, /checkdomain_active.:false|dns_automation.:.skipped/)
@@ -197,6 +270,28 @@ assert.doesNotMatch(adminAuth, /process\.env\.CRON_SECRET/)
 assert.match(adminAuth, /LEADS_ADMIN_SECRET/)
 const staticBuild = read('scripts/build-static-production.sh')
 assert.match(staticBuild, /mv app\/api/)
+
+const deployVerifyScript = read('scripts/deploy/checkdomain/dth-checkdomain.sh')
+assert.match(deployVerifyScript, /VERIFY_PASS=NO/)
+assert.match(deployVerifyScript, /VERIFY_PASS=YES/)
+assert.match(deployVerifyScript, /LIVE_EQUALS_LOCAL_INDEX=YES/)
+assert.match(deployVerifyScript, /PUBLIC_BUILD_METADATA=FAIL/)
+const deployUploadSection = deployVerifyScript.slice(
+  deployVerifyScript.indexOf('cmd_upload() {'),
+  deployVerifyScript.indexOf('cmd_verify() {'),
+)
+assert.doesNotMatch(deployUploadSection, /echo "put -r \.dth-build"/)
+
+const htaccessSecurity = read('public/.htaccess')
+assert.match(htaccessSecurity, /RewriteRule \^\\\.dth-build/)
+
+const htaccess = read('public/.htaccess')
+assert.match(htaccess, /\^\/_next\/static\//)
+assert.match(htaccess, /max-age=31536000, immutable/)
+assert.match(htaccess, /image\/png "access plus 7 days"/)
+assert.match(htaccess, /no-cache, max-age=0, must-revalidate/)
+assert.match(htaccess, /X-XSS-Protection "0"/)
+assert.doesNotMatch(htaccess, /image\/png "access plus 1 year"/)
 
 const pkg = JSON.parse(read('package.json'))
 for (const s of [
@@ -224,6 +319,9 @@ for (const s of [
 }
 
 assert.ok(existsSync(join(root, '.github/workflows/dth-phase-a-ci.yml')))
+const ciWorkflow = read('.github/workflows/dth-phase-a-ci.yml')
+assert.match(ciWorkflow, /node-version-file: '\.nvmrc'/)
+assert.doesNotMatch(ciWorkflow, /^\s+paths:\s*$/m)
 assert.ok(existsSync(join(root, 'scripts/infra/phase-a/run-all.sh')))
 assert.ok(existsSync(join(root, 'docs/legal/DATENSCHUTZ_PHASE_B_DRAFT.md')))
 assert.ok(existsSync(join(root, 'docs/legal/DATENSCHUTZ_CUTOVER_CANDIDATE.md')))
@@ -235,13 +333,63 @@ assert.match(privacyCutover, /LIVE_PUBLISH_AUTHORIZED=NO/)
 const privacyFinal = read('docs/legal/DATENSCHUTZ_CUTOVER_FINAL_REVIEW.md')
 assert.match(privacyFinal, /STATUS=NOAH_AND_LEGAL_APPROVAL_REQUIRED/)
 assert.match(privacyFinal, /LIVE_PUBLISH_AUTHORIZED=NO/)
-assert.match(privacyFinal, /TECHNICAL_STATE=INTERNAL_LIVE_NOTIFICATION/)
-assert.match(privacyFinal, /CUSTOMER_CONFIRMATION=OFF/)
-assert.match(privacyFinal, /RESEND_DOMAIN_VERIFIED=NO/)
+assert.match(privacyFinal, /HISTORICAL_SNAPSHOT=YES/)
+assert.match(privacyFinal, /CURRENT_PRODUCTION_RELEASE_GATE\.md/)
+const approvalPack = read('docs/legal/DTH_09C_APPROVAL_PACK.md')
+assert.match(approvalPack, /HISTORICAL_SNAPSHOT=YES/)
+assert.match(approvalPack, /DO_NOT_USE_FOR_CURRENT_MAIL_OR_RELEASE_CONFIGURATION=YES/)
+const currentReleaseGate = read('docs/deployment/CURRENT_PRODUCTION_RELEASE_GATE.md')
+assert.match(currentReleaseGate, /LEADS_MAIL_MODE=live/)
+assert.match(currentReleaseGate, /ALLOW_CUSTOMER_MAIL=YES/)
+assert.match(currentReleaseGate, /LEADS_TO_EMAIL.*kontakt@deintarifheld\.de/)
 const gate = read('scripts/deploy/checkdomain/common.sh')
 assert.match(gate, /internal_live/)
-assert.match(gate, /INTERNAL_NOTIFICATION=LIVE/)
-assert.match(gate, /TEMPORARY_MODE=YES/)
+assert.match(gate, /ALLOW_CUSTOMER_MAIL/)
+assert.match(gate, /CUSTOMER_CONFIRMATION=BLOCKED_BY_DUAL_GUARD/)
+assert.match(gate, /CUSTOMER_CONFIRMATION=ON/)
+
+const deployScript = read('scripts/deploy/checkdomain/dth-checkdomain.sh')
+assert.match(deployScript, /put \.htaccess/)
+assert.match(deployScript, /rollback_backup_missing_htaccess/)
+assert.match(deployScript, /backup_missing_htaccess/)
+assert.match(deployScript, /MANIFEST\.sha256/)
+assert.match(deployScript, /shasum -a 256 -c MANIFEST\.sha256/)
+assert.match(deployScript, /upload_requires_fresh_backup/)
+assert.match(deployScript, /backup_age > 14400/)
+assert.match(deployScript, /UPLOAD_STAGING_DIR=NONE/)
+assert.match(deployScript, /UPLOAD_ORDERED_OVERLAY=YES/)
+assert.match(deployScript, /-rm google-apps-script\.js/)
+assert.match(deployScript, /-rm images\/tari\.png/)
+assert.match(deployScript, /RETIRED_PUBLIC_ARTIFACT=FAIL/)
+assert.doesNotMatch(deployScript, /rm -r \*|rm \*/)
+const uploadSection = deployScript.slice(
+  deployScript.indexOf('cmd_upload() {'),
+  deployScript.indexOf('cmd_verify() {'),
+)
+assert.doesNotMatch(uploadSection, /mkdir releases|releases\/<|staging="/)
+assert.doesNotMatch(uploadSection, /put -r \*/)
+assert.doesNotMatch(deployScript, /find \. -type f \| sort \| while read -r f/)
+const cutoverPlan = read('scripts/cutover-plan.mjs')
+assert.match(cutoverPlan, /MAIL_MODE_REQUIRED=live/)
+assert.match(cutoverPlan, /ALLOW_CUSTOMER_MAIL_REQUIRED=YES/)
+assert.match(cutoverPlan, /GOOGLE_APPS_SCRIPT_RUNTIME_PATH=RETIRED/)
+assert.doesNotMatch(cutoverPlan, /MAIL_MODE_PREFERRED=internal_live/)
+
+const cutoverDoc = read('docs/deployment/checkdomain-cutover.md')
+const cutoverSequence = read('docs/deployment/CHECKDOMAIN_CUTOVER_SEQUENCE.md')
+assert.match(cutoverDoc, /backup.*four hours/i)
+assert.match(cutoverDoc, /no redundant remote staging copy/i)
+assert.match(cutoverSequence, /no redundant remote staging copy/i)
+
+const previewSmoke = read('scripts/infra/phase-a/smoke-preview.sh')
+assert.match(previewSmoke, /ALL_PUBLIC_FORM_ENTRYPOINTS_E2E=PASS/)
+assert.match(previewSmoke, /forms":6/)
+assert.match(previewSmoke, /x-dth-intake-smoke/)
+assert.match(previewSmoke, /mode:"physical",channel:"all"/)
+assert.match(previewSmoke, /\/api\/leads\//)
+assert.match(previewSmoke, /\/api\/careers\//)
+assert.match(previewSmoke, /REFUSE_PRODUCTION_TARGET=YES/)
+assert.doesNotMatch(previewSmoke, /api\/leads"\s*$/m)
 
 assert.ok(existsSync(join(root, 'scripts/build-static-production.sh')))
 assert.ok(existsSync(join(root, 'scripts/deploy/checkdomain/dth-checkdomain.sh')))

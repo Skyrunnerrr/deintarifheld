@@ -11,8 +11,8 @@ const TRUST_ITEMS = [
           stroke="#D4FF3E" strokeWidth="1.3" strokeLinejoin="round" fill="rgba(212,255,62,0.12)" />
       </svg>
     ),
-    label: 'Ø 480 € Ersparnis/Jahr',
-    sub: 'Basierend auf Kundenbeispielen*',
+    label: 'Persönlicher Tarifvergleich',
+    sub: 'Auf Basis deiner Angaben',
   },
   {
     icon: (
@@ -21,8 +21,8 @@ const TRUST_ITEMS = [
           stroke="#D4FF3E" strokeWidth="1.3" strokeLinejoin="round" fill="rgba(212,255,62,0.12)" />
       </svg>
     ),
-    label: '100% Kostenlos',
-    sub: 'Keine versteckten Kosten',
+    label: 'Kostenlose Anfrage',
+    sub: 'Keine Bearbeitungsgebühr',
   },
   {
     icon: (
@@ -31,8 +31,8 @@ const TRUST_ITEMS = [
         <path d="M8 5v3l2 1.5" stroke="#D4FF3E" strokeWidth="1.3" strokeLinecap="round" />
       </svg>
     ),
-    label: '24h Rückmeldung',
-    sub: 'Persönliche Beratung',
+    label: 'Persönliche Rückmeldung',
+    sub: 'Direkter Ansprechpartner',
   },
   {
     icon: (

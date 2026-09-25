@@ -4,6 +4,7 @@ import { ADMIN_INBOX_HTML, ADMIN_LOGIN_HTML } from '@/lib/leads/admin-inbox-html
 import { inboxGetResponse, inboxHtmlResponse, inboxLoginPage } from '@/lib/leads/admin-inbox-http'
 import { adminCookieHeader, createAdminSessionValue } from '@/lib/leads/admin-session'
 import { safeEqualString } from '@/lib/leads/secret-compare'
+import { readBodyText } from '@/lib/leads/read-json-body'
 
 export const runtime = 'nodejs'
 
@@ -16,16 +17,28 @@ export async function POST(request) {
   const contentType = request.headers.get('content-type') || ''
   let action = ''
   let provided = ''
+  const raw = await readBodyText(request, { maxBytes: 4096 })
+  if (!raw.ok) {
+    if (raw.status === 413) {
+      return inboxHtmlResponse(
+        ADMIN_LOGIN_HTML.replace('<!--ERR-->', '<div class="err">Anfrage zu groß.</div>'),
+        { status: 413 },
+      )
+    }
+    return inboxLoginPage('Anmeldung fehlgeschlagen.')
+  }
+
   try {
     if (contentType.includes('application/x-www-form-urlencoded')) {
-      const text = await request.text()
-      const params = new URLSearchParams(text)
+      const params = new URLSearchParams(raw.text)
       action = params.get('action') || ''
       provided = params.get('secret') || ''
     } else if (contentType.includes('application/json')) {
-      const body = await request.json()
+      const body = JSON.parse(raw.text)
       action = typeof body.action === 'string' ? body.action : ''
       provided = typeof body.secret === 'string' ? body.secret : ''
+    } else {
+      return inboxLoginPage('Anmeldung fehlgeschlagen.')
     }
   } catch {
     return inboxLoginPage('Anmeldung fehlgeschlagen.')

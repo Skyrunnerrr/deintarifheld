@@ -7,11 +7,14 @@ import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildInternalOpsMail, parseLeadToAddresses, sendLeadEmails } from '../lib/leads/mail.js'
+import { buildCareerMails, buildInternalOpsMail, buildPrivateMails, buildUnternehmenMails, parseLeadToAddresses, resendSendTimeoutMs, sendLeadEmails } from '../lib/leads/mail.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const sends = []
 let failNext = false
+let throwNext = false
+let hangNext = false
+let failRecipient = ''
 let providerIdSeq = 0
 
 const originalFetch = globalThis.fetch
@@ -28,7 +31,34 @@ globalThis.fetch = async (input, init = {}) => {
     to: body.to,
     subject: body.subject,
     reply_to: body.reply_to || body.replyTo,
+    idempotencyKey: new Headers(init.headers || {}).get('Idempotency-Key'),
+    hasSignal: Boolean(init.signal),
   })
+  if (hangNext) {
+    hangNext = false
+    return new Promise((_resolve, reject) => {
+      const signal = init.signal
+      if (!signal) {
+        reject(new Error('missing_abort_signal'))
+        return
+      }
+      if (signal.aborted) {
+        reject(new Error('aborted'))
+        return
+      }
+      signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true })
+    })
+  }
+  if (throwNext) {
+    throwNext = false
+    throw new Error('forced_transport_failure')
+  }
+  if (failRecipient && Array.isArray(body.to) && body.to.includes(failRecipient)) {
+    return new Response(JSON.stringify({ message: 'forced_recipient_failure', name: 'application_error' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    })
+  }
   if (failNext) {
     failNext = false
     return new Response(JSON.stringify({ message: 'forced_failure', name: 'application_error' }), {
@@ -175,6 +205,8 @@ async function assertInternalLiveChannel(channel, data, leadRef) {
       assert.ok(r.providerEmailId)
       assert.equal(sends.length, 1, `${channel} must send exactly one mail`)
       assert.deepEqual(sends[0].to, ['ops-account@example.invalid'])
+      assert.equal(sends[0].hasSignal, true)
+      assert.equal(sends[0].idempotencyKey, `dth-${leadRef}-internal`)
       assert.match(String(sends[0].from), /onboarding@resend\.dev/)
       assert.notEqual(sends[0].to?.[0], data.email)
     },
@@ -277,6 +309,25 @@ async function assertFailurePath() {
   await withEnv(
     {
       LEADS_MAIL_MODE: 'internal_live',
+      RESEND_API_KEY: 're_test_key',
+      LEADS_FROM_EMAIL: 'DeinTarifheld <kontakt@deintarifheld.de>\r\nBcc: attacker@example.invalid',
+      LEADS_TO_EMAIL: 'ops@example.invalid',
+    },
+    async () => {
+      const r = await sendLeadEmails({
+        leadRef: 'REF-BAD-FROM',
+        data: businessData,
+        submittedAt: new Date().toISOString(),
+        channel: 'business',
+      })
+      assert.equal(r.ok, false)
+      assert.equal(r.code, 'mail-not-configured')
+    },
+  )
+
+  await withEnv(
+    {
+      LEADS_MAIL_MODE: 'internal_live',
       RESEND_API_KEY: undefined,
       LEADS_FROM_EMAIL: undefined,
       LEADS_TO_EMAIL: undefined,
@@ -292,7 +343,105 @@ async function assertFailurePath() {
       assert.equal(r.code, 'mail-not-configured')
     },
   )
+  sends.length = 0
+  throwNext = true
+  await withEnv(
+    {
+      LEADS_MAIL_MODE: 'internal_live',
+      RESEND_API_KEY: 're_test_key',
+      LEADS_FROM_EMAIL: 'DeinTarifheld <onboarding@resend.dev>',
+      LEADS_TO_EMAIL: 'ops-account@example.invalid',
+    },
+    async () => {
+      const r = await sendLeadEmails({
+        leadRef: 'REF-THROW',
+        data: businessData,
+        submittedAt: new Date().toISOString(),
+        channel: 'business',
+      })
+      assert.equal(r.ok, false)
+      assert.equal(r.mailStatus, 'failed')
+      assert.equal(r.customerConfirmation, 'skipped')
+      assert.equal(r.code, 'mail-send-failed')
+      assert.ok(r.providerErrorCode)
+    },
+  )
+
+  sends.length = 0
+  failRecipient = businessData.email
+  await withEnv(
+    {
+      LEADS_MAIL_MODE: 'live',
+      ALLOW_CUSTOMER_MAIL: 'YES',
+      RESEND_API_KEY: 're_test_key',
+      LEADS_FROM_EMAIL: 'DeinTarifheld <onboarding@resend.dev>',
+      LEADS_TO_EMAIL: 'ops-account@example.invalid',
+    },
+    async () => {
+      const r = await sendLeadEmails({
+        leadRef: 'REF-PARTIAL',
+        data: businessData,
+        submittedAt: new Date().toISOString(),
+        channel: 'business',
+      })
+      assert.equal(r.ok, false)
+      assert.equal(r.mailStatus, 'partial_failed')
+      assert.equal(r.internalDelivery, 'sent')
+      assert.equal(r.customerConfirmation, 'failed')
+      assert.ok(r.providerEmailId)
+      assert.equal(sends.length, 2)
+      assert.deepEqual(sends[0].to, ['ops-account@example.invalid'])
+      assert.deepEqual(sends[1].to, [businessData.email])
+      assert.equal(sends[0].idempotencyKey, 'dth-REF-PARTIAL-internal')
+      assert.equal(sends[1].idempotencyKey, 'dth-REF-PARTIAL-customer')
+    },
+  )
+  failRecipient = ''
+
+  await withEnv({ RESEND_SEND_TIMEOUT_MS: undefined }, async () => {
+    assert.equal(resendSendTimeoutMs(), 8000)
+  })
+  await withEnv({ RESEND_SEND_TIMEOUT_MS: '2500' }, async () => {
+    assert.equal(resendSendTimeoutMs(), 2500)
+  })
+  for (const invalid of ['abc', '99', '15001', '100.5']) {
+    await withEnv({ RESEND_SEND_TIMEOUT_MS: invalid }, async () => {
+      assert.equal(resendSendTimeoutMs(), null)
+    })
+  }
+
+  sends.length = 0
+  hangNext = true
+  await withEnv(
+    {
+      LEADS_MAIL_MODE: 'internal_live',
+      RESEND_API_KEY: 're_test_key',
+      LEADS_FROM_EMAIL: 'DeinTarifheld <onboarding@resend.dev>',
+      LEADS_TO_EMAIL: 'ops-account@example.invalid',
+      RESEND_SEND_TIMEOUT_MS: '100',
+    },
+    async () => {
+      const r = await sendLeadEmails({
+        leadRef: 'REF-TIMEOUT',
+        data: businessData,
+        submittedAt: new Date().toISOString(),
+        channel: 'business',
+      })
+      assert.equal(r.ok, false)
+      assert.equal(r.mailStatus, 'failed')
+      assert.equal(r.code, 'mail-send-failed')
+      assert.equal(r.providerErrorCode, 'resend_timeout')
+      assert.equal(sends.length, 1)
+      assert.equal(sends[0].hasSignal, true)
+      assert.equal(sends[0].idempotencyKey, 'dth-REF-TIMEOUT-internal')
+    },
+  )
+
   console.log('MAIL_FAILURE=PASS')
+  console.log('MAIL_TRANSPORT_EXCEPTION_CONTAINED=PASS')
+  console.log('MAIL_PARTIAL_DELIVERY_TRUTH=PASS')
+  console.log('MAIL_PROVIDER_TIMEOUT=PASS')
+  console.log('MAIL_PROVIDER_IDEMPOTENCY=PASS')
 }
 
 function assertInquiryFieldsInOpsMail() {
@@ -302,7 +451,8 @@ function assertInquiryFieldsInOpsMail() {
     data: careerData,
     submittedAt: new Date().toISOString(),
   })
-  assert.match(mail.adminText, /Neue Karriere-Bewerbung/)
+  assert.match(mail.adminText, /Neue Partneranfrage/)
+  assert.doesNotMatch(mail.adminText, /Bewerbung/)
   assert.ok(mail.adminText.includes('A'.repeat(400)))
   assert.match(mail.adminText, /Kundenbestätigung: bewusst übersprungen/)
   assert.doesNotMatch(mail.adminText, /honeypot|user-agent|x-forwarded|RESEND_API_KEY/i)
@@ -335,8 +485,46 @@ function assertInquiryFieldsInOpsMail() {
     'kontakt@deintarifheld.de',
   ])
   assert.deepEqual(parseLeadToAddresses('  '), [])
+  assert.deepEqual(parseLeadToAddresses('ops@example.invalid,ops@example.invalid'), ['ops@example.invalid'])
+  assert.deepEqual(parseLeadToAddresses('ops@example.invalid,'), [])
+  assert.deepEqual(parseLeadToAddresses('ops@example.invalid\r\nBcc:evil@example.invalid'), [])
+  assert.deepEqual(parseLeadToAddresses('not-an-email'), [])
   console.log('INQUIRY_FIELDS_IN_OPS_MAIL=PASS')
   console.log('AUDIT_REDACTION_AND_MINIMIZATION=PASS')
+}
+
+function assertMailSubjectHeaderSafety() {
+  const injected = {
+    business: {
+      ...businessData,
+      firma: 'Acme GmbH\r\nBcc: attacker@example.invalid',
+      energieart: 'Strom\nX-Test: injected',
+    },
+    private: {
+      ...privateHero,
+      firstName: 'Max\r\nBcc: attacker@example.invalid',
+      type: 'Strom\nX-Test: injected',
+    },
+    career: {
+      ...careerData,
+      name: 'Career\r\nBcc: attacker@example.invalid',
+    },
+  }
+  const timestamp = new Date().toISOString()
+  const mails = [
+    buildUnternehmenMails({ leadRef: 'REF-HDR-B', data: injected.business, submittedAt: timestamp }),
+    buildPrivateMails({ leadRef: 'REF-HDR-P', data: injected.private, submittedAt: timestamp }),
+    buildCareerMails({ leadRef: 'REF-HDR-C', data: injected.career, submittedAt: timestamp }),
+    buildInternalOpsMail({ channel: 'business', leadRef: 'REF-HDR-IB', data: injected.business, submittedAt: timestamp }),
+    buildInternalOpsMail({ channel: 'private', leadRef: 'REF-HDR-IP', data: injected.private, submittedAt: timestamp }),
+    buildInternalOpsMail({ channel: 'career', leadRef: 'REF-HDR-IC', data: injected.career, submittedAt: timestamp }),
+  ]
+  for (const mail of mails) {
+    assert.equal(typeof mail.subjectAdmin, 'string')
+    assert.doesNotMatch(mail.subjectAdmin, /[\r\n\u0000-\u001F\u007F]/)
+    assert.ok(mail.subjectAdmin.length <= 260)
+  }
+  console.log('MAIL_SUBJECT_HEADER_SANITIZATION=PASS')
 }
 
 function assertCutoverGate() {
@@ -346,8 +534,9 @@ source scripts/deploy/checkdomain/common.sh
 run() {
   export LEADS_MAIL_MODE="$1"
   export ALLOW_MOCK_MAIL_CUTOVER="\${2:-NO}"
+  export ALLOW_CUSTOMER_MAIL="\${3:-NO}"
   if dth_cd_mail_gate_status >/tmp/dth-gate-out.txt; then echo PASS; else echo BLOCK; fi
-  grep -E 'CUSTOMER_TRAFFIC_MAIL_GATE|INTERNAL_NOTIFICATION|CUSTOMER_CONFIRMATION|TEMPORARY_MODE|FOLLOW_UP_REQUIRED' /tmp/dth-gate-out.txt || true
+  grep -E 'CUSTOMER_TRAFFIC_MAIL_GATE|ALLOW_CUSTOMER_MAIL|INTERNAL_NOTIFICATION|CUSTOMER_CONFIRMATION|TEMPORARY_MODE|FOLLOW_UP_REQUIRED' /tmp/dth-gate-out.txt || true
 }
 echo '---mock---'
 run mock
@@ -355,8 +544,10 @@ echo '---fail---'
 run fail
 echo '---internal_live---'
 run internal_live
-echo '---live---'
-run live
+echo '---live-blocked---'
+run live NO NO
+echo '---live-enabled---'
+run live NO YES
 `
   const r = spawnSync('bash', ['-c', helper], { cwd: root, encoding: 'utf8' })
   assert.equal(r.status, 0, r.stderr || r.stdout)
@@ -368,7 +559,10 @@ run live
   assert.match(out, /CUSTOMER_CONFIRMATION=OFF/)
   assert.match(out, /TEMPORARY_MODE=YES/)
   assert.match(out, /FOLLOW_UP_REQUIRED=RESEND_DOMAIN_VERIFICATION/)
-  assert.match(out, /---live---\nPASS/)
+  assert.match(out, /---live-blocked---\nPASS/)
+  assert.match(out, /CUSTOMER_CONFIRMATION=BLOCKED_BY_DUAL_GUARD/)
+  assert.match(out, /---live-enabled---\nPASS/)
+  assert.match(out, /ALLOW_CUSTOMER_MAIL=YES/)
   assert.match(out, /CUSTOMER_CONFIRMATION=ON/)
   console.log('CUTOVER_MAIL_GATE=PASS')
 }
@@ -434,6 +628,7 @@ async function main() {
     await assertIdempotentMailContract()
     await assertFailurePath()
     assertInquiryFieldsInOpsMail()
+    assertMailSubjectHeaderSafety()
     assertCutoverGate()
     await assertLiveStillSendsCustomer()
     await assertLiveDualGuardBlocksCustomer()

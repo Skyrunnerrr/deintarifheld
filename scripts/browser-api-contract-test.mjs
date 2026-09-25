@@ -4,7 +4,13 @@
  * Env is read at call time in browser-api helpers.
  */
 import assert from 'node:assert/strict'
-import { leadsApiUrl, careersApiUrl, newIdempotencyKey, postJsonLead } from '../lib/leads/browser-api.js'
+import {
+  leadsApiUrl,
+  careersApiUrl,
+  leadPayloadFingerprint,
+  newIdempotencyKey,
+  postJsonLead,
+} from '../lib/leads/browser-api.js'
 
 const origin = 'https://deintarifheld-leads-api.vercel.app'
 
@@ -27,30 +33,186 @@ async function withEnv(env, fn) {
   }
 }
 
-withEnv({ ORIGIN: origin, URL: undefined }, () => {
+await withEnv({ ORIGIN: origin, URL: undefined }, () => {
   assert.equal(leadsApiUrl(), `${origin}/api/leads/`)
   assert.equal(careersApiUrl(), `${origin}/api/careers/`)
 })
 
-withEnv({ ORIGIN: undefined, URL: `${origin}/api/leads` }, () => {
+await withEnv({ ORIGIN: undefined, URL: `${origin}/api/leads` }, () => {
   assert.equal(leadsApiUrl(), `${origin}/api/leads/`)
   assert.equal(careersApiUrl(), `${origin}/api/careers/`)
 })
 
-withEnv({ ORIGIN: undefined, URL: `${origin}/api/leads/` }, () => {
+await withEnv({ ORIGIN: undefined, URL: `${origin}/api/leads/` }, () => {
   assert.equal(leadsApiUrl(), `${origin}/api/leads/`)
   assert.equal(careersApiUrl(), `${origin}/api/careers/`)
 })
 
-withEnv({ ORIGIN: `${origin}/`, URL: undefined }, () => {
+await withEnv({ ORIGIN: `${origin}/`, URL: undefined }, () => {
   assert.equal(leadsApiUrl(), `${origin}/api/leads/`)
   assert.doesNotMatch(leadsApiUrl(), /\/\/api/)
   assert.doesNotMatch(leadsApiUrl(), /api\/leads\/api\/leads/)
 })
 
-withEnv({ ORIGIN: undefined, URL: undefined }, () => {
+await withEnv({ ORIGIN: undefined, URL: undefined }, () => {
   assert.equal(leadsApiUrl(), '/api/leads/')
   assert.equal(careersApiUrl(), '/api/careers/')
+})
+
+await withEnv({ ORIGIN: `${origin}/api/leads`, URL: undefined }, () => {
+  assert.throws(() => leadsApiUrl(), /Invalid NEXT_PUBLIC_LEADS_API_ORIGIN/)
+})
+
+await withEnv({ ORIGIN: `${origin}?bad=1`, URL: undefined }, () => {
+  assert.throws(() => careersApiUrl(), /Invalid NEXT_PUBLIC_LEADS_API_ORIGIN/)
+})
+
+await withEnv({ ORIGIN: undefined, URL: `${origin}/api/leads/extra` }, () => {
+  assert.throws(() => leadsApiUrl(), /Invalid NEXT_PUBLIC_LEADS_API_URL/)
+})
+
+assert.equal(
+  leadPayloadFingerprint('/api/leads/', {
+    page_source: 'hero-funnel',
+    email: 'same@example.com',
+    timestamp: 'A',
+    _formLoadedAt: 1,
+    _recaptchaToken: 'token-one',
+  }),
+  leadPayloadFingerprint('/api/leads/', {
+    _recaptchaToken: 'token-two',
+    _formLoadedAt: 2,
+    timestamp: 'B',
+    email: 'same@example.com',
+    page_source: 'hero-funnel',
+  }),
+)
+
+await withEnv({ ORIGIN: origin, URL: undefined }, async () => {
+  const prevFetch = globalThis.fetch
+  let firstKey = ''
+  globalThis.fetch = (url, init) => new Promise((resolve, reject) => {
+    firstKey = init.headers['Idempotency-Key']
+    init.signal?.addEventListener('abort', () => {
+      const error = new Error('aborted')
+      error.name = 'AbortError'
+      reject(error)
+    }, { once: true })
+  })
+  try {
+    await assert.rejects(
+      postJsonLead(leadsApiUrl(), {
+        page_source: 'hero-funnel',
+        email: 'retry@example.com',
+        timestamp: 'first',
+        _recaptchaToken: 'token-first',
+      }, { timeoutMs: 10 }),
+      (error) => error?.code === 'request-timeout' && error?.idempotencyKey === firstKey,
+    )
+  } finally {
+    globalThis.fetch = prevFetch
+  }
+
+  const retryCalls = []
+  globalThis.fetch = async (url, init) => {
+    retryCalls.push({ url, init })
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return { ok: true }
+      },
+    }
+  }
+  try {
+    const retry = await postJsonLead(leadsApiUrl(), {
+      page_source: 'hero-funnel',
+      email: 'retry@example.com',
+      timestamp: 'second',
+      _recaptchaToken: 'token-second',
+    })
+    assert.equal(retryCalls.length, 1)
+    assert.equal(retryCalls[0].init.headers['Idempotency-Key'], firstKey)
+    assert.equal(retry.idempotencyKey, firstKey)
+  } finally {
+    globalThis.fetch = prevFetch
+  }
+})
+
+await withEnv({ ORIGIN: origin, URL: undefined }, async () => {
+  const prevFetch = globalThis.fetch
+  const keys = []
+  let call = 0
+  globalThis.fetch = async (url, init) => {
+    keys.push(init.headers['Idempotency-Key'])
+    call += 1
+    return {
+      ok: call > 1,
+      status: call === 1 ? 500 : 200,
+      async json() {
+        return call === 1 ? { ok: false, code: 'storage-failed' } : { ok: true }
+      },
+    }
+  }
+  try {
+    const payload = {
+      page_source: 'hero-funnel',
+      email: 'ambiguous-500@example.com',
+      _recaptchaToken: 'token-one',
+    }
+    const first = await postJsonLead(leadsApiUrl(), payload)
+    assert.equal(first.res.status, 500)
+    const retry = await postJsonLead(leadsApiUrl(), { ...payload, _recaptchaToken: 'token-two' })
+    assert.equal(retry.res.status, 200)
+    assert.equal(keys.length, 2)
+    assert.equal(keys[1], keys[0], '5xx retry must preserve idempotency key')
+  } finally {
+    globalThis.fetch = prevFetch
+  }
+})
+
+await withEnv({ ORIGIN: origin, URL: undefined }, async () => {
+  const prevFetch = globalThis.fetch
+  const captured = []
+  globalThis.fetch = async (url, init) => {
+    captured.push(init.headers['Idempotency-Key'])
+    throw new Error('offline')
+  }
+  try {
+    for (let i = 0; i < 40; i += 1) {
+      await assert.rejects(
+        postJsonLead(leadsApiUrl(), {
+          page_source: 'hero-funnel',
+          email: `bounded-${i}@example.com`,
+        }),
+        /offline/,
+      )
+    }
+  } finally {
+    globalThis.fetch = prevFetch
+  }
+
+  const firstKey = captured[0]
+  let retriedKey = ''
+  globalThis.fetch = async (url, init) => {
+    retriedKey = init.headers['Idempotency-Key']
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return { ok: true }
+      },
+    }
+  }
+  try {
+    await postJsonLead(leadsApiUrl(), {
+      page_source: 'hero-funnel',
+      email: 'bounded-0@example.com',
+    })
+    assert.notEqual(retriedKey, firstKey, 'oldest uncertain key must be evicted from bounded cache')
+  } finally {
+    globalThis.fetch = prevFetch
+  }
 })
 
 await withEnv({ ORIGIN: origin, URL: undefined }, async () => {

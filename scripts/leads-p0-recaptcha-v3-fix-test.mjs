@@ -13,6 +13,8 @@ import {
   GOOGLE_ASSESSMENT_INVALID_REASONS,
   GOOGLE_ASSESSMENT_RISK_REASONS,
   publicCaptchaErrorCode,
+  recaptchaMinScore,
+  recaptchaVerifyTimeoutMs,
   verifyCaptchaToken,
 } from '../lib/leads/captcha.js'
 import { resolveExpectedCaptchaAction } from '../lib/leads/captcha-action.js'
@@ -319,6 +321,19 @@ async function assertLoadRecaptchaContract() {
 
     await withEnv({ NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: SITE_KEY, RECAPTCHA_READY_TIMEOUT_MS: '40' }, async () => {
       resetRecaptchaClientForTests()
+      const neverLoaded = installBrowserMocks()
+      delete globalThis.grecaptcha
+      const pending = loadRecaptcha()
+      assert.equal(neverLoaded.scripts.length, 1)
+      await assert.rejects(
+        pending,
+        (err) => err instanceof RecaptchaClientError && err.code === 'recaptcha-script-timeout',
+      )
+      assert.equal(neverLoaded.scripts[0].attrs['data-recaptcha-v3-status'], 'failed')
+    })
+
+    await withEnv({ NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: SITE_KEY, RECAPTCHA_READY_TIMEOUT_MS: '40' }, async () => {
+      resetRecaptchaClientForTests()
       const hung = installBrowserMocks()
       globalThis.grecaptcha = {
         enterprise: {
@@ -381,6 +396,22 @@ async function assertGetTokenContract() {
     assert.equal(minted.code, 'recaptcha-execute-unavailable')
     if (minted.ok) posted = true
     assert.equal(posted, false, 'execute unavailable must not POST')
+
+    await withEnv({ NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: SITE_KEY, RECAPTCHA_READY_TIMEOUT_MS: '40' }, async () => {
+      resetRecaptchaClientForTests()
+      installBrowserMocks()
+      readyGrecaptcha({
+        execute: () => new Promise(() => {}),
+      })
+      await assert.rejects(
+        getRecaptchaToken('career'),
+        (err) => err instanceof RecaptchaClientError && err.code === 'recaptcha-execute-timeout',
+      )
+      const mapped = await awaitFreshRecaptchaToken('career')
+      assert.equal(mapped.ok, false)
+      assert.equal(mapped.code, 'recaptcha-execute-timeout')
+    })
+
   })
   console.log('P0_RECAPTCHA_TOKEN=PASS')
 }
@@ -440,6 +471,8 @@ async function assertFormTokenFlow() {
   assert.match(security, /enterprise\.execute/)
   assert.doesNotMatch(security, /recaptcha\/api\.js\?render=\$\{/)
   assert.doesNotMatch(security, /console\.(log|info|debug|error|warn)\([^)]*token/)
+  assert.match(security, /recaptcha-script-timeout/)
+  assert.match(security, /recaptcha-execute-timeout/)
 
   console.log('P0_RECAPTCHA_FORM_FLOW=PASS')
 }
@@ -506,6 +539,85 @@ async function assertServerDiagnostics() {
         assert.equal(score.ok, false)
         assert.equal(score.reason, 'captcha-score-too-low')
         assert.equal(score.code, 'captcha-rejected')
+
+        await withEnv({ RECAPTCHA_MIN_SCORE: undefined }, async () => {
+          assert.equal(recaptchaMinScore(), 0.5)
+        })
+        await withEnv({ RECAPTCHA_MIN_SCORE: '0.7' }, async () => {
+          assert.equal(recaptchaMinScore(), 0.7)
+        })
+        for (const invalid of ['abc', 'NaN', '-0.1', '1.1', 'Infinity']) {
+          await withEnv({ RECAPTCHA_MIN_SCORE: invalid }, async () => {
+            assert.equal(recaptchaMinScore(), null)
+            let called = false
+            const invalidConfig = await verifyCaptchaToken(TOKEN, {
+              expectedAction: 'unternehmen',
+              fetchImpl: async () => {
+                called = true
+                throw new Error('must-not-call-google')
+              },
+            })
+            assert.equal(invalidConfig.ok, false)
+            assert.equal(invalidConfig.code, 'captcha-not-configured')
+            assert.equal(invalidConfig.reason, 'captcha-not-configured')
+            assert.equal(called, false, 'invalid threshold must fail before Google request')
+          })
+        }
+
+        await withEnv({ RECAPTCHA_VERIFY_TIMEOUT_MS: undefined }, async () => {
+          assert.equal(recaptchaVerifyTimeoutMs(), 5000)
+        })
+        await withEnv({ RECAPTCHA_VERIFY_TIMEOUT_MS: '2500' }, async () => {
+          assert.equal(recaptchaVerifyTimeoutMs(), 2500)
+        })
+        for (const invalid of ['abc', '99', '15001', '100.5']) {
+          await withEnv({ RECAPTCHA_VERIFY_TIMEOUT_MS: invalid }, async () => {
+            assert.equal(recaptchaVerifyTimeoutMs(), null)
+            let called = false
+            const invalidConfig = await verifyCaptchaToken(TOKEN, {
+              expectedAction: 'unternehmen',
+              fetchImpl: async () => {
+                called = true
+                throw new Error('must-not-call-google')
+              },
+            })
+            assert.equal(invalidConfig.ok, false)
+            assert.equal(invalidConfig.code, 'captcha-not-configured')
+            assert.equal(called, false, 'invalid timeout must fail before Google request')
+          })
+        }
+
+        await withEnv({ RECAPTCHA_VERIFY_TIMEOUT_MS: '100' }, async () => {
+          let sawSignal = false
+          let aborted = false
+          const timedOut = await verifyCaptchaToken(TOKEN, {
+            expectedAction: 'unternehmen',
+            fetchImpl: async (_url, init = {}) =>
+              new Promise((_resolve, reject) => {
+                const signal = init.signal
+                sawSignal = Boolean(signal)
+                if (!signal) {
+                  reject(new Error('missing-abort-signal'))
+                  return
+                }
+                if (signal.aborted) {
+                  aborted = true
+                  reject(new Error('aborted'))
+                  return
+                }
+                signal.addEventListener('abort', () => {
+                  aborted = true
+                  reject(new Error('aborted'))
+                }, { once: true })
+              }),
+          })
+          assert.equal(sawSignal, true)
+          assert.equal(aborted, true)
+          assert.equal(timedOut.ok, false)
+          assert.equal(timedOut.code, 'captcha-verify-failed')
+          assert.equal(timedOut.reason, 'captcha-verify-failed')
+          assert.equal(timedOut.upstream?.transportError, true)
+        })
 
         const action = await verifyCaptchaToken(TOKEN, {
           expectedAction: 'unternehmen',
@@ -851,6 +963,8 @@ function assertErrorUx() {
   assert.match(storage, /gespeichert|später|Minuten/i)
   const network = mapLeadSubmitUserMessage({ thrown: new TypeError('Failed to fetch') }, { tone: 'informal' })
   assert.match(network, /Verbindung/)
+  const timeout = mapLeadSubmitUserMessage({ thrown: Object.assign(new Error('timeout'), { code: 'request-timeout', name: 'AbortError' }) }, { tone: 'informal' })
+  assert.match(timeout, /Verbindung/)
   const formal = mapLeadSubmitUserMessage({ status: 403, code: 'captcha-rejected' }, { tone: 'formal' })
   assert.match(formal, /Sie|Ihre|Captcha/)
   const generic = mapLeadSubmitUserMessage({ status: 418, code: 'unknown-teapot' }, { tone: 'informal' })

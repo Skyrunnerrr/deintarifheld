@@ -40,7 +40,7 @@ appears. It is **not** a merge blocker (`EXTERNAL_LEGAL_REVIEW_REQUIRED_FOR_MERG
 
 | Claim | Code / ops truth | Repo AGB |
 |---|---|---|
-| Automatic customer confirmation email with order number and data summary | `CUSTOMER_MAIL_ENABLED=NO`. Dual guard closed. Do not enable mail. | §5(2): no contractual promise of automatic confirmation; contact may follow via supplied contact data |
+| Automatic transactional acknowledgement | Current production flow can send a short customer/partner confirmation when `LEADS_MAIL_MODE=live` and `ALLOW_CUSTOMER_MAIL=YES`. | §5(2): no contractual entitlement to an automatic confirmation; this remains compatible with a voluntarily sent transactional acknowledgement |
 | Statutory short name for cookie/telemedia law | Factual federal short name is TDDDG | §6(1): TDDDG (zuvor TTDSG) |
 
 ```

@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
-import { createHash, randomUUID } from 'crypto'
 import { consumeRateLimit } from '@/lib/leads/abuse-guard'
 import { enforcePublicIntake, isBotLikeSubmit } from '@/lib/leads/intake-guard'
 import { validateCareerPayload } from '@/lib/leads/validate-career'
 import {
   findCareerByIdempotencyKey,
-  findRecentCareerDuplicate,
   getServiceSupabase,
   insertCareerApplication,
   makeLeadRef,
@@ -15,21 +13,27 @@ import {
 import { mailFieldsFromStored, sendLeadEmails } from '@/lib/leads/mail'
 import { optionsResponse, withCors } from '@/lib/leads/cors'
 import { leadsLog } from '@/lib/leads/log'
+import { resolveRequestId } from '@/lib/leads/request-id'
+import { buildIdempotencyKey } from '@/lib/leads/idempotency'
 import { publicCareersHealth } from '@/lib/leads/public-health'
 
 export const runtime = 'nodejs'
 
-function requestId(request) {
-  return request.headers.get('x-request-id')?.trim() || randomUUID()
-}
-
 function json(request, body, status = 200, headers) {
-  const rid = requestId(request)
+  const rid = resolveRequestId(request)
   return withCors(
     request,
     NextResponse.json(
       { ...body, requestId: body.requestId || rid },
-      { status, headers: { 'x-request-id': rid, ...(headers || {}) } },
+      {
+        status,
+        headers: {
+          'cache-control': 'no-store',
+          'x-content-type-options': 'nosniff',
+          'x-request-id': rid,
+          ...(headers || {}),
+        },
+      },
     ),
   )
 }
@@ -38,27 +42,79 @@ function errorResponse(request, code, status, headers) {
   return json(request, { ok: false, code }, status, headers)
 }
 
-function buildIdempotencyKey(request, data) {
-  const header = request.headers.get('idempotency-key')?.trim()
-  if (header && header.length >= 8 && header.length <= 128) return header
-  const window = Math.floor(Date.now() / 60_000)
-  return createHash('sha256')
-    .update(`career|${data.email}|${window}`)
-    .digest('hex')
-    .slice(0, 48)
+async function writeAuditObserved(supabase, payload) {
+  const result = await writeAudit(supabase, payload)
+  if (result.error) {
+    leadsLog('error', 'careers.audit_write_failed', {
+      eventType: payload.eventType || 'unknown',
+      code: result.error.code || 'unknown',
+    })
+  }
+  return result
 }
 
 function mailFields(mailResult) {
   const mode = mailResult.mode || (process.env.LEADS_MAIL_MODE || 'mock')
   const mailStatus = mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed')
-  const customerConfirmation =
-    mailResult.customerConfirmation ||
-    (mode === 'internal_live' ? 'skipped' : mode === 'live' ? 'sent' : 'n/a')
+  const customerConfirmation = mailResult.customerConfirmation || 'n/a'
   return {
-    mail: Boolean(mailResult.ok),
+    // "mail" means at least one intended operational mail was accepted. The
+    // customerConfirmation field carries the separate customer-delivery truth.
+    mail: ['accepted', 'internal_sent', 'partial_failed'].includes(mailStatus),
     mailMode: mode,
     mailStatus,
     customerConfirmation,
+  }
+}
+
+function storedMailNeedsRecovery(row) {
+  const status = typeof row?.mail_status === 'string' ? row.mail_status.trim() : ''
+  return !status || status === 'pending'
+}
+
+async function recoverStoredCareerMail(supabase, row) {
+  if (!storedMailNeedsRecovery(row)) {
+    return { status: 200, fields: mailFieldsFromStored(row) }
+  }
+
+  const data = row?.payload && typeof row.payload === 'object' ? row.payload : null
+  if (!data) {
+    return { status: 200, fields: mailFieldsFromStored(row) }
+  }
+
+  const mailResult = await sendLeadEmails({
+    leadRef: row.application_ref,
+    data,
+    submittedAt: row.created_at || new Date().toISOString(),
+    channel: 'career',
+  })
+
+  const mailStatus = mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed')
+  const mailMode = mailResult.mode || process.env.LEADS_MAIL_MODE || 'mock'
+  const mailMeta = await updateCareerMailMeta(supabase, row.id, { mailStatus, mailMode })
+
+  if (mailMeta.error) {
+    leadsLog('error', 'careers.mail_recovery_meta_update_failed', {
+      leadRef: row.application_ref,
+      code: mailMeta.error.code || 'unknown',
+    })
+  }
+
+  await writeAuditObserved(supabase, {
+    careerId: row.id,
+    eventType: mailResult.ok ? 'career.mail_recovered' : 'career.mail_recovery_failed',
+    detail: {
+      application_ref: row.application_ref,
+      mode: mailMode,
+      mail_status: mailStatus,
+      customer_confirmation: mailResult.customerConfirmation || 'n/a',
+    },
+  })
+
+  return {
+    status: mailResult.ok ? 200 : 202,
+    fields: mailFields(mailResult),
+    code: mailResult.ok ? undefined : mailResult.code,
   }
 }
 
@@ -94,35 +150,29 @@ export async function POST(request) {
     return errorResponse(request, 'storage-not-configured', 500)
   }
 
-  const idempotencyKey = buildIdempotencyKey(request, validated.data)
-  const { data: existingByKey } = await findCareerByIdempotencyKey(supabase, idempotencyKey)
-  if (existingByKey) {
-    return json(request, {
-      ok: true,
-      duplicate: true,
-      idempotent: true,
-      leadId: existingByKey.id,
-      leadRef: existingByKey.application_ref,
-      ...mailFieldsFromStored(existingByKey),
+  const idempotencyKey = buildIdempotencyKey(request, validated.data, { scope: 'career' })
+  const { data: existingByKey, error: idempotencyError } =
+    await findCareerByIdempotencyKey(supabase, idempotencyKey)
+  if (idempotencyError) {
+    leadsLog('error', 'careers.idempotency_lookup_failed', {
+      code: idempotencyError.code || 'unknown',
     })
-  }
-
-  const { duplicate, error: dupErr } = await findRecentCareerDuplicate(supabase, {
-    email: validated.data.email,
-    withinSeconds: 60,
-  })
-  if (dupErr) {
-    leadsLog('error', 'careers.duplicate_check_failed', { code: 'storage-failed' })
     return errorResponse(request, 'storage-failed', 500)
   }
-  if (duplicate) {
-    return json(request, {
-      ok: true,
-      duplicate: true,
-      leadId: duplicate.id,
-      leadRef: duplicate.application_ref,
-      ...mailFieldsFromStored(duplicate),
-    })
+  if (existingByKey) {
+    const recovered = await recoverStoredCareerMail(supabase, existingByKey)
+    return json(
+      request,
+      {
+        ok: true,
+        duplicate: true,
+        idempotent: true,
+        leadRef: existingByKey.application_ref,
+        ...recovered.fields,
+        ...(recovered.code ? { code: recovered.code } : {}),
+      },
+      recovered.status,
+    )
   }
 
   const leadRef = makeLeadRef('career')
@@ -137,6 +187,8 @@ export async function POST(request) {
     consent_at: submittedAt,
     source_page: validated.data.source_page,
     idempotency_key: idempotencyKey,
+    mail_status: 'pending',
+    mail_mode: process.env.LEADS_MAIL_MODE || 'mock',
     payload: {
       ...payloadFields,
       _formLoadedAt,
@@ -146,27 +198,38 @@ export async function POST(request) {
 
   if (insertError) {
     if (insertError.code === '23505') {
-      const { data: raced } = await findCareerByIdempotencyKey(supabase, idempotencyKey)
-      if (raced) {
-        return json(request, {
-          ok: true,
-          duplicate: true,
-          idempotent: true,
-          leadId: raced.id,
-          leadRef: raced.application_ref,
-          ...mailFieldsFromStored(raced),
+      const { data: raced, error: raceLookupError } =
+        await findCareerByIdempotencyKey(supabase, idempotencyKey)
+      if (raceLookupError) {
+        leadsLog('error', 'careers.idempotency_race_lookup_failed', {
+          code: raceLookupError.code || 'unknown',
         })
+      }
+      if (raced) {
+        const recovered = await recoverStoredCareerMail(supabase, raced)
+        return json(
+          request,
+          {
+            ok: true,
+            duplicate: true,
+            idempotent: true,
+            leadRef: raced.application_ref,
+            ...recovered.fields,
+            ...(recovered.code ? { code: recovered.code } : {}),
+          },
+          recovered.status,
+        )
       }
     }
     leadsLog('error', 'careers.insert_failed', { code: insertError.code || 'unknown' })
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       eventType: 'career.insert_failed',
       detail: { code: insertError.code || 'unknown' },
     })
     return errorResponse(request, 'storage-failed', 500)
   }
 
-  await writeAudit(supabase, {
+  await writeAuditObserved(supabase, {
     careerId: inserted.id,
     eventType: 'career.accepted',
     detail: { application_ref: leadRef },
@@ -179,15 +242,50 @@ export async function POST(request) {
     channel: 'career',
   })
 
-  await updateCareerMailMeta(supabase, inserted.id, {
+  const mailMeta = await updateCareerMailMeta(supabase, inserted.id, {
     mailStatus: mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed'),
     mailMode: mailResult.mode || process.env.LEADS_MAIL_MODE || 'mock',
   })
+  if (mailMeta.error) {
+    leadsLog('error', 'careers.mail_meta_update_failed', {
+      leadRef,
+      code: mailMeta.error.code || 'unknown',
+    })
+    await writeAuditObserved(supabase, {
+      careerId: inserted.id,
+      eventType: 'career.mail_meta_update_failed',
+      detail: { application_ref: leadRef, code: mailMeta.error.code || 'unknown' },
+    })
+  }
 
   if (!mailResult.ok) {
+    if (mailResult.internalDelivery === 'sent') {
+      await writeAuditObserved(supabase, {
+        careerId: inserted.id,
+        eventType: 'career.internal_mail_sent',
+        detail: {
+          application_ref: leadRef,
+          mode: mailResult.mode || 'live',
+          provider_email_id: mailResult.providerEmailId || null,
+          outcome: 'partial_success',
+        },
+      })
+      if (mailResult.customerConfirmation === 'failed') {
+        await writeAuditObserved(supabase, {
+          careerId: inserted.id,
+          eventType: 'career.customer_confirmation_failed',
+          detail: {
+            application_ref: leadRef,
+            mode: mailResult.mode || 'live',
+            provider_error_code: mailResult.providerErrorCode || null,
+          },
+        })
+      }
+    }
+
     const failEvent =
       mailResult.mode === 'internal_live' ? 'career.internal_mail_failed' : 'career.mail_failed'
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       careerId: inserted.id,
       eventType: failEvent,
       detail: {
@@ -198,7 +296,7 @@ export async function POST(request) {
       },
     })
     if (mailResult.mode === 'internal_live') {
-      await writeAudit(supabase, {
+      await writeAuditObserved(supabase, {
         careerId: inserted.id,
         eventType: 'career.customer_confirmation_skipped',
         detail: { application_ref: leadRef, mode: 'internal_live', reason: 'temporary_internal_mode' },
@@ -208,7 +306,6 @@ export async function POST(request) {
       request,
       {
         ok: true,
-        leadId: inserted.id,
         leadRef,
         duplicate: false,
         idempotent: false,
@@ -220,7 +317,7 @@ export async function POST(request) {
   }
 
   if (mailResult.mode === 'internal_live') {
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       careerId: inserted.id,
       eventType: 'career.internal_mail_sent',
       detail: {
@@ -230,13 +327,13 @@ export async function POST(request) {
         provider_email_id: mailResult.providerEmailId || null,
       },
     })
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       careerId: inserted.id,
       eventType: 'career.customer_confirmation_skipped',
       detail: { application_ref: leadRef, mode: 'internal_live', reason: 'temporary_internal_mode' },
     })
   } else {
-    await writeAudit(supabase, {
+    await writeAuditObserved(supabase, {
       careerId: inserted.id,
       eventType: 'career.mail_sent',
       detail: {
@@ -251,7 +348,6 @@ export async function POST(request) {
 
   return json(request, {
     ok: true,
-    leadId: inserted.id,
     leadRef,
     duplicate: false,
     idempotent: false,

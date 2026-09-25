@@ -105,7 +105,7 @@ const STEPS = [
     bullets: [
       { text: 'Name, E-Mail und Telefonnummer', color: '#D4FF3E' },
       { text: 'Jahresverbrauch (kWh) und Postleitzahl', color: '#D4FF3E' },
-      { text: 'Strom, Gas oder beides', color: '#D4FF3E' },
+      { text: 'Strom oder Gas', color: '#D4FF3E' },
     ],
     hl: {
       bg: 'rgba(212,255,62,0.05)', border: 'rgba(212,255,62,0.12)',

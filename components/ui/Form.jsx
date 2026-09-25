@@ -11,7 +11,8 @@ export const Input = forwardRef(function Input(
   { label, error, hint, className, id, required, ...props },
   ref
 ) {
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
+  const generatedId = useId()
+  const inputId = id || `input-${generatedId}`
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -63,7 +64,8 @@ export const Select = forwardRef(function Select(
   { label, options = [], error, className, id, required, placeholder, ...props },
   ref
 ) {
-  const selectId = id || label?.toLowerCase().replace(/\s+/g, '-')
+  const generatedId = useId()
+  const selectId = id || `select-${generatedId}`
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -87,6 +89,8 @@ export const Select = forwardRef(function Select(
           error && 'border-energy/60',
           className
         )}
+        aria-invalid={error ? 'true' : undefined}
+        aria-describedby={error ? `${selectId}-error` : undefined}
         required={required}
         {...props}
       >
@@ -98,7 +102,7 @@ export const Select = forwardRef(function Select(
         ))}
       </select>
       {error && (
-        <p className="text-energy text-xs font-body" role="alert">{error}</p>
+        <p id={`${selectId}-error`} className="text-energy text-xs font-body" role="alert">{error}</p>
       )}
     </div>
   )
@@ -111,7 +115,8 @@ export const Textarea = forwardRef(function Textarea(
   { label, error, className, id, required, rows = 4, ...props },
   ref
 ) {
-  const textareaId = id || label?.toLowerCase().replace(/\s+/g, '-')
+  const generatedId = useId()
+  const textareaId = id || `textarea-${generatedId}`
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -125,6 +130,8 @@ export const Textarea = forwardRef(function Textarea(
         ref={ref}
         id={textareaId}
         rows={rows}
+        aria-invalid={error ? 'true' : undefined}
+        aria-describedby={error ? `${textareaId}-error` : undefined}
         className={cn(
           'w-full px-4 py-3 rounded-2xl resize-none',
           'bg-bg-input border border-white/8',
@@ -139,7 +146,7 @@ export const Textarea = forwardRef(function Textarea(
         {...props}
       />
       {error && (
-        <p className="text-energy text-xs font-body" role="alert">{error}</p>
+        <p id={`${textareaId}-error`} className="text-energy text-xs font-body" role="alert">{error}</p>
       )}
     </div>
   )
@@ -164,18 +171,20 @@ export const Checkbox = forwardRef(function Checkbox(
             type="checkbox"
             id={checkId}
             className="sr-only peer"
+            aria-invalid={error ? 'true' : undefined}
+            aria-describedby={error ? `${checkId}-error` : undefined}
             required={required}
             {...props}
           />
           <div className={cn(
             'w-5 h-5 rounded-md border border-white/15 bg-bg-input',
-            'peer-checked:bg-volt peer-checked:border-volt',
+            'peer-checked:bg-volt peer-checked:border-volt peer-checked:[&>svg]:opacity-100',
             'peer-focus-visible:ring-2 peer-focus-visible:ring-volt/30',
             'transition-all duration-200 group-hover:border-white/25',
             className
           )} aria-hidden="true">
             <svg
-              className="w-3 h-3 text-bg-base absolute top-1 left-1 opacity-0 peer-checked:opacity-100 transition-opacity"
+              className="w-3 h-3 text-bg-base absolute top-1 left-1 opacity-0 transition-opacity"
               fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2.5}
               aria-hidden="true"
             >
@@ -189,7 +198,7 @@ export const Checkbox = forwardRef(function Checkbox(
         </span>
       </label>
       {error && (
-        <p className="text-energy text-xs font-body ml-8" role="alert">{error}</p>
+        <p id={`${checkId}-error`} className="text-energy text-xs font-body ml-8" role="alert">{error}</p>
       )}
     </div>
   )
@@ -239,6 +248,7 @@ export function RadioToggle({ options = [], value, onChange, name, className }) 
         className
       )}
       role="radiogroup"
+      aria-label={name || undefined}
     >
       {options.map(option => (
         <button
@@ -262,4 +272,6 @@ export function RadioToggle({ options = [], value, onChange, name, className }) 
   )
 }
 
-export default { Input, Select, Textarea, Checkbox, ProgressBar, RadioToggle }
+const Form = { Input, Select, Textarea, Checkbox, ProgressBar, RadioToggle }
+
+export default Form

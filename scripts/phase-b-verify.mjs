@@ -36,4 +36,4 @@ if (!existsSync(join(root, 'docs/legal/DATENSCHUTZ_PHASE_B_DRAFT.md'))) {
 
 console.log('PHASE_B_VERIFY=PASS')
 console.log('MIGRATION_REMOTE_APPLIED=NO')
-console.log('LIVE_MAIL_ENABLED=NO')
+console.log('LIVE_MAIL_STATE=NOT_EVALUATED_BY_OFFLINE_VERIFY')

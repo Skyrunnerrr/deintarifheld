@@ -93,9 +93,6 @@ export function SavingsCalculator() {
   // ─── State ──────────────────────────────────────────
   const [kundentyp, setKundentyp] = useState('privat')   // 'privat' | 'gewerbe'
   const energie = 'strom'                                // fest: nur Strom
-  const [calcDsgvo, setCalcDsgvo] = useState(false)
-  const [calcDsgvoError, setCalcDsgvoError] = useState(false)
-
   // Privat-Felder
   const [privatName,  setPrivatName]  = useState('')
   const [privatCons,  setPrivatCons]  = useState(3500)
@@ -428,33 +425,9 @@ export function SavingsCalculator() {
             Echtes Angebot kann abweichen.
           </p>
 
-          {/* DSGVO Checkbox */}
-          <label
-            style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginBottom: 0 }}
-          >
-            <input
-              type="checkbox"
-              id="calc-dsgvo"
-              checked={calcDsgvo}
-              onChange={e => { setCalcDsgvo(e.target.checked); if (e.target.checked) setCalcDsgvoError(false) }}
-              required
-              style={{ marginTop: 2, flexShrink: 0, width: 15, height: 15, accentColor: '#D4FF3E', cursor: 'pointer' }}
-            />
-            <span style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>
-              Ich habe die{' '}
-              <a href="/datenschutz" style={{ color: 'rgba(212,255,62,0.7)', textDecoration: 'underline' }}>Datenschutzerklärung</a>
-              {' '}zur Kenntnis genommen.*
-            </span>
-          </label>
-          {calcDsgvoError && (
-            <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 2 }}>Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.</p>
-          )}
-
           {/* CTA */}
           <button
             onClick={() => {
-              if (!calcDsgvo) { setCalcDsgvoError(true); return }
-              setCalcDsgvoError(false)
               document.getElementById('funnel')?.scrollIntoView({ behavior: 'smooth' })
             }}
             style={{

@@ -165,7 +165,7 @@ export function VoltText({ children, className }) {
   )
 }
 
-export default {
+const Typography = {
   SectionLabel,
   DisplayHeading,
   SectionHeading,
@@ -175,3 +175,5 @@ export default {
   TrustIndicators,
   VoltText,
 }
+
+export default Typography

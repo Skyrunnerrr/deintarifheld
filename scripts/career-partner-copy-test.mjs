@@ -11,7 +11,6 @@ const FAIL = []
 const files = [
   'components/sections/CareerSection.jsx',
   'app/karriere/page.js',
-  'components/sections/JobDescription.jsx',
 ]
 
 const FORBIDDEN = [
@@ -57,6 +56,9 @@ if (/type=["']file["']|input.*file|Lebenslauf|CV upload/i.test(career)) {
 }
 if (!/zur Kenntnis genommen/.test(career)) {
   FAIL.push('CareerSection.jsx: privacy acknowledgement missing')
+}
+if (/1\.400\s*[–-]\s*5\.500\s*€|monatlich möglich|48h Antwort|innerhalb von 48 Stunden/i.test(career)) {
+  FAIL.push('CareerSection.jsx: unsupported earnings/response-time claim remains')
 }
 
 const page = readFileSync(join(ROOT, 'app/karriere/page.js'), 'utf8')

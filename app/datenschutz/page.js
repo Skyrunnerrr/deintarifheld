@@ -388,11 +388,18 @@ export default function DatenschutzPage() {
             </p>
           </SubSection>
           <SubSection title="9.3 Resend">
-            <p style={{ margin: 0 }}>
+            <p style={{ marginBottom: '0.75rem' }}>
               Zur operativen Bearbeitung einer neuen Anfrage wird eine interne
-              Benachrichtigungs-E-Mail über den Dienst <Highlight>Resend</Highlight> an eine
-              interne Betriebsadresse versendet. Inhalt sind die für die Bearbeitung
-              erforderlichen Anfrageangaben in datensparsamem Umfang.
+              Benachrichtigungs-E-Mail über den Dienst <Highlight>Resend</Highlight> an unsere
+              Betriebsadresse versendet. Inhalt sind die für die Bearbeitung erforderlichen
+              Anfrageangaben.
+            </p>
+            <p style={{ margin: 0 }}>
+              Im derzeit freigegebenen Transaktionsmail-Betrieb kann Resend zusätzlich eine
+              automatische Eingangsbestätigung an die im Formular angegebene E-Mail-Adresse
+              versenden. Diese Nachricht bestätigt lediglich den technischen Eingang der Anfrage;
+              sie ist kein Newsletter und begründet keinen Anspruch auf Annahme, Angebot oder
+              Vertragsschluss.
             </p>
           </SubSection>
           <SubSection title="9.4 Google reCAPTCHA">
@@ -432,12 +439,14 @@ export default function DatenschutzPage() {
           </SubSection>
         </LegalSection>
 
-        <LegalSection id="keine-bestaetigung" title="10. Keine automatische Bestätigung an Absender">
+        <LegalSection id="eingangsbestaetigung" title="10. Automatische Eingangsbestätigung">
           <p style={{ margin: 0 }}>
-            Es wird <Highlight>keine</Highlight> automatische Bestätigungs-E-Mail an die im
-            Formular angegebene E-Mail-Adresse versendet. Es erfolgt weder eine Kundenbestätigung
-            noch eine Bestätigung an Partnerinteressenten per Transaktionsmail. Marketing- oder
-            Newsletter-Mails werden über diesen Anfragepfad nicht ausgelöst.
+            Nach erfolgreicher Übermittlung kann eine automatische
+            <Highlight> Eingangsbestätigung</Highlight> an die im Formular angegebene
+            E-Mail-Adresse versendet werden. Sie enthält insbesondere die Referenz der Anfrage
+            und eine kurze Bestätigung des Eingangs. Die Nachricht dient ausschließlich der
+            Bearbeitung der konkreten Anfrage. Marketing- oder Newsletter-Mails werden über
+            diesen Anfragepfad nicht ausgelöst.
           </p>
         </LegalSection>
 
@@ -513,7 +522,7 @@ export default function DatenschutzPage() {
               'Checkdomain – Hosting der öffentlichen Website',
               'Vercel – Betrieb der Formular-API',
               'Supabase – Datenbankspeicherung',
-              'Resend – interne E-Mail-Benachrichtigung',
+              'Resend – interne Benachrichtigung und transaktionale Eingangsbestätigung',
               'Google – reCAPTCHA zur Missbrauchsabwehr der Formulare (siehe Abschnitt 9.4)',
               'ProvenExpert – optionales Netzwerkscript nur nach Auswahl; sonst nur lokales Siegel (siehe Abschnitt 9.5)',
               'TELESON Vertriebs GmbH – soweit für die Tarifvermittlung im Handelsvertreterverhältnis erforderlich',

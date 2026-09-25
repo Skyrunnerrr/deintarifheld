@@ -3,13 +3,18 @@ import { enforceAdminAccess } from '@/lib/leads/admin-guard'
 import { getServiceSupabase, processLeadDeletion } from '@/lib/leads/supabase'
 import { evaluateAdminEraseInput } from '@/lib/leads/admin-erase'
 import { applySecurityHeaders } from '@/lib/leads/security-headers'
+import { readJsonBody } from '@/lib/leads/read-json-body'
 
 export const runtime = 'nodejs'
 
 function json(body, status = 200, extraHeaders) {
   const response = NextResponse.json(body, {
     status,
-    headers: extraHeaders,
+    headers: {
+      'cache-control': 'no-store',
+      'x-robots-tag': 'noindex, nofollow, noarchive',
+      ...(extraHeaders || {}),
+    },
   })
   applySecurityHeaders(response.headers)
   return response
@@ -26,12 +31,11 @@ export async function POST(request) {
     return json({ ok: false, code: gate.code }, gate.status, gate.headers)
   }
 
-  let body
-  try {
-    body = await request.json()
-  } catch {
-    return json({ ok: false, code: 'invalid-payload' }, 400)
+  const parsed = await readJsonBody(request, { maxBytes: 4096 })
+  if (!parsed.ok) {
+    return json({ ok: false, code: parsed.code }, parsed.status)
   }
+  const body = parsed.data
 
   const input = evaluateAdminEraseInput({
     email: body.email,

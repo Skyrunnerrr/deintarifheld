@@ -60,7 +60,6 @@ console.log(`NPM_AUDIT_HIGH=${scored.counts.high}`)
 console.log(`NPM_AUDIT_MODERATE=${scored.counts.moderate}`)
 console.log(`NPM_AUDIT_LOW=${scored.counts.low}`)
 console.log('NPM_AUDIT_FIX=NOT_RUN')
-console.log('CUSTOMER_MAIL_ENABLED=NO')
 
 for (const f of scored.findings || []) {
   if (f.severity !== 'high' && f.severity !== 'critical') continue

@@ -1,7 +1,8 @@
 {
-  "name": "deintarifheld-temp",
+  "name": "deintarifheld",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -48,7 +49,8 @@
     "infra:phase-a:dns": "bash scripts/infra/phase-a/configure-dns.sh",
     "infra:phase-a:apply": "bash scripts/infra/phase-a/apply.sh",
     "infra:phase-a:status": "bash scripts/infra/phase-a/status.sh",
-    "infra:phase-a:smoke": "bash scripts/infra/phase-a/smoke-preview.sh"
+    "infra:phase-a:smoke": "bash scripts/infra/phase-a/smoke-preview.sh",
+    "forms:contract-matrix:test": "node scripts/public-form-contract-matrix-test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -56,7 +58,6 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.577.0",
-    "motion-dom": "^12.38.0",
     "next": "15.5.24",
     "react": "^19",
     "react-dom": "^19",

@@ -1,4 +1,15 @@
 /**
+ * RETIRED HISTORICAL IMPLEMENTATION
+ *
+ * This Google Apps Script backend is not part of the current production path.
+ * Production intake is Checkdomain -> Vercel API -> Supabase -> Resend with
+ * server-side reCAPTCHA Enterprise Assessment.
+ *
+ * Do not deploy, configure or use this file for current operations.
+ * Kept only as migration/history evidence.
+ */
+
+/**
  * deintarifheld.de - Lead Backend (Google Apps Script)
  * Version 4.0 - Clean + Secure + DSGVO-ready
  *

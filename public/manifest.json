@@ -1,7 +1,7 @@
 {
   "name": "Tarifheld – Günstiger Strom & Gas Vergleich",
   "short_name": "Tarifheld",
-  "description": "Günstiger Strom & Gas: Kostenloser Tarifvergleich mit Ø 480 € Ersparnis.",
+  "description": "Strom- und Gastarife kostenlos und unverbindlich mit DeinTarifheld prüfen.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#090B0F",

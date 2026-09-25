@@ -14,22 +14,28 @@ import { Section, AmbientBg } from '@/components/ui/Background'
 import { SectionLabel, SectionHeading, VoltText } from '@/components/ui/Typography'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { cn } from '@/lib/utils'
-import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
+import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, recordFormLoad, getFormTiming } from '@/lib/security'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
 // ─── Schemas ─────────────────────────────────────────────────────
 
 const step1Schema = z.object({
-  firstName: z.string().min(2, 'Bitte gib deinen Vornamen ein'),
-  email:     z.string().email('Bitte gib eine gültige E-Mail ein'),
-  phone:     z.string().min(6, 'Bitte gib deine Telefonnummer ein'),
+  firstName: z.string().min(2, 'Bitte gib deinen Vornamen ein').max(120, 'Der Vorname ist zu lang'),
+  email:     z.string().max(180, 'Die E-Mail-Adresse ist zu lang').email('Bitte gib eine gültige E-Mail ein'),
+  phone:     z.string().max(40, 'Die Telefonnummer ist zu lang').refine(
+    (value) => /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/.test(value.trim()),
+    'Bitte gib eine gültige Telefonnummer ein',
+  ),
   gdpr:      z.literal(true, { errorMap: () => ({ message: 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.' }) }),
 })
 
 const step2Schema = z.object({
-  provider:    z.string().min(1, 'Bitte gib deinen aktuellen Anbieter ein'),
-  consumption: z.string().regex(/^\d+$/, 'Bitte gib nur Zahlen ein').min(1, 'Verbrauch erforderlich'),
+  provider:    z.string().min(1, 'Bitte gib deinen aktuellen Anbieter ein').max(120, 'Der Anbietername ist zu lang'),
+  consumption: z.string()
+    .max(40, 'Der Verbrauchswert ist zu lang')
+    .regex(/^\d+$/, 'Bitte gib nur Zahlen ein')
+    .refine((value) => Number(value) > 0, 'Bitte gib einen Verbrauch größer als 0 kWh ein'),
   zip:         z.string().regex(/^\d{5}$/, 'Bitte gib eine gültige 5-stellige PLZ ein'),
   gdpr:        z.literal(true, { errorMap: () => ({ message: 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.' }) }),
 })
@@ -168,10 +174,6 @@ function Step2({ step1Data, onSuccess }) {
     setRateLimitMsg('')
     setRecaptchaError('')
 
-    // Rate limiting
-    const rl = checkRateLimit('main-funnel')
-    if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s bevor du erneut absendest.`); return }
-
     setLoading(true)
     try {
       const captcha = await resolveSubmitCaptchaToken('main_funnel', recaptchaToken)
@@ -179,7 +181,6 @@ function Step2({ step1Data, onSuccess }) {
         setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
         return
       }
-      recordSubmission('main-funnel')
       const payload = {
         ...sanitizePayload({
           firstName: step1Data.firstName,
@@ -199,8 +200,8 @@ function Step2({ step1Data, onSuccess }) {
           brand_theme: 'privat',
           form_version: '2.0',
           source_page: '/',
-          website_url: '',
-          company_fax: '',
+          website_url: honeypot,
+          company_fax: honeypot2,
         }),
         _recaptchaToken: captcha.token,
       }

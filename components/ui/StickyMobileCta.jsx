@@ -2,36 +2,44 @@
 
 import { usePathname } from 'next/navigation'
 
-/** DTH-04: On /unternehmen-neu, sticky CTA must target the business form — not #rechner. */
-function isBusinessPreviewRoute(pathname) {
-  return pathname === '/unternehmen-neu' || pathname?.startsWith('/unternehmen-neu/')
+function resolveStickyCta(pathname) {
+  if (pathname === '/') {
+    return { href: '#rechner', label: 'Kostenlos prüfen', business: false }
+  }
+  if (pathname?.startsWith('/unternehmen')) {
+    return { href: '#formular', label: 'Kostenlos prüfen', business: true }
+  }
+  if (pathname?.startsWith('/karriere')) {
+    return { href: '#partneranfrage', label: 'Partneranfrage starten', business: false }
+  }
+  return null
 }
 
 export function StickyMobileCta() {
   const pathname = usePathname()
-  const isBusinessPreview = isBusinessPreviewRoute(pathname)
-  const href = isBusinessPreview ? '#formular' : '#rechner'
+  const cta = resolveStickyCta(pathname)
+  if (!cta) return null
 
   return (
     <a
-      href={href}
-      aria-label="Kostenlos prüfen"
+      href={cta.href}
+      aria-label={cta.label}
       style={{
         position: 'fixed',
         bottom: 'calc(24px + env(safe-area-inset-bottom))',
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 50,
-        display: 'none', /* wird via CSS auf Mobile eingeblendet */
+        display: 'none',
         alignItems: 'center',
         gap: 8,
-        background: isBusinessPreview ? '#F98540' : '#D4FF3E',
-        color: isBusinessPreview ? '#FFFFFF' : '#090B0F',
+        background: cta.business ? '#F98540' : '#D4FF3E',
+        color: cta.business ? '#FFFFFF' : '#090B0F',
         fontWeight: 800,
         fontSize: 14,
         padding: '14px 24px',
-        borderRadius: isBusinessPreview ? 16 : 999,
-        boxShadow: isBusinessPreview
+        borderRadius: cta.business ? 16 : 999,
+        boxShadow: cta.business
           ? '0 6px 22px rgba(255,107,43,0.28)'
           : '0 4px 24px rgba(212,255,62,0.35)',
         textDecoration: 'none',
@@ -42,7 +50,7 @@ export function StickyMobileCta() {
       }}
       className="sticky-mobile-cta"
     >
-      Kostenlos prüfen →
+      {cta.label} →
     </a>
   )
 }

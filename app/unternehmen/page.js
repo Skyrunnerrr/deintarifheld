@@ -10,7 +10,7 @@ import { SectionLabel, SectionHeading, TrustIndicators } from '@/components/ui/T
 import { Button } from '@/components/ui/Button'
 import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
 import { Footer } from '@/components/sections/Footer'
-import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
+import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, recordFormLoad, getFormTiming } from '@/lib/security'
 import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
@@ -78,15 +78,28 @@ function B2BFormular() {
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }))
 
+  const activeConsumption =
+    form.energieart === 'Strom' ? form.verbrauchStrom :
+    form.energieart === 'Gas' ? form.verbrauchGas :
+    ''
+  const activeConsumptionValid =
+    !activeConsumption || (/^\d+$/.test(activeConsumption) && Number(activeConsumption) > 0)
+
   const step1Valid =
     form.energieart !== '' &&
     form.standorte !== '' &&
-    form.plz.trim().length === 5 && /^\d{5}$/.test(form.plz.trim())
+    form.plz.trim().length === 5 &&
+    /^\d{5}$/.test(form.plz.trim()) &&
+    activeConsumptionValid
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const phoneRegex = /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/
   const step2Valid =
     form.firma.trim().length >= 2 &&
+    form.firma.trim().length <= 160 &&
     form.ansprechpartner.trim().length >= 2 &&
+    form.ansprechpartner.trim().length <= 120 &&
+    form.email.trim().length <= 180 &&
     emailRegex.test(form.email.trim())
 
   const handleSubmit = async (e) => {
@@ -98,16 +111,17 @@ function B2BFormular() {
 
     // Field-level validation
     const errs = {}
-    if (form.firma.trim().length < 2) errs.firma = 'Bitte gib einen Firmennamen ein'
-    if (form.ansprechpartner.trim().length < 2) errs.ansprechpartner = 'Bitte gib einen Ansprechpartner ein'
-    if (!emailRegex.test(form.email.trim())) errs.email = 'Bitte gib eine gültige E-Mail ein'
+    const firma = form.firma.trim()
+    const ansprechpartner = form.ansprechpartner.trim()
+    const email = form.email.trim()
+    const telefon = form.telefon.trim()
+    if (firma.length < 2 || firma.length > 160) errs.firma = 'Bitte gib einen gültigen Firmennamen ein'
+    if (ansprechpartner.length < 2 || ansprechpartner.length > 120) errs.ansprechpartner = 'Bitte gib einen gültigen Ansprechpartner ein'
+    if (email.length > 180 || !emailRegex.test(email)) errs.email = 'Bitte gib eine gültige E-Mail ein'
+    if (telefon && (telefon.length > 40 || !phoneRegex.test(telefon))) errs.telefon = 'Bitte gib eine gültige Telefonnummer ein'
     if (!form.dsgvo) { setDsgvoError(true); errs.dsgvo = true }
     if (Object.keys(errs).length > 0) { setValidationErrors(errs); if (!errs.dsgvo) setDsgvoError(false); return }
     setDsgvoError(false)
-
-    // Rate limiting
-    const rl = checkRateLimit('b2b-form')
-    if (!rl.allowed) { setRateLimitMsg(`Bitte warten Sie ${rl.remainingSeconds}s bevor Sie erneut absenden.`); return }
 
     setSending(true)
     try {
@@ -116,7 +130,6 @@ function B2BFormular() {
         setRecaptchaError(leadSubmitCaptchaClientMessage('formal'))
         return
       }
-      recordSubmission('b2b-form')
       const payload = {
         ...sanitizePayload({
           ...form,
@@ -163,7 +176,7 @@ function B2BFormular() {
         <div>
           <p className="font-display font-black text-2xl text-text-primary mb-2">Anfrage eingegangen!</p>
           <p className="font-body text-text-secondary text-base max-w-sm">
-            Ihr persönlicher Ansprechpartner meldet sich innerhalb von 24 Stunden bei Ihnen — per E-Mail oder Telefon, wie Sie es bevorzugen.
+            Ihr persönlicher Ansprechpartner meldet sich schnellstmöglich bei Ihnen — per E-Mail oder Telefon.
           </p>
         </div>
         <Link href="/" className="font-body text-sm text-[#FF6B2B] hover:underline">
@@ -223,7 +236,12 @@ function B2BFormular() {
                   <button
                     key={opt}
                     type="button"
-                    onClick={() => set('energieart', opt)}
+                    onClick={() => setForm((prev) => ({
+                      ...prev,
+                      energieart: opt,
+                      verbrauchStrom: opt === 'Strom' ? prev.verbrauchStrom : '',
+                      verbrauchGas: opt === 'Gas' ? prev.verbrauchGas : '',
+                    }))}
                     className={`px-4 py-2.5 rounded-2xl border font-body text-sm font-medium transition-all duration-200 ${
                       form.energieart === opt
                         ? 'bg-[#FF6B2B] text-white border-[#FF6B2B]'
@@ -248,9 +266,17 @@ function B2BFormular() {
                   min="0"
                   placeholder="z. B. 80000"
                   value={form.verbrauchStrom}
-                  onChange={e => set('verbrauchStrom', e.target.value)}
+                  inputMode="numeric"
+                  onChange={e => set('verbrauchStrom', e.target.value.replace(/\D/g, '').slice(0, 40))}
                   className="w-full px-4 py-3 rounded-2xl bg-bg-input border border-white/10 text-text-primary font-body text-base placeholder:text-text-tertiary focus:outline-none focus:border-[#FF6B2B]/40 transition-colors"
+                  aria-invalid={form.verbrauchStrom !== '' && Number(form.verbrauchStrom) <= 0}
+                  aria-describedby={form.verbrauchStrom !== '' && Number(form.verbrauchStrom) <= 0 ? 'verbrauchStrom-error' : undefined}
                 />
+                {form.verbrauchStrom !== '' && Number(form.verbrauchStrom) <= 0 && (
+                  <p role="alert" id="verbrauchStrom-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    Bitte geben Sie einen Verbrauch größer als 0 kWh ein
+                  </p>
+                )}
               </div>
             )}
 
@@ -266,9 +292,17 @@ function B2BFormular() {
                   min="0"
                   placeholder="z. B. 150000"
                   value={form.verbrauchGas}
-                  onChange={e => set('verbrauchGas', e.target.value)}
+                  inputMode="numeric"
+                  onChange={e => set('verbrauchGas', e.target.value.replace(/\D/g, '').slice(0, 40))}
                   className="w-full px-4 py-3 rounded-2xl bg-bg-input border border-white/10 text-text-primary font-body text-base placeholder:text-text-tertiary focus:outline-none focus:border-[#FF6B2B]/40 transition-colors"
+                  aria-invalid={form.verbrauchGas !== '' && Number(form.verbrauchGas) <= 0}
+                  aria-describedby={form.verbrauchGas !== '' && Number(form.verbrauchGas) <= 0 ? 'verbrauchGas-error' : undefined}
                 />
+                {form.verbrauchGas !== '' && Number(form.verbrauchGas) <= 0 && (
+                  <p role="alert" id="verbrauchGas-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    Bitte geben Sie einen Verbrauch größer als 0 kWh ein
+                  </p>
+                )}
               </div>
             )}
 
@@ -343,6 +377,7 @@ function B2BFormular() {
               <input
                 id="firma"
                 type="text"
+                maxLength={160}
                 placeholder="Ihre Firma GmbH"
                 value={form.firma}
                 onChange={e => set('firma', e.target.value)}
@@ -358,6 +393,7 @@ function B2BFormular() {
               <input
                 id="ansprechpartner"
                 type="text"
+                maxLength={120}
                 placeholder="Vor- und Nachname"
                 value={form.ansprechpartner}
                 onChange={e => set('ansprechpartner', e.target.value)}
@@ -374,6 +410,7 @@ function B2BFormular() {
                 <input
                   id="email"
                   type="email"
+                  maxLength={180}
                   placeholder="ihre@firma.de"
                   value={form.email}
                   onChange={e => set('email', e.target.value)}
@@ -387,11 +424,22 @@ function B2BFormular() {
                 <input
                   id="telefon"
                   type="tel"
+                  maxLength={40}
                   placeholder="+49 800 000 0000"
                   value={form.telefon}
-                  onChange={e => set('telefon', e.target.value)}
+                  onChange={e => {
+                    set('telefon', e.target.value.slice(0, 40))
+                    setValidationErrors(prev => ({ ...prev, telefon: undefined }))
+                  }}
                   className="w-full px-4 py-3 rounded-2xl bg-bg-input border border-white/10 text-text-primary font-body text-base placeholder:text-text-tertiary focus:outline-none focus:border-[#FF6B2B]/40 transition-colors"
+                  aria-invalid={Boolean(validationErrors.telefon)}
+                  aria-describedby={validationErrors.telefon ? 'telefon-error' : undefined}
                 />
+                {validationErrors.telefon && (
+                  <p role="alert" id="telefon-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    {validationErrors.telefon}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -404,6 +452,7 @@ function B2BFormular() {
                 <input
                   id="versorger"
                   type="text"
+                  maxLength={120}
                   placeholder="z. B. E.ON, EnBW, ..."
                   value={form.versorger}
                   onChange={e => set('versorger', e.target.value)}
@@ -436,6 +485,7 @@ function B2BFormular() {
               <textarea
                 id="nachricht"
                 rows={3}
+                maxLength={2000}
                 placeholder="Besondere Anforderungen, Fragen oder Informationen..."
                 value={form.nachricht}
                 onChange={e => set('nachricht', e.target.value)}
