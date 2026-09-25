@@ -128,6 +128,50 @@ await withEnv({ ORIGIN: origin, URL: undefined }, async () => {
 })
 
 await withEnv({ ORIGIN: origin, URL: undefined }, async () => {
+  const prevFetch = globalThis.fetch
+  const captured = []
+  globalThis.fetch = async (url, init) => {
+    captured.push(init.headers['Idempotency-Key'])
+    throw new Error('offline')
+  }
+  try {
+    for (let i = 0; i < 40; i += 1) {
+      await assert.rejects(
+        postJsonLead(leadsApiUrl(), {
+          page_source: 'hero-funnel',
+          email: `bounded-${i}@example.com`,
+        }),
+        /offline/,
+      )
+    }
+  } finally {
+    globalThis.fetch = prevFetch
+  }
+
+  const firstKey = captured[0]
+  let retriedKey = ''
+  globalThis.fetch = async (url, init) => {
+    retriedKey = init.headers['Idempotency-Key']
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return { ok: true }
+      },
+    }
+  }
+  try {
+    await postJsonLead(leadsApiUrl(), {
+      page_source: 'hero-funnel',
+      email: 'bounded-0@example.com',
+    })
+    assert.notEqual(retriedKey, firstKey, 'oldest uncertain key must be evicted from bounded cache')
+  } finally {
+    globalThis.fetch = prevFetch
+  }
+})
+
+await withEnv({ ORIGIN: origin, URL: undefined }, async () => {
   const key = newIdempotencyKey()
   assert.ok(key && key.length >= 8)
   const calls = []
