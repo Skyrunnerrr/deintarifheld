@@ -51,7 +51,9 @@ function mailFields(mailResult) {
   const mailStatus = mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed')
   const customerConfirmation = mailResult.customerConfirmation || 'n/a'
   return {
-    mail: Boolean(mailResult.ok),
+    // "mail" means at least one intended operational mail was accepted. The
+    // customerConfirmation field carries the separate customer-delivery truth.
+    mail: mailStatus === 'accepted' || mailStatus === 'internal_sent',
     mailMode: mode,
     mailStatus,
     customerConfirmation,
