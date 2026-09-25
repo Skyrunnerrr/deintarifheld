@@ -231,11 +231,11 @@ for (const [name, payload] of [['hero', privateHero], ['main-funnel', privateFun
   assert.equal(validatePrivatePayload({ ...payload, type: 'water' }).code, 'invalid-energy-type')
   assert.equal(validatePrivatePayload({ ...payload, website_url: 'bot.example' }).honeypotFilled, true)
   assert.equal(validatePrivatePayload({ ...payload, company_fax: '123' }).honeypotFilled, true)
-  assert.equal(validatePrivatePayload({ ...payload, firstName: 'x'.repeat(121) }).code, 'invalid-name')
-  assert.equal(validatePrivatePayload({ ...payload, email: `${'x'.repeat(170)}@example.invalid` }).code, 'invalid-email')
-  assert.equal(validatePrivatePayload({ ...payload, phone: `+49${'1'.repeat(40)}` }).code, 'invalid-phone')
-  assert.equal(validatePrivatePayload({ ...payload, provider: 'x'.repeat(121) }).code, 'invalid-provider')
-  assert.equal(validatePrivatePayload({ ...payload, usage: '1'.repeat(41) }).code, 'invalid-usage')
+  assert.equal(validatePrivatePayload({ ...payload, firstName: 'x'.repeat(121) }).code, 'invalid-message')
+  assert.equal(validatePrivatePayload({ ...payload, email: `${'x'.repeat(170)}@example.invalid` }).code, 'invalid-message')
+  assert.equal(validatePrivatePayload({ ...payload, phone: `+49${'1'.repeat(40)}` }).code, 'invalid-message')
+  assert.equal(validatePrivatePayload({ ...payload, provider: 'x'.repeat(121) }).code, 'invalid-message')
+  assert.equal(validatePrivatePayload({ ...payload, usage: '1'.repeat(41) }).code, 'invalid-message')
 }
 
 for (const sourcePage of ['/unternehmen/', '/unternehmen-neu/']) {
@@ -288,11 +288,11 @@ for (const sourcePage of ['/unternehmen/', '/unternehmen-neu/']) {
   assert.equal(validateUnternehmenPayload({ ...business, plz: '' }).code, 'invalid-plz')
   assert.equal(validateUnternehmenPayload({ ...business, website_url: 'bot.example' }).honeypotFilled, true)
   assert.equal(validateUnternehmenPayload({ ...business, company_fax: '123' }).honeypotFilled, true)
-  assert.equal(validateUnternehmenPayload({ ...business, firma: 'x'.repeat(161) }).code, 'invalid-company')
-  assert.equal(validateUnternehmenPayload({ ...business, ansprechpartner: 'x'.repeat(121) }).code, 'invalid-contact')
-  assert.equal(validateUnternehmenPayload({ ...business, email: `${'x'.repeat(170)}@example.invalid` }).code, 'invalid-email')
-  assert.equal(validateUnternehmenPayload({ ...business, telefon: `+49${'1'.repeat(40)}` }).code, 'invalid-phone')
-  assert.equal(validateUnternehmenPayload({ ...business, versorger: 'x'.repeat(121) }).code, 'invalid-provider')
+  assert.equal(validateUnternehmenPayload({ ...business, firma: 'x'.repeat(161) }).code, 'invalid-message')
+  assert.equal(validateUnternehmenPayload({ ...business, ansprechpartner: 'x'.repeat(121) }).code, 'invalid-message')
+  assert.equal(validateUnternehmenPayload({ ...business, email: `${'x'.repeat(170)}@example.invalid` }).code, 'invalid-message')
+  assert.equal(validateUnternehmenPayload({ ...business, telefon: `+49${'1'.repeat(40)}` }).code, 'invalid-message')
+  assert.equal(validateUnternehmenPayload({ ...business, versorger: 'x'.repeat(121) }).code, 'invalid-message')
   assert.equal(validateUnternehmenPayload({ ...business, nachricht: 'x'.repeat(2001) }).code, 'invalid-message')
 }
 
@@ -320,10 +320,10 @@ assert.equal(validateCareerPayload({ ...career, motivation: 'zu kurz' }).code, '
 assert.equal(validateCareerPayload({ ...career, website_url: 'bot.example' }).honeypotFilled, true)
 assert.equal(validateCareerPayload({ ...career, company_fax: '123' }).honeypotFilled, true)
 assert.equal(validateCareerPayload({ ...career, file: 'resume.pdf' }).code, 'file-upload-not-supported')
-assert.equal(validateCareerPayload({ ...career, name: 'x'.repeat(161) }).code, 'invalid-name')
-assert.equal(validateCareerPayload({ ...career, email: `${'x'.repeat(170)}@example.invalid` }).code, 'invalid-email')
-assert.equal(validateCareerPayload({ ...career, phone: `+49${'1'.repeat(40)}` }).code, 'invalid-phone')
-assert.equal(validateCareerPayload({ ...career, motivation: 'x'.repeat(4001) }).code, 'invalid-motivation')
+assert.equal(validateCareerPayload({ ...career, name: 'x'.repeat(161) }).code, 'invalid-message')
+assert.equal(validateCareerPayload({ ...career, email: `${'x'.repeat(170)}@example.invalid` }).code, 'invalid-message')
+assert.equal(validateCareerPayload({ ...career, phone: `+49${'1'.repeat(40)}` }).code, 'invalid-message')
+assert.equal(validateCareerPayload({ ...career, motivation: 'x'.repeat(4001) }).code, 'invalid-message')
 
 const prevOrigin = process.env.NEXT_PUBLIC_LEADS_API_ORIGIN
 const prevLegacy = process.env.NEXT_PUBLIC_LEADS_API_URL
