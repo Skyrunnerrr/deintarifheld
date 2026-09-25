@@ -112,6 +112,23 @@ assert.deepEqual(
   'Every public postJsonLead submitter must be explicitly covered by the form contract matrix',
 )
 
+// Route wiring is part of the form contract: a correct component that is no
+// longer mounted on the intended public route is still a production failure.
+const homePage = read('app/page.js')
+assert.match(homePage, /<Hero\s*\/>/, 'home: Hero form must remain mounted')
+assert.match(homePage, /<FunnelSection\s*\/>/, 'home: Funnel form must remain mounted')
+assert.match(homePage, /<CareerSection\b/, 'home: Partner form must remain mounted')
+
+const careerPage = read('app/karriere/page.js')
+assert.match(careerPage, /<CareerSection\s*\/>/, 'career route: Partner form must remain mounted')
+
+const businessPreviewPage = read('app/unternehmen-neu/page.js')
+assert.match(businessPreviewPage, /<BusinessForm\s*\/>/, 'business preview route: BusinessForm must remain mounted')
+
+const businessLivePage = read('app/unternehmen/page.js')
+assert.match(businessLivePage, /function B2BFormular\(/, 'business live route: B2B form implementation missing')
+assert.match(businessLivePage, /<B2BFormular\s*\/>/, 'business live route: B2B form must remain mounted')
+
 for (const full of [...walkSource(join(root, 'app')), ...walkSource(join(root, 'components'))]) {
   const source = readFileSync(full, 'utf8')
   const rel = full.slice(root.length + 1)
