@@ -33,41 +33,41 @@ async function withEnv(env, fn) {
   }
 }
 
-withEnv({ ORIGIN: origin, URL: undefined }, () => {
+await withEnv({ ORIGIN: origin, URL: undefined }, () => {
   assert.equal(leadsApiUrl(), `${origin}/api/leads/`)
   assert.equal(careersApiUrl(), `${origin}/api/careers/`)
 })
 
-withEnv({ ORIGIN: undefined, URL: `${origin}/api/leads` }, () => {
+await withEnv({ ORIGIN: undefined, URL: `${origin}/api/leads` }, () => {
   assert.equal(leadsApiUrl(), `${origin}/api/leads/`)
   assert.equal(careersApiUrl(), `${origin}/api/careers/`)
 })
 
-withEnv({ ORIGIN: undefined, URL: `${origin}/api/leads/` }, () => {
+await withEnv({ ORIGIN: undefined, URL: `${origin}/api/leads/` }, () => {
   assert.equal(leadsApiUrl(), `${origin}/api/leads/`)
   assert.equal(careersApiUrl(), `${origin}/api/careers/`)
 })
 
-withEnv({ ORIGIN: `${origin}/`, URL: undefined }, () => {
+await withEnv({ ORIGIN: `${origin}/`, URL: undefined }, () => {
   assert.equal(leadsApiUrl(), `${origin}/api/leads/`)
   assert.doesNotMatch(leadsApiUrl(), /\/\/api/)
   assert.doesNotMatch(leadsApiUrl(), /api\/leads\/api\/leads/)
 })
 
-withEnv({ ORIGIN: undefined, URL: undefined }, () => {
+await withEnv({ ORIGIN: undefined, URL: undefined }, () => {
   assert.equal(leadsApiUrl(), '/api/leads/')
   assert.equal(careersApiUrl(), '/api/careers/')
 })
 
-withEnv({ ORIGIN: `${origin}/api/leads`, URL: undefined }, () => {
+await withEnv({ ORIGIN: `${origin}/api/leads`, URL: undefined }, () => {
   assert.throws(() => leadsApiUrl(), /Invalid NEXT_PUBLIC_LEADS_API_ORIGIN/)
 })
 
-withEnv({ ORIGIN: `${origin}?bad=1`, URL: undefined }, () => {
+await withEnv({ ORIGIN: `${origin}?bad=1`, URL: undefined }, () => {
   assert.throws(() => careersApiUrl(), /Invalid NEXT_PUBLIC_LEADS_API_ORIGIN/)
 })
 
-withEnv({ ORIGIN: undefined, URL: `${origin}/api/leads/extra` }, () => {
+await withEnv({ ORIGIN: undefined, URL: `${origin}/api/leads/extra` }, () => {
   assert.throws(() => leadsApiUrl(), /Invalid NEXT_PUBLIC_LEADS_API_URL/)
 })
 
