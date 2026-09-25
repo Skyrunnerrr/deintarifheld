@@ -137,6 +137,13 @@ for (const surface of surfaces) {
     assert.match(source, /newErrors\.type = 'Bitte wähle Strom oder Gas aus'/, 'hero: energy type must be client-validated')
     assert.match(source, /error=\{errors\.type\}/, 'hero: energy type validation must be visible')
     assert.match(source, /Number\(formData\.usage\) <= 0/, 'hero: consumption must be positive before submit')
+    assert.match(source, /PHONE_INPUT_RE\.test\(formData\.phone\.trim\(\)\)/, 'hero: phone validation must match server boundary')
+  }
+  if (surface.name === 'main-funnel' || surface.name === 'career-home-and-route') {
+    assert.match(source, /\(value\) => \/\^\(\?=/, `${surface.name}: phone must be refined before submit`)
+  }
+  if (surface.name === 'business-live' || surface.name === 'business-preview') {
+    assert.match(source, /phoneRegex\.test\(form\.telefon\.trim\(\)\)/, `${surface.name}: optional phone must be validated when present`)
   }
   const binding = resolveExpectedCaptchaAction({
     endpoint: surface.endpoint,
