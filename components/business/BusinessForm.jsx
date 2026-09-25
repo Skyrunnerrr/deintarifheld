@@ -99,7 +99,10 @@ function BusinessFormular() {
   const phoneRegex = /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/
   const step2Valid =
     form.firma.trim().length >= 2 &&
+    form.firma.trim().length <= 160 &&
     form.ansprechpartner.trim().length >= 2 &&
+    form.ansprechpartner.trim().length <= 120 &&
+    form.email.trim().length <= 180 &&
     emailRegex.test(form.email.trim())
 
   const handleSubmit = async (e) => {
@@ -110,10 +113,14 @@ function BusinessFormular() {
     setValidationErrors({})
 
     const errs = {}
-    if (form.firma.trim().length < 2) errs.firma = 'Bitte geben Sie einen Firmennamen ein'
-    if (form.ansprechpartner.trim().length < 2) errs.ansprechpartner = 'Bitte geben Sie einen Ansprechpartner ein'
-    if (!emailRegex.test(form.email.trim())) errs.email = 'Bitte geben Sie eine gültige E-Mail ein'
-    if (form.telefon.trim() && !phoneRegex.test(form.telefon.trim())) errs.telefon = 'Bitte geben Sie eine gültige Telefonnummer ein'
+    const firma = form.firma.trim()
+    const ansprechpartner = form.ansprechpartner.trim()
+    const email = form.email.trim()
+    const telefon = form.telefon.trim()
+    if (firma.length < 2 || firma.length > 160) errs.firma = 'Bitte geben Sie einen gültigen Firmennamen ein'
+    if (ansprechpartner.length < 2 || ansprechpartner.length > 120) errs.ansprechpartner = 'Bitte geben Sie einen gültigen Ansprechpartner ein'
+    if (email.length > 180 || !emailRegex.test(email)) errs.email = 'Bitte geben Sie eine gültige E-Mail ein'
+    if (telefon && (telefon.length > 40 || !phoneRegex.test(telefon))) errs.telefon = 'Bitte geben Sie eine gültige Telefonnummer ein'
     if (!form.dsgvo) {
       setDsgvoError(true)
       errs.dsgvo = true
@@ -415,6 +422,7 @@ function BusinessFormular() {
               <input
                 id="bneu-firma"
                 type="text"
+                maxLength={160}
                 placeholder="Ihre Firma GmbH"
                 value={form.firma}
                 onChange={(e) => set('firma', e.target.value)}
@@ -437,6 +445,7 @@ function BusinessFormular() {
               <input
                 id="bneu-ansprechpartner"
                 type="text"
+                maxLength={120}
                 placeholder="Vor- und Nachname"
                 value={form.ansprechpartner}
                 onChange={(e) => set('ansprechpartner', e.target.value)}
@@ -460,6 +469,7 @@ function BusinessFormular() {
                 <input
                   id="bneu-email"
                   type="email"
+                  maxLength={180}
                   placeholder="ihre@firma.de"
                   value={form.email}
                   onChange={(e) => set('email', e.target.value)}
@@ -481,6 +491,7 @@ function BusinessFormular() {
                 <input
                   id="bneu-telefon"
                   type="tel"
+                  maxLength={40}
                   placeholder="+49 6221 8688877"
                   value={form.telefon}
                   onChange={(e) => {
@@ -507,6 +518,7 @@ function BusinessFormular() {
                 <input
                   id="bneu-versorger"
                   type="text"
+                  maxLength={120}
                   placeholder="z. B. aktueller Versorger"
                   value={form.versorger}
                   onChange={(e) => set('versorger', e.target.value)}
@@ -538,6 +550,7 @@ function BusinessFormular() {
               <textarea
                 id="bneu-nachricht"
                 rows={3}
+                maxLength={2000}
                 placeholder="Standorte, Verbrauchsschwerpunkte oder offene Fragen..."
                 value={form.nachricht}
                 onChange={(e) => set('nachricht', e.target.value)}
