@@ -148,7 +148,7 @@ async function assertCaptcha() {
       const result = await enforcePublicIntake(
         jsonRequest({
           origin: 'https://www.deintarifheld.de',
-          body: { email: 'x@example.invalid' },
+          body: { page_source: 'unternehmen', email: 'x@example.invalid' },
         }),
       )
       assert.equal(result.ok, false)
