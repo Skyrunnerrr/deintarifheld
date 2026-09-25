@@ -59,6 +59,8 @@ function assertChannelWiring() {
   const supabase = read('lib/leads/supabase.js')
   assert.match(leads, /mailFieldsFromStored/)
   assert.match(careers, /mailFieldsFromStored/)
+  assert.match(leads, /mail: mailStatus === 'accepted' \|\| mailStatus === 'internal_sent'/)
+  assert.match(careers, /mail: mailStatus === 'accepted' \|\| mailStatus === 'internal_sent'/)
   assert.match(supabase, /mail_status, mail_mode, mail_sent_at/)
   assert.match(supabase, /findLeadByIdempotencyKey/)
   assert.match(supabase, /findCareerByIdempotencyKey/)
