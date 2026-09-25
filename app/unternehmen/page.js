@@ -218,7 +218,12 @@ function B2BFormular() {
                   <button
                     key={opt}
                     type="button"
-                    onClick={() => set('energieart', opt)}
+                    onClick={() => setForm((prev) => ({
+                      ...prev,
+                      energieart: opt,
+                      verbrauchStrom: opt === 'Strom' ? prev.verbrauchStrom : '',
+                      verbrauchGas: opt === 'Gas' ? prev.verbrauchGas : '',
+                    }))}
                     className={`px-4 py-2.5 rounded-2xl border font-body text-sm font-medium transition-all duration-200 ${
                       form.energieart === opt
                         ? 'bg-[#FF6B2B] text-white border-[#FF6B2B]'
