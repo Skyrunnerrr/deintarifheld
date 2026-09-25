@@ -214,6 +214,14 @@ cmd_upload() {
     if [[ -f "${CHECKDOMAIN_LOCAL_OUT}/.htaccess" ]]; then
       echo "put .htaccess"
     fi
+
+    # Exact retired public artifacts only. Each deletion is non-fatal if the old
+    # file is already absent. Generic remote pruning is deliberately forbidden.
+    echo "-rm google-apps-script.js"
+    echo "-rm RECAPTCHA_SETUP.md"
+    echo "-rm RECAPTCHA_QUICKSTART.md"
+    echo "-rm INTEGRATION_SUMMARY.md"
+    echo "-rm images/tari.png"
   } > "$batch"
 
   sftp -oBatchMode=yes -i "$CHECKDOMAIN_SSH_IDENTITY" -b "$batch" \
@@ -277,6 +285,17 @@ cmd_verify() {
   else
     echo "PUBLIC_BUILD_METADATA=PASS status=${metadata_code:-ERR}"
   fi
+
+  local retired_path retired_code
+  for retired_path in google-apps-script.js RECAPTCHA_SETUP.md RECAPTCHA_QUICKSTART.md INTEGRATION_SUMMARY.md images/tari.png; do
+    retired_code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "${base}/${retired_path}" || true)"
+    if [[ "$retired_code" == "200" ]]; then
+      echo "RETIRED_PUBLIC_ARTIFACT=FAIL path=${retired_path} status=200"
+      failed=1
+    else
+      echo "RETIRED_PUBLIC_ARTIFACT=PASS path=${retired_path} status=${retired_code:-ERR}"
+    fi
+  done
 
   if [[ -n "${CHECKDOMAIN_LOCAL_OUT:-}" && -f "${CHECKDOMAIN_LOCAL_OUT}/index.html" && "$code" == "200" ]]; then
     local local_hash live_hash
