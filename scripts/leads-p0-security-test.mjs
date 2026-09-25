@@ -13,6 +13,7 @@ import { createAdminSessionValue, parseAdminSessionValue, ADMIN_COOKIE_NAME } fr
 import { adminRateLimitKey, enforceAdminAccess } from '../lib/leads/admin-guard.js'
 import {
   hasControlledIntakeBypass,
+  hasJsonContentType,
   isBlockedOrigin,
   resetRateLimitsForTests,
 } from '../lib/leads/abuse-guard.js'
@@ -237,6 +238,14 @@ async function assertOrigin() {
   )
   console.log('P0_ORIGIN=PASS')
   console.log('P0_NONPROD_SMOKE_QUOTA_BYPASS=PASS')
+}
+
+function assertJsonContentTypeBoundary() {
+  assert.equal(hasJsonContentType(fakeRequest({ 'content-type': 'application/json' })), true)
+  assert.equal(hasJsonContentType(fakeRequest({ 'content-type': 'application/json; charset=utf-8' })), true)
+  assert.equal(hasJsonContentType(fakeRequest({ 'content-type': 'text/plain' })), false)
+  assert.equal(hasJsonContentType(fakeRequest({ 'content-type': 'application/json-extra' })), false)
+  console.log('P0_JSON_CONTENT_TYPE_BOUNDARY=PASS')
 }
 
 async function assertBodyLimit() {
@@ -645,6 +654,7 @@ async function main() {
   assertProductionEnvPreflight()
 assertRateLimitIdentityResistsUserAgentRotation()
 assertLogAllowlist()
+assertJsonContentTypeBoundary()
 await assertCaptcha()
   await assertOrigin()
   await assertBodyLimit()
