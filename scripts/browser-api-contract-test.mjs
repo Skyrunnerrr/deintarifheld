@@ -141,6 +141,38 @@ await withEnv({ ORIGIN: origin, URL: undefined }, async () => {
 
 await withEnv({ ORIGIN: origin, URL: undefined }, async () => {
   const prevFetch = globalThis.fetch
+  const keys = []
+  let call = 0
+  globalThis.fetch = async (url, init) => {
+    keys.push(init.headers['Idempotency-Key'])
+    call += 1
+    return {
+      ok: call > 1,
+      status: call === 1 ? 500 : 200,
+      async json() {
+        return call === 1 ? { ok: false, code: 'storage-failed' } : { ok: true }
+      },
+    }
+  }
+  try {
+    const payload = {
+      page_source: 'hero-funnel',
+      email: 'ambiguous-500@example.com',
+      _recaptchaToken: 'token-one',
+    }
+    const first = await postJsonLead(leadsApiUrl(), payload)
+    assert.equal(first.res.status, 500)
+    const retry = await postJsonLead(leadsApiUrl(), { ...payload, _recaptchaToken: 'token-two' })
+    assert.equal(retry.res.status, 200)
+    assert.equal(keys.length, 2)
+    assert.equal(keys[1], keys[0], '5xx retry must preserve idempotency key')
+  } finally {
+    globalThis.fetch = prevFetch
+  }
+})
+
+await withEnv({ ORIGIN: origin, URL: undefined }, async () => {
+  const prevFetch = globalThis.fetch
   const captured = []
   globalThis.fetch = async (url, init) => {
     captured.push(init.headers['Idempotency-Key'])
