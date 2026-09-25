@@ -28,7 +28,7 @@ import { inboxGetResponse } from '../lib/leads/admin-inbox-http.js'
 import { withCors } from '../lib/leads/cors.js'
 import { normalizeRequestId, resolveRequestId } from '../lib/leads/request-id.js'
 import { sanitizeLogFields } from '../lib/leads/log.js'
-import { assertProductionApiEnv, productionApiEnvProblems } from '../lib/leads/production-env-preflight.js'
+import { assertProductionApiEnv, productionApiEnvProblems, productionPublicIntakeEnvProblems } from '../lib/leads/production-env-preflight.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const STRONG_ADMIN = 'p0-admin-secret-value-32chars!!'
@@ -353,7 +353,44 @@ function assertProductionEnvPreflight() {
   console.log('P0_PRODUCTION_ENV_PREFLIGHT=PASS')
 }
 
-function assertRateLimitIdentityResistsUserAgentRotation() {
+async function assertProductionIntakeFailsClosedOnBrokenEnv() {
+  await withEnv(
+    {
+      LEADS_RUNTIME_ENV: 'production',
+      VERCEL_ENV: undefined,
+      SUPABASE_URL: undefined,
+      NEXT_PUBLIC_SUPABASE_URL: undefined,
+      SUPABASE_SERVICE_ROLE_KEY: undefined,
+      RECAPTCHA_PROJECT_ID: undefined,
+      RECAPTCHA_API_KEY: undefined,
+      NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: undefined,
+      LEADS_RATE_LIMIT_SALT: undefined,
+      LEADS_MAIL_MODE: 'mock',
+      ALLOW_CUSTOMER_MAIL: 'NO',
+      RESEND_API_KEY: undefined,
+      LEADS_FROM_EMAIL: undefined,
+      LEADS_TO_EMAIL: undefined,
+    },
+    async () => {
+      const problems = productionPublicIntakeEnvProblems()
+      assert.ok(problems.includes('SUPABASE_URL'))
+      assert.ok(problems.includes('LEADS_MAIL_MODE'))
+      const result = await enforcePublicIntake(
+        jsonRequest({
+          origin: 'https://www.deintarifheld.de',
+          body: { page_source: 'unternehmen' },
+        }),
+      )
+      assert.equal(result.ok, false)
+      assert.equal(result.code, 'service-not-configured')
+      assert.equal(result.status, 503)
+    },
+  )
+  console.log('P0_PRODUCTION_INTAKE_CONFIG_FAIL_CLOSED=PASS')
+}
+
+function await assertProductionIntakeFailsClosedOnBrokenEnv()
+assertRateLimitIdentityResistsUserAgentRotation() {
   const prevSalt = process.env.LEADS_RATE_LIMIT_SALT
   const prevRuntime = process.env.LEADS_RUNTIME_ENV
   process.env.LEADS_RATE_LIMIT_SALT = 'p0-rate-limit-identity-salt'
