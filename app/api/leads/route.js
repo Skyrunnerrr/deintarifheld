@@ -61,7 +61,7 @@ function mailFields(mailResult) {
   return {
     // "mail" means at least one intended operational mail was accepted. The
     // customerConfirmation field carries the separate customer-delivery truth.
-    mail: mailStatus === 'accepted' || mailStatus === 'internal_sent',
+    mail: ['accepted', 'internal_sent', 'partial_failed'].includes(mailStatus),
     mailMode: mode,
     mailStatus,
     customerConfirmation,
