@@ -194,8 +194,8 @@ function Step2({ step1Data, onSuccess }) {
           brand_theme: 'privat',
           form_version: '2.0',
           source_page: '/',
-          website_url: '',
-          company_fax: '',
+          website_url: honeypot,
+          company_fax: honeypot2,
         }),
         _recaptchaToken: captcha.token,
       }
