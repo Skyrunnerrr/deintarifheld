@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildInternalOpsMail, parseLeadToAddresses, resendSendTimeoutMs, sendLeadEmails } from '../lib/leads/mail.js'
+import { buildCareerMails, buildInternalOpsMail, buildPrivateMails, buildUnternehmenMails, parseLeadToAddresses, resendSendTimeoutMs, sendLeadEmails } from '../lib/leads/mail.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const sends = []
@@ -469,6 +469,40 @@ function assertInquiryFieldsInOpsMail() {
   console.log('AUDIT_REDACTION_AND_MINIMIZATION=PASS')
 }
 
+function assertMailSubjectHeaderSafety() {
+  const injected = {
+    business: {
+      ...businessData,
+      firma: 'Acme GmbH\r\nBcc: attacker@example.invalid',
+      energieart: 'Strom\nX-Test: injected',
+    },
+    private: {
+      ...privateHero,
+      firstName: 'Max\r\nBcc: attacker@example.invalid',
+      type: 'Strom\nX-Test: injected',
+    },
+    career: {
+      ...careerData,
+      name: 'Career\r\nBcc: attacker@example.invalid',
+    },
+  }
+  const timestamp = new Date().toISOString()
+  const mails = [
+    buildUnternehmenMails({ leadRef: 'REF-HDR-B', data: injected.business, submittedAt: timestamp }),
+    buildPrivateMails({ leadRef: 'REF-HDR-P', data: injected.private, submittedAt: timestamp }),
+    buildCareerMails({ leadRef: 'REF-HDR-C', data: injected.career, submittedAt: timestamp }),
+    buildInternalOpsMail({ channel: 'business', leadRef: 'REF-HDR-IB', data: injected.business, submittedAt: timestamp }),
+    buildInternalOpsMail({ channel: 'private', leadRef: 'REF-HDR-IP', data: injected.private, submittedAt: timestamp }),
+    buildInternalOpsMail({ channel: 'career', leadRef: 'REF-HDR-IC', data: injected.career, submittedAt: timestamp }),
+  ]
+  for (const mail of mails) {
+    assert.equal(typeof mail.subjectAdmin, 'string')
+    assert.doesNotMatch(mail.subjectAdmin, /[\r\n\u0000-\u001F\u007F]/)
+    assert.ok(mail.subjectAdmin.length <= 260)
+  }
+  console.log('MAIL_SUBJECT_HEADER_SANITIZATION=PASS')
+}
+
 function assertCutoverGate() {
   const helper = `
 set -euo pipefail
@@ -570,6 +604,7 @@ async function main() {
     await assertIdempotentMailContract()
     await assertFailurePath()
     assertInquiryFieldsInOpsMail()
+    assertMailSubjectHeaderSafety()
     assertCutoverGate()
     await assertLiveStillSendsCustomer()
     await assertLiveDualGuardBlocksCustomer()
