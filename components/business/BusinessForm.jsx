@@ -269,7 +269,8 @@ function BusinessFormular() {
                   min="0"
                   placeholder="z. B. 80000"
                   value={form.verbrauchStrom}
-                  onChange={(e) => set('verbrauchStrom', e.target.value)}
+                  inputMode="numeric"
+                  onChange={(e) => set('verbrauchStrom', e.target.value.replace(/\D/g, '').slice(0, 40))}
                   className={inputClass}
                 />
               </div>
@@ -286,7 +287,8 @@ function BusinessFormular() {
                   min="0"
                   placeholder="z. B. 150000"
                   value={form.verbrauchGas}
-                  onChange={(e) => set('verbrauchGas', e.target.value)}
+                  inputMode="numeric"
+                  onChange={(e) => set('verbrauchGas', e.target.value.replace(/\D/g, '').slice(0, 40))}
                   className={inputClass}
                 />
               </div>
