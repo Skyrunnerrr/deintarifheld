@@ -23,7 +23,10 @@ import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmit
 const step1Schema = z.object({
   firstName: z.string().min(2, 'Bitte gib deinen Vornamen ein'),
   email:     z.string().email('Bitte gib eine gültige E-Mail ein'),
-  phone:     z.string().min(6, 'Bitte gib deine Telefonnummer ein'),
+  phone:     z.string().refine(
+    (value) => /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/.test(value.trim()),
+    'Bitte gib eine gültige Telefonnummer ein',
+  ),
   gdpr:      z.literal(true, { errorMap: () => ({ message: 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.' }) }),
 })
 
