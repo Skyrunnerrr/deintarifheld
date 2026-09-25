@@ -81,11 +81,19 @@ function BusinessFormular() {
 
   const set = (key, val) => setForm((prev) => ({ ...prev, [key]: val }))
 
+  const activeConsumption =
+    form.energieart === 'Strom' ? form.verbrauchStrom :
+    form.energieart === 'Gas' ? form.verbrauchGas :
+    ''
+  const activeConsumptionValid =
+    !activeConsumption || (/^\d+$/.test(activeConsumption) && Number(activeConsumption) > 0)
+
   const step1Valid =
     form.energieart !== '' &&
     form.standorte !== '' &&
     form.plz.trim().length === 5 &&
-    /^\d{5}$/.test(form.plz.trim())
+    /^\d{5}$/.test(form.plz.trim()) &&
+    activeConsumptionValid
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   const phoneRegex = /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/
@@ -163,6 +171,10 @@ function BusinessFormular() {
       const errs = {}
       if (!form.energieart) errs.energieart = 'Bitte wählen Sie eine Energieart'
       if (!form.standorte) errs.standorte = 'Bitte wählen Sie die Anzahl der Standorte'
+      if (!activeConsumptionValid) {
+        if (form.energieart === 'Strom') errs.verbrauchStrom = 'Bitte geben Sie einen Verbrauch größer als 0 kWh ein'
+        if (form.energieart === 'Gas') errs.verbrauchGas = 'Bitte geben Sie einen Verbrauch größer als 0 kWh ein'
+      }
       if (form.plz.trim().length !== 5 || !/^\d{5}$/.test(form.plz.trim())) {
         errs.plz = 'Bitte geben Sie eine gültige 5-stellige Postleitzahl ein'
       }
@@ -277,9 +289,19 @@ function BusinessFormular() {
                   placeholder="z. B. 80000"
                   value={form.verbrauchStrom}
                   inputMode="numeric"
-                  onChange={(e) => set('verbrauchStrom', e.target.value.replace(/\D/g, '').slice(0, 40))}
+                  onChange={(e) => {
+                    set('verbrauchStrom', e.target.value.replace(/\D/g, '').slice(0, 40))
+                    setValidationErrors((prev) => ({ ...prev, verbrauchStrom: undefined }))
+                  }}
                   className={inputClass}
+                  aria-invalid={Boolean(validationErrors.verbrauchStrom)}
+                  aria-describedby={validationErrors.verbrauchStrom ? 'bneu-verbrauchStrom-error' : undefined}
                 />
+                {validationErrors.verbrauchStrom && (
+                  <p role="alert" id="bneu-verbrauchStrom-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    {validationErrors.verbrauchStrom}
+                  </p>
+                )}
               </div>
             )}
 
@@ -295,9 +317,19 @@ function BusinessFormular() {
                   placeholder="z. B. 150000"
                   value={form.verbrauchGas}
                   inputMode="numeric"
-                  onChange={(e) => set('verbrauchGas', e.target.value.replace(/\D/g, '').slice(0, 40))}
+                  onChange={(e) => {
+                    set('verbrauchGas', e.target.value.replace(/\D/g, '').slice(0, 40))
+                    setValidationErrors((prev) => ({ ...prev, verbrauchGas: undefined }))
+                  }}
                   className={inputClass}
+                  aria-invalid={Boolean(validationErrors.verbrauchGas)}
+                  aria-describedby={validationErrors.verbrauchGas ? 'bneu-verbrauchGas-error' : undefined}
                 />
+                {validationErrors.verbrauchGas && (
+                  <p role="alert" id="bneu-verbrauchGas-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    {validationErrors.verbrauchGas}
+                  </p>
+                )}
               </div>
             )}
 
