@@ -70,7 +70,7 @@ function mailFields(mailResult) {
 
 function resolveValidator(raw) {
   const source = typeof raw?.page_source === 'string' ? raw.page_source.trim() : ''
-  if (!source || source === 'unternehmen') {
+  if (source === 'unternehmen') {
     return { channel: 'business', validated: validateUnternehmenPayload(raw) }
   }
   if (isPrivatePageSource(source)) {
