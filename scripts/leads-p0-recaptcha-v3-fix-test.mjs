@@ -321,6 +321,19 @@ async function assertLoadRecaptchaContract() {
 
     await withEnv({ NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: SITE_KEY, RECAPTCHA_READY_TIMEOUT_MS: '40' }, async () => {
       resetRecaptchaClientForTests()
+      const neverLoaded = installBrowserMocks()
+      delete globalThis.grecaptcha
+      const pending = loadRecaptcha()
+      assert.equal(neverLoaded.scripts.length, 1)
+      await assert.rejects(
+        pending,
+        (err) => err instanceof RecaptchaClientError && err.code === 'recaptcha-script-timeout',
+      )
+      assert.equal(neverLoaded.scripts[0].attrs['data-recaptcha-v3-status'], 'failed')
+    })
+
+    await withEnv({ NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: SITE_KEY, RECAPTCHA_READY_TIMEOUT_MS: '40' }, async () => {
+      resetRecaptchaClientForTests()
       const hung = installBrowserMocks()
       globalThis.grecaptcha = {
         enterprise: {
@@ -376,6 +389,21 @@ async function assertGetTokenContract() {
       failed,
       (err) => err instanceof RecaptchaClientError && err.code === 'recaptcha-execute-unavailable',
     )
+
+    await withEnv({ NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: SITE_KEY, RECAPTCHA_READY_TIMEOUT_MS: '40' }, async () => {
+      resetRecaptchaClientForTests()
+      installBrowserMocks()
+      readyGrecaptcha({
+        execute: () => new Promise(() => {}),
+      })
+      await assert.rejects(
+        getRecaptchaToken('career'),
+        (err) => err instanceof RecaptchaClientError && err.code === 'recaptcha-execute-timeout',
+      )
+      const mapped = await awaitFreshRecaptchaToken('career')
+      assert.equal(mapped.ok, false)
+      assert.equal(mapped.code, 'recaptcha-execute-timeout')
+    })
 
     let posted = false
     const minted = await awaitFreshRecaptchaToken('career')
@@ -442,6 +470,8 @@ async function assertFormTokenFlow() {
   assert.match(security, /enterprise\.execute/)
   assert.doesNotMatch(security, /recaptcha\/api\.js\?render=\$\{/)
   assert.doesNotMatch(security, /console\.(log|info|debug|error|warn)\([^)]*token/)
+  assert.match(security, /recaptcha-script-timeout/)
+  assert.match(security, /recaptcha-execute-timeout/)
 
   console.log('P0_RECAPTCHA_FORM_FLOW=PASS')
 }
