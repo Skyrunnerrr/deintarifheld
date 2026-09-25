@@ -7,7 +7,7 @@
  * validators with representative payloads.
  */
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { resolveExpectedCaptchaAction } from '../lib/leads/captcha-action.js'
@@ -18,6 +18,16 @@ import { careersApiUrl, leadsApiUrl } from '../lib/leads/browser-api.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(join(root, p), 'utf8')
+
+function walkSource(dir, out = []) {
+  for (const name of readdirSync(dir)) {
+    const full = join(dir, name)
+    const stat = statSync(full)
+    if (stat.isDirectory()) walkSource(full, out)
+    else if (/\.(js|jsx|ts|tsx)$/.test(name)) out.push(full)
+  }
+  return out
+}
 
 const surfaces = [
   {
@@ -86,6 +96,29 @@ const surfaces = [
     ],
   },
 ]
+
+const expectedSubmitters = [...new Set(surfaces.map((surface) => surface.path))].sort()
+const discoveredSubmitters = [
+  ...walkSource(join(root, 'app')),
+  ...walkSource(join(root, 'components')),
+]
+  .filter((full) => readFileSync(full, 'utf8').includes('postJsonLead('))
+  .map((full) => full.slice(root.length + 1))
+  .sort()
+
+assert.deepEqual(
+  discoveredSubmitters,
+  expectedSubmitters,
+  'Every public postJsonLead submitter must be explicitly covered by the form contract matrix',
+)
+
+for (const full of [...walkSource(join(root, 'app')), ...walkSource(join(root, 'components'))]) {
+  const source = readFileSync(full, 'utf8')
+  const rel = full.slice(root.length + 1)
+  if (/fetch\s*\([^)]*(?:\/api\/leads|\/api\/careers|deintarifheld-leads-api)/s.test(source)) {
+    assert.fail(`${rel}: direct lead API fetch bypasses postJsonLead contract`)
+  }
+}
 
 for (const surface of surfaces) {
   const source = read(surface.path)
@@ -222,6 +255,8 @@ try {
 }
 
 console.log('PUBLIC_FORM_SURFACES=5')
+console.log('PUBLIC_FORM_SUBMITTER_COVERAGE=COMPLETE')
+console.log('DIRECT_LEAD_API_FETCH_BYPASS=NONE')
 console.log('FORM_ENDPOINT_MATRIX=PASS')
 console.log('FORM_CAPTCHA_ACTION_MATRIX=PASS')
 console.log('FORM_HONEYPOT_TRANSPORT=PASS')
