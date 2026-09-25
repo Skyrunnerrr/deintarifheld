@@ -243,7 +243,12 @@ function BusinessFormular() {
                     key={opt}
                     active={form.energieart === opt}
                     onClick={() => {
-                      set('energieart', opt)
+                      setForm((prev) => ({
+                        ...prev,
+                        energieart: opt,
+                        verbrauchStrom: opt === 'Strom' ? prev.verbrauchStrom : '',
+                        verbrauchGas: opt === 'Gas' ? prev.verbrauchGas : '',
+                      }))
                       setValidationErrors((prev) => ({ ...prev, energieart: undefined }))
                     }}
                   >
