@@ -476,8 +476,9 @@ source scripts/deploy/checkdomain/common.sh
 run() {
   export LEADS_MAIL_MODE="$1"
   export ALLOW_MOCK_MAIL_CUTOVER="\${2:-NO}"
+  export ALLOW_CUSTOMER_MAIL="\${3:-NO}"
   if dth_cd_mail_gate_status >/tmp/dth-gate-out.txt; then echo PASS; else echo BLOCK; fi
-  grep -E 'CUSTOMER_TRAFFIC_MAIL_GATE|INTERNAL_NOTIFICATION|CUSTOMER_CONFIRMATION|TEMPORARY_MODE|FOLLOW_UP_REQUIRED' /tmp/dth-gate-out.txt || true
+  grep -E 'CUSTOMER_TRAFFIC_MAIL_GATE|ALLOW_CUSTOMER_MAIL|INTERNAL_NOTIFICATION|CUSTOMER_CONFIRMATION|TEMPORARY_MODE|FOLLOW_UP_REQUIRED' /tmp/dth-gate-out.txt || true
 }
 echo '---mock---'
 run mock
@@ -485,8 +486,10 @@ echo '---fail---'
 run fail
 echo '---internal_live---'
 run internal_live
-echo '---live---'
-run live
+echo '---live-blocked---'
+run live NO NO
+echo '---live-enabled---'
+run live NO YES
 `
   const r = spawnSync('bash', ['-c', helper], { cwd: root, encoding: 'utf8' })
   assert.equal(r.status, 0, r.stderr || r.stdout)
@@ -498,7 +501,10 @@ run live
   assert.match(out, /CUSTOMER_CONFIRMATION=OFF/)
   assert.match(out, /TEMPORARY_MODE=YES/)
   assert.match(out, /FOLLOW_UP_REQUIRED=RESEND_DOMAIN_VERIFICATION/)
-  assert.match(out, /---live---\nPASS/)
+  assert.match(out, /---live-blocked---\nPASS/)
+  assert.match(out, /CUSTOMER_CONFIRMATION=BLOCKED_BY_DUAL_GUARD/)
+  assert.match(out, /---live-enabled---\nPASS/)
+  assert.match(out, /ALLOW_CUSTOMER_MAIL=YES/)
   assert.match(out, /CUSTOMER_CONFIRMATION=ON/)
   console.log('CUTOVER_MAIL_GATE=PASS')
 }
