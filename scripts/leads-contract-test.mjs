@@ -352,6 +352,10 @@ assert.match(deployScript, /upload_requires_fresh_backup/)
 assert.match(deployScript, /backup_age > 14400/)
 assert.match(deployScript, /UPLOAD_STAGING_DIR=NONE/)
 assert.match(deployScript, /UPLOAD_ORDERED_OVERLAY=YES/)
+assert.match(deployScript, /-rm google-apps-script\.js/)
+assert.match(deployScript, /-rm images\/tari\.png/)
+assert.match(deployScript, /RETIRED_PUBLIC_ARTIFACT=FAIL/)
+assert.doesNotMatch(deployScript, /rm -r \*|rm \*/)
 const uploadSection = deployScript.slice(
   deployScript.indexOf('cmd_upload() {'),
   deployScript.indexOf('cmd_verify() {'),
