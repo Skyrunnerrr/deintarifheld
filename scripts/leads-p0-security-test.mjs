@@ -10,14 +10,14 @@ import { fileURLToPath } from 'node:url'
 import { isAdminAuthorized } from '../lib/leads/admin-auth.js'
 import { isCronAuthorized } from '../lib/leads/cron-auth.js'
 import { createAdminSessionValue, parseAdminSessionValue, ADMIN_COOKIE_NAME } from '../lib/leads/admin-session.js'
-import { enforceAdminAccess } from '../lib/leads/admin-guard.js'
+import { adminRateLimitKey, enforceAdminAccess } from '../lib/leads/admin-guard.js'
 import {
   hasControlledIntakeBypass,
   isBlockedOrigin,
   resetRateLimitsForTests,
 } from '../lib/leads/abuse-guard.js'
 import { captchaRequired, verifyCaptchaToken } from '../lib/leads/captcha.js'
-import { enforcePublicIntake } from '../lib/leads/intake-guard.js'
+import { enforcePublicIntake, intakeRateLimitKey } from '../lib/leads/intake-guard.js'
 import { readBodyText, readJsonBody, MAX_LEAD_BODY_BYTES } from '../lib/leads/read-json-body.js'
 import { allowedOrigins, corsHeaders } from '../lib/leads/cors.js'
 import { API_SECURITY_HEADERS, INBOX_SECURITY_HEADERS } from '../lib/leads/security-headers.js'
@@ -266,6 +266,29 @@ async function assertBodyLimit() {
   console.log('P0_BODY_LIMIT=PASS')
 }
 
+function assertRateLimitIdentityResistsUserAgentRotation() {
+  const prevSalt = process.env.LEADS_RATE_LIMIT_SALT
+  const prevRuntime = process.env.LEADS_RUNTIME_ENV
+  process.env.LEADS_RATE_LIMIT_SALT = 'p0-rate-limit-identity-salt'
+  delete process.env.LEADS_RUNTIME_ENV
+  try {
+    const a = fakeRequest({ 'x-forwarded-for': '203.0.113.44', 'user-agent': 'rotated-a' })
+    const b = fakeRequest({ 'x-forwarded-for': '203.0.113.44', 'user-agent': 'rotated-b' })
+    assert.equal(intakeRateLimitKey(a), intakeRateLimitKey(b))
+    assert.equal(adminRateLimitKey(a), adminRateLimitKey(b))
+
+    const otherIp = fakeRequest({ 'x-forwarded-for': '203.0.113.45', 'user-agent': 'rotated-a' })
+    assert.notEqual(intakeRateLimitKey(a), intakeRateLimitKey(otherIp))
+    assert.notEqual(adminRateLimitKey(a), adminRateLimitKey(otherIp))
+  } finally {
+    if (prevSalt === undefined) delete process.env.LEADS_RATE_LIMIT_SALT
+    else process.env.LEADS_RATE_LIMIT_SALT = prevSalt
+    if (prevRuntime === undefined) delete process.env.LEADS_RUNTIME_ENV
+    else process.env.LEADS_RUNTIME_ENV = prevRuntime
+  }
+  console.log('P0_RATE_LIMIT_UA_ROTATION_RESISTANCE=PASS')
+}
+
 function assertLogAllowlist() {
   const safe = sanitizeLogFields({
     code: 'storage-failed',
@@ -496,7 +519,8 @@ function assertRequestIds() {
 }
 
 async function main() {
-  assertLogAllowlist()
+  assertRateLimitIdentityResistsUserAgentRotation()
+assertLogAllowlist()
 await assertCaptcha()
   await assertOrigin()
   await assertBodyLimit()
