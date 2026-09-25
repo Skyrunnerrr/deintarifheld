@@ -29,7 +29,7 @@ Upload never wipes the remote tree first. Apply requires a verified backup no ol
 1. **Backup current site** — `dth-checkdomain.sh backup --apply` (requires `CHECKDOMAIN_SSH_IDENTITY`). Confirm `LATEST` stamp + `MANIFEST.sha256`.
 2. **Build production static** — from **merged `main` SHA** (`LIVE_BUILD_SOURCE_BRANCH=main`). `NEXT_PUBLIC_LEADS_API_ORIGIN=https://deintarifheld-leads-api.vercel.app`. `npm run build:static:production`.
 3. **Verify production static** — `npm run verify:static:production` (no GAS URLs, no localhost endpoints, no leaked keys).
-4. **API health check** — Production API accepts an authenticated ops health/inbox probe; captcha still required on public POST. No customer mail.
+4. **API health check** — Production API accepts an authenticated ops health/inbox probe; captcha still required on public POST. Mail configuration must match `CURRENT_PRODUCTION_RELEASE_GATE.md` (`live` + customer dual guard enabled for the current intended state).
 5. **Upload** — `dth-checkdomain.sh upload --apply` only if mail gate PASS and backup exists.
 6. **Smoke / verify** — `dth-checkdomain.sh verify --apply` (`/ /unternehmen/ /karriere/ /rechner/ /datenschutz/`).
 7. **Rollback trigger** — `dth-checkdomain.sh rollback --apply` restores the last backup tree via SFTP. DNS change not required.
