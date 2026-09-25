@@ -33,6 +33,14 @@ if (!existsSync(metaPath)) fail('MISSING_BUILD_METADATA')
 const meta = JSON.parse(readFileSync(metaPath, 'utf8'))
 const apiOrigin = String(meta.apiOrigin || '').replace(/\/+$/, '')
 if (!apiOrigin.startsWith('https://')) fail('BAD_API_ORIGIN_IN_METADATA')
+const expectedApiOrigin = String(
+  process.env.DTH_EXPECTED_API_ORIGIN || 'https://deintarifheld-leads-api.vercel.app',
+).replace(/\/+$/, '')
+if (apiOrigin !== expectedApiOrigin) fail('UNEXPECTED_API_ORIGIN_IN_METADATA')
+if (meta.recaptchaVariant !== 'enterprise_v3_assessment') fail('BAD_RECAPTCHA_VARIANT_IN_METADATA')
+if (meta.recaptchaPublicKeyConfigured !== true) fail('RECAPTCHA_PUBLIC_KEY_NOT_PROVEN')
+if (meta.staticExport !== true) fail('STATIC_EXPORT_METADATA_FALSE')
+if (!/^[a-f0-9]{40}$/i.test(String(meta.gitCommitSha || ''))) fail('BAD_BUILD_SHA_IN_METADATA')
 
 const expectedLeads = `${apiOrigin}/api/leads/`
 const expectedCareers = `${apiOrigin}/api/careers/`
@@ -95,9 +103,12 @@ const report = {
   LEADS_API_REFERENCE_PRESENT: 'YES',
   CAREERS_API_REFERENCE_PRESENT: 'YES',
   EXPECTED_API_ORIGIN_PRESENT: 'YES',
+  RECAPTCHA_ENTERPRISE_V3_CONFIGURED: 'YES',
   LOCALHOST_REFERENCE_IN_PRODUCTION_OUT: 0,
   SECRET_REFERENCE_IN_OUT: 0,
   apiOrigin,
+  recaptchaVariant: meta.recaptchaVariant,
+  recaptchaPublicKeyConfigured: meta.recaptchaPublicKeyConfigured,
   expectedLeads,
   expectedCareers,
   filesScanned: textFiles.length,
