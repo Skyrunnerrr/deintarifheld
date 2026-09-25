@@ -10,7 +10,11 @@ export const runtime = 'nodejs'
 function json(body, status = 200, extraHeaders) {
   const response = NextResponse.json(body, {
     status,
-    headers: extraHeaders,
+    headers: {
+      'cache-control': 'no-store',
+      'x-robots-tag': 'noindex, nofollow, noarchive',
+      ...(extraHeaders || {}),
+    },
   })
   applySecurityHeaders(response.headers)
   return response
