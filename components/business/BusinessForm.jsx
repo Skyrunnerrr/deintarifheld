@@ -88,6 +88,7 @@ function BusinessFormular() {
     /^\d{5}$/.test(form.plz.trim())
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const phoneRegex = /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/
   const step2Valid =
     form.firma.trim().length >= 2 &&
     form.ansprechpartner.trim().length >= 2 &&
@@ -104,6 +105,7 @@ function BusinessFormular() {
     if (form.firma.trim().length < 2) errs.firma = 'Bitte geben Sie einen Firmennamen ein'
     if (form.ansprechpartner.trim().length < 2) errs.ansprechpartner = 'Bitte geben Sie einen Ansprechpartner ein'
     if (!emailRegex.test(form.email.trim())) errs.email = 'Bitte geben Sie eine gültige E-Mail ein'
+    if (form.telefon.trim() && !phoneRegex.test(form.telefon.trim())) errs.telefon = 'Bitte geben Sie eine gültige Telefonnummer ein'
     if (!form.dsgvo) {
       setDsgvoError(true)
       errs.dsgvo = true
@@ -449,9 +451,19 @@ function BusinessFormular() {
                   type="tel"
                   placeholder="+49 6221 8688877"
                   value={form.telefon}
-                  onChange={(e) => set('telefon', e.target.value)}
+                  onChange={(e) => {
+                    set('telefon', e.target.value.slice(0, 40))
+                    setValidationErrors((prev) => ({ ...prev, telefon: undefined }))
+                  }}
                   className={inputClass}
+                  aria-invalid={Boolean(validationErrors.telefon)}
+                  aria-describedby={validationErrors.telefon ? 'bneu-telefon-error' : undefined}
                 />
+                {validationErrors.telefon && (
+                  <p role="alert" id="bneu-telefon-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    {validationErrors.telefon}
+                  </p>
+                )}
               </div>
             </div>
 
