@@ -67,6 +67,57 @@ function mailFields(mailResult) {
   }
 }
 
+function storedMailNeedsRecovery(row) {
+  const status = typeof row?.mail_status === 'string' ? row.mail_status.trim() : ''
+  return !status || status === 'pending'
+}
+
+async function recoverStoredCareerMail(supabase, row) {
+  if (!storedMailNeedsRecovery(row)) {
+    return { status: 200, fields: mailFieldsFromStored(row) }
+  }
+
+  const data = row?.payload && typeof row.payload === 'object' ? row.payload : null
+  if (!data) {
+    return { status: 200, fields: mailFieldsFromStored(row) }
+  }
+
+  const mailResult = await sendLeadEmails({
+    leadRef: row.application_ref,
+    data,
+    submittedAt: row.created_at || new Date().toISOString(),
+    channel: 'career',
+  })
+
+  const mailStatus = mailResult.mailStatus || (mailResult.ok ? 'accepted' : 'failed')
+  const mailMode = mailResult.mode || process.env.LEADS_MAIL_MODE || 'mock'
+  const mailMeta = await updateCareerMailMeta(supabase, row.id, { mailStatus, mailMode })
+
+  if (mailMeta.error) {
+    leadsLog('error', 'careers.mail_recovery_meta_update_failed', {
+      leadRef: row.application_ref,
+      code: mailMeta.error.code || 'unknown',
+    })
+  }
+
+  await writeAuditObserved(supabase, {
+    careerId: row.id,
+    eventType: mailResult.ok ? 'career.mail_recovered' : 'career.mail_recovery_failed',
+    detail: {
+      application_ref: row.application_ref,
+      mode: mailMode,
+      mail_status: mailStatus,
+      customer_confirmation: mailResult.customerConfirmation || 'n/a',
+    },
+  })
+
+  return {
+    status: mailResult.ok ? 200 : 202,
+    fields: mailFields(mailResult),
+    code: mailResult.ok ? undefined : mailResult.code,
+  }
+}
+
 export async function OPTIONS(request) {
   return optionsResponse(request)
 }
@@ -109,13 +160,19 @@ export async function POST(request) {
     return errorResponse(request, 'storage-failed', 500)
   }
   if (existingByKey) {
-    return json(request, {
-      ok: true,
-      duplicate: true,
-      idempotent: true,
-      leadRef: existingByKey.application_ref,
-      ...mailFieldsFromStored(existingByKey),
-    })
+    const recovered = await recoverStoredCareerMail(supabase, existingByKey)
+    return json(
+      request,
+      {
+        ok: true,
+        duplicate: true,
+        idempotent: true,
+        leadRef: existingByKey.application_ref,
+        ...recovered.fields,
+        ...(recovered.code ? { code: recovered.code } : {}),
+      },
+      recovered.status,
+    )
   }
 
   const leadRef = makeLeadRef('career')
@@ -130,6 +187,8 @@ export async function POST(request) {
     consent_at: submittedAt,
     source_page: validated.data.source_page,
     idempotency_key: idempotencyKey,
+    mail_status: 'pending',
+    mail_mode: process.env.LEADS_MAIL_MODE || 'mock',
     payload: {
       ...payloadFields,
       _formLoadedAt,
@@ -147,13 +206,19 @@ export async function POST(request) {
         })
       }
       if (raced) {
-        return json(request, {
-          ok: true,
-          duplicate: true,
-          idempotent: true,
-          leadRef: raced.application_ref,
-          ...mailFieldsFromStored(raced),
-        })
+        const recovered = await recoverStoredCareerMail(supabase, raced)
+        return json(
+          request,
+          {
+            ok: true,
+            duplicate: true,
+            idempotent: true,
+            leadRef: raced.application_ref,
+            ...recovered.fields,
+            ...(recovered.code ? { code: recovered.code } : {}),
+          },
+          recovered.status,
+        )
       }
     }
     leadsLog('error', 'careers.insert_failed', { code: insertError.code || 'unknown' })
