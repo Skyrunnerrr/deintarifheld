@@ -153,8 +153,8 @@ for (const surface of surfaces) {
   if (surface.name === 'hero') {
     assert.match(source, /newErrors\.type = 'Bitte wähle Strom oder Gas aus'/, 'hero: energy type must be client-validated')
     assert.match(source, /error=\{errors\.type\}/, 'hero: energy type validation must be visible')
-    assert.match(source, /Number\(formData\.usage\) <= 0/, 'hero: consumption must be positive before submit')
-    assert.match(source, /PHONE_INPUT_RE\.test\(formData\.phone\.trim\(\)\)/, 'hero: phone validation must match server boundary')
+    assert.match(source, /Number\(usage\) <= 0/, 'hero: consumption must be positive before submit')
+    assert.match(source, /PHONE_INPUT_RE\.test\(phone\)/, 'hero: phone validation must match server boundary')
     assert.match(source, /firstName\.length > 120/, 'hero: first-name max must mirror server')
     assert.match(source, /phone\.length > 40/, 'hero: phone max must mirror server')
     assert.match(source, /email\.length > 180/, 'hero: email max must mirror server')
