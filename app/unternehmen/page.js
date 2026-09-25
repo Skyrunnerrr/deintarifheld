@@ -78,10 +78,19 @@ function B2BFormular() {
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }))
 
+  const activeConsumption =
+    form.energieart === 'Strom' ? form.verbrauchStrom :
+    form.energieart === 'Gas' ? form.verbrauchGas :
+    ''
+  const activeConsumptionValid =
+    !activeConsumption || (/^\d+$/.test(activeConsumption) && Number(activeConsumption) > 0)
+
   const step1Valid =
     form.energieart !== '' &&
     form.standorte !== '' &&
-    form.plz.trim().length === 5 && /^\d{5}$/.test(form.plz.trim())
+    form.plz.trim().length === 5 &&
+    /^\d{5}$/.test(form.plz.trim()) &&
+    activeConsumptionValid
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   const phoneRegex = /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/
@@ -253,7 +262,14 @@ function B2BFormular() {
                   inputMode="numeric"
                   onChange={e => set('verbrauchStrom', e.target.value.replace(/\D/g, '').slice(0, 40))}
                   className="w-full px-4 py-3 rounded-2xl bg-bg-input border border-white/10 text-text-primary font-body text-base placeholder:text-text-tertiary focus:outline-none focus:border-[#FF6B2B]/40 transition-colors"
+                  aria-invalid={form.verbrauchStrom !== '' && Number(form.verbrauchStrom) <= 0}
+                  aria-describedby={form.verbrauchStrom !== '' && Number(form.verbrauchStrom) <= 0 ? 'verbrauchStrom-error' : undefined}
                 />
+                {form.verbrauchStrom !== '' && Number(form.verbrauchStrom) <= 0 && (
+                  <p role="alert" id="verbrauchStrom-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    Bitte geben Sie einen Verbrauch größer als 0 kWh ein
+                  </p>
+                )}
               </div>
             )}
 
@@ -272,7 +288,14 @@ function B2BFormular() {
                   inputMode="numeric"
                   onChange={e => set('verbrauchGas', e.target.value.replace(/\D/g, '').slice(0, 40))}
                   className="w-full px-4 py-3 rounded-2xl bg-bg-input border border-white/10 text-text-primary font-body text-base placeholder:text-text-tertiary focus:outline-none focus:border-[#FF6B2B]/40 transition-colors"
+                  aria-invalid={form.verbrauchGas !== '' && Number(form.verbrauchGas) <= 0}
+                  aria-describedby={form.verbrauchGas !== '' && Number(form.verbrauchGas) <= 0 ? 'verbrauchGas-error' : undefined}
                 />
+                {form.verbrauchGas !== '' && Number(form.verbrauchGas) <= 0 && (
+                  <p role="alert" id="verbrauchGas-error" className="font-body text-[#EF4444] text-xs mt-2">
+                    Bitte geben Sie einen Verbrauch größer als 0 kWh ein
+                  </p>
+                )}
               </div>
             )}
 
