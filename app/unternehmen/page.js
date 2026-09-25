@@ -96,7 +96,10 @@ function B2BFormular() {
   const phoneRegex = /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/
   const step2Valid =
     form.firma.trim().length >= 2 &&
+    form.firma.trim().length <= 160 &&
     form.ansprechpartner.trim().length >= 2 &&
+    form.ansprechpartner.trim().length <= 120 &&
+    form.email.trim().length <= 180 &&
     emailRegex.test(form.email.trim())
 
   const handleSubmit = async (e) => {
@@ -108,10 +111,14 @@ function B2BFormular() {
 
     // Field-level validation
     const errs = {}
-    if (form.firma.trim().length < 2) errs.firma = 'Bitte gib einen Firmennamen ein'
-    if (form.ansprechpartner.trim().length < 2) errs.ansprechpartner = 'Bitte gib einen Ansprechpartner ein'
-    if (!emailRegex.test(form.email.trim())) errs.email = 'Bitte gib eine gültige E-Mail ein'
-    if (form.telefon.trim() && !phoneRegex.test(form.telefon.trim())) errs.telefon = 'Bitte gib eine gültige Telefonnummer ein'
+    const firma = form.firma.trim()
+    const ansprechpartner = form.ansprechpartner.trim()
+    const email = form.email.trim()
+    const telefon = form.telefon.trim()
+    if (firma.length < 2 || firma.length > 160) errs.firma = 'Bitte gib einen gültigen Firmennamen ein'
+    if (ansprechpartner.length < 2 || ansprechpartner.length > 120) errs.ansprechpartner = 'Bitte gib einen gültigen Ansprechpartner ein'
+    if (email.length > 180 || !emailRegex.test(email)) errs.email = 'Bitte gib eine gültige E-Mail ein'
+    if (telefon && (telefon.length > 40 || !phoneRegex.test(telefon))) errs.telefon = 'Bitte gib eine gültige Telefonnummer ein'
     if (!form.dsgvo) { setDsgvoError(true); errs.dsgvo = true }
     if (Object.keys(errs).length > 0) { setValidationErrors(errs); if (!errs.dsgvo) setDsgvoError(false); return }
     setDsgvoError(false)
@@ -169,7 +176,7 @@ function B2BFormular() {
         <div>
           <p className="font-display font-black text-2xl text-text-primary mb-2">Anfrage eingegangen!</p>
           <p className="font-body text-text-secondary text-base max-w-sm">
-            Ihr persönlicher Ansprechpartner meldet sich innerhalb von 24 Stunden bei Ihnen — per E-Mail oder Telefon, wie Sie es bevorzugen.
+            Ihr persönlicher Ansprechpartner meldet sich schnellstmöglich bei Ihnen — per E-Mail oder Telefon.
           </p>
         </div>
         <Link href="/" className="font-body text-sm text-[#FF6B2B] hover:underline">
@@ -370,6 +377,7 @@ function B2BFormular() {
               <input
                 id="firma"
                 type="text"
+                maxLength={160}
                 placeholder="Ihre Firma GmbH"
                 value={form.firma}
                 onChange={e => set('firma', e.target.value)}
@@ -385,6 +393,7 @@ function B2BFormular() {
               <input
                 id="ansprechpartner"
                 type="text"
+                maxLength={120}
                 placeholder="Vor- und Nachname"
                 value={form.ansprechpartner}
                 onChange={e => set('ansprechpartner', e.target.value)}
@@ -401,6 +410,7 @@ function B2BFormular() {
                 <input
                   id="email"
                   type="email"
+                  maxLength={180}
                   placeholder="ihre@firma.de"
                   value={form.email}
                   onChange={e => set('email', e.target.value)}
@@ -414,6 +424,7 @@ function B2BFormular() {
                 <input
                   id="telefon"
                   type="tel"
+                  maxLength={40}
                   placeholder="+49 800 000 0000"
                   value={form.telefon}
                   onChange={e => {
@@ -441,6 +452,7 @@ function B2BFormular() {
                 <input
                   id="versorger"
                   type="text"
+                  maxLength={120}
                   placeholder="z. B. E.ON, EnBW, ..."
                   value={form.versorger}
                   onChange={e => set('versorger', e.target.value)}
@@ -473,6 +485,7 @@ function B2BFormular() {
               <textarea
                 id="nachricht"
                 rows={3}
+                maxLength={2000}
                 placeholder="Besondere Anforderungen, Fragen oder Informationen..."
                 value={form.nachricht}
                 onChange={e => set('nachricht', e.target.value)}
