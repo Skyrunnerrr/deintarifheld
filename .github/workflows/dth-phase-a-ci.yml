@@ -82,6 +82,8 @@ jobs:
         run: npm run browser-api:test
       - name: Form intercept (no GAS)
         run: npm run forms:intercept:test
+      - name: Full public form contract matrix
+        run: npm run forms:contract-matrix:test
       - name: Phase B verify
         run: npm run phase-b:verify
       - name: npm audit allowlist gate (no fix)
