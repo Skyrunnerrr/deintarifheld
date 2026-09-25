@@ -9,6 +9,8 @@ import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
 import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
 
 // ─── Keyframes via inline style tag ────────────────────────────────
+const PHONE_INPUT_RE = /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/
+
 const KEYFRAMES = `
   @keyframes orbFloat {
     0%, 100% { transform: translateY(0) scale(1); }
@@ -181,7 +183,7 @@ export function Hero() {
   function goStep2() {
     const newErrors = {}
     if (!formData.firstName.trim()) newErrors.firstName = 'Bitte gib deinen Vornamen ein'
-    if (!formData.phone.trim() || formData.phone.trim().length < 6) newErrors.phone = 'Bitte gib deine Telefonnummer ein'
+    if (!PHONE_INPUT_RE.test(formData.phone.trim())) newErrors.phone = 'Bitte gib eine gültige Telefonnummer ein'
     if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) newErrors.email = 'Bitte gib eine gültige E-Mail ein'
     setErrors(newErrors)
     if (Object.keys(newErrors).length === 0) setStep(2)
