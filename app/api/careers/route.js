@@ -186,6 +186,30 @@ export async function POST(request) {
   }
 
   if (!mailResult.ok) {
+    if (mailResult.internalDelivery === 'sent') {
+      await writeAuditObserved(supabase, {
+        careerId: inserted.id,
+        eventType: 'career.internal_mail_sent',
+        detail: {
+          application_ref: leadRef,
+          mode: mailResult.mode || 'live',
+          provider_email_id: mailResult.providerEmailId || null,
+          outcome: 'partial_success',
+        },
+      })
+      if (mailResult.customerConfirmation === 'failed') {
+        await writeAuditObserved(supabase, {
+          careerId: inserted.id,
+          eventType: 'career.customer_confirmation_failed',
+          detail: {
+            application_ref: leadRef,
+            mode: mailResult.mode || 'live',
+            provider_error_code: mailResult.providerErrorCode || null,
+          },
+        })
+      }
+    }
+
     const failEvent =
       mailResult.mode === 'internal_live' ? 'career.internal_mail_failed' : 'career.mail_failed'
     await writeAuditObserved(supabase, {
