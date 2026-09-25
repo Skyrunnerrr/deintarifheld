@@ -36,7 +36,10 @@ const KF = `
 const schema = z.object({
   name:       z.string().min(2, 'Bitte gib deinen Namen ein'),
   email:      z.string().email('Bitte gib eine gültige E-Mail ein'),
-  phone:      z.string().min(6, 'Bitte gib deine Telefonnummer ein'),
+  phone:      z.string().refine(
+    (value) => /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/.test(value.trim()),
+    'Bitte gib eine gültige Telefonnummer ein',
+  ),
   motivation: z.string().min(10, 'Bitte schreib uns kurz, warum dich das interessiert'),
   gdpr:       z.literal(true, { errorMap: () => ({ message: 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.' }) }),
 })
