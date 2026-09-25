@@ -432,7 +432,8 @@ function assertInquiryFieldsInOpsMail() {
     data: careerData,
     submittedAt: new Date().toISOString(),
   })
-  assert.match(mail.adminText, /Neue Karriere-Bewerbung/)
+  assert.match(mail.adminText, /Neue Partneranfrage/)
+  assert.doesNotMatch(mail.adminText, /Bewerbung/)
   assert.ok(mail.adminText.includes('A'.repeat(400)))
   assert.match(mail.adminText, /Kundenbestätigung: bewusst übersprungen/)
   assert.doesNotMatch(mail.adminText, /honeypot|user-agent|x-forwarded|RESEND_API_KEY/i)
