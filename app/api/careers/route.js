@@ -113,7 +113,6 @@ export async function POST(request) {
       ok: true,
       duplicate: true,
       idempotent: true,
-      leadId: existingByKey.id,
       leadRef: existingByKey.application_ref,
       ...mailFieldsFromStored(existingByKey),
     })
@@ -152,7 +151,6 @@ export async function POST(request) {
           ok: true,
           duplicate: true,
           idempotent: true,
-          leadId: raced.id,
           leadRef: raced.application_ref,
           ...mailFieldsFromStored(raced),
         })
@@ -243,7 +241,6 @@ export async function POST(request) {
       request,
       {
         ok: true,
-        leadId: inserted.id,
         leadRef,
         duplicate: false,
         idempotent: false,
@@ -286,7 +283,6 @@ export async function POST(request) {
 
   return json(request, {
     ok: true,
-    leadId: inserted.id,
     leadRef,
     duplicate: false,
     idempotent: false,
