@@ -34,7 +34,7 @@
     try { return new Date(iso).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }) } catch { return iso || '' }
   }
   function titleOf(item) {
-    if (item.kind === 'career') return 'Karriere · ' + (item.full_name || item.email || item.application_ref)
+    if (item.kind === 'career') return 'Partner · ' + (item.full_name || item.email || item.application_ref)
     if (item.page_source === 'unternehmen') return 'Unternehmen · ' + (item.firma || item.email || item.lead_ref)
     return 'Privat · ' + ((item.payload && item.payload.firstName) || item.email || item.lead_ref)
   }
@@ -42,15 +42,15 @@
   let lastCounts = { leads: 0, careers: 0 }
   function mailStatusOf(item) {
     const raw = typeof item.mail_status === 'string' ? item.mail_status.trim() : ''
-    if (raw === 'failed' || raw === 'internal_sent' || raw === 'accepted') return raw
+    if (raw === 'failed' || raw === 'partial_failed' || raw === 'internal_sent' || raw === 'accepted') return raw
     return 'unknown'
   }
-  function isFailed(item) { return mailStatusOf(item) === 'failed' }
+  function isFailed(item) { return ['failed', 'partial_failed'].includes(mailStatusOf(item)) }
   function render() {
     const failedOnly = $('failedOnly').checked
     const items = failedOnly ? allItems.filter(isFailed) : allItems
     const failedCount = allItems.filter(isFailed).length
-    $('counts').textContent = lastCounts.leads + ' Anfragen · ' + lastCounts.careers + ' Bewerbungen · ' + failedCount + ' Mail fehlgeschlagen'
+    $('counts').textContent = lastCounts.leads + ' Anfragen · ' + lastCounts.careers + ' Partneranfragen · ' + failedCount + ' Mailproblem'
     if (!items.length) {
       $('list').innerHTML = '<p class="empty">' + (failedOnly ? 'Keine fehlgeschlagenen Mails.' : 'Keine Einträge.') + '</p>'
       return
