@@ -194,6 +194,32 @@ async function assertOrigin() {
 
   await withEnv(
     {
+      LEADS_RUNTIME_ENV: undefined,
+      VERCEL_ENV: undefined,
+      LEADS_ALLOW_SMOKE_BYPASS: 'YES',
+      LEADS_INTAKE_SMOKE_SECRET: 'smoke-secret-16ch',
+      LEADS_RATE_LIMIT_SALT: 'p0-smoke-bypass-salt',
+      LEADS_RATE_LIMIT_PROVIDER: 'memory',
+    },
+    async () => {
+      resetRateLimitsForTests()
+      for (let i = 0; i < 8; i += 1) {
+        const result = await enforcePublicIntake(
+          jsonRequest({
+            body: { page_source: 'unternehmen', email: `smoke-${i}@example.invalid` },
+            extraHeaders: {
+              'x-dth-intake-smoke': 'smoke-secret-16ch',
+              'x-forwarded-for': '203.0.113.77',
+            },
+          }),
+        )
+        assert.equal(result.ok, true, 'secret non-production smoke must not self-rate-limit')
+      }
+    },
+  )
+
+  await withEnv(
+    {
       LEADS_RUNTIME_ENV: 'production',
       LEADS_ALLOW_SMOKE_BYPASS: 'YES',
       LEADS_INTAKE_SMOKE_SECRET: 'smoke-secret-16ch',
@@ -207,6 +233,7 @@ async function assertOrigin() {
     },
   )
   console.log('P0_ORIGIN=PASS')
+  console.log('P0_NONPROD_SMOKE_QUOTA_BYPASS=PASS')
 }
 
 async function assertBodyLimit() {
