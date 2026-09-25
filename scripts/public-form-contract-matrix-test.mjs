@@ -114,6 +114,12 @@ assert.deepEqual(
 
 // Route wiring is part of the form contract: a correct component that is no
 // longer mounted on the intended public route is still a production failure.
+const howItWorks = read('components/sections/HowItWorks.jsx')
+assert.match(howItWorks, /Strom oder Gas/, 'public copy must match supported single-energy form choice')
+assert.doesNotMatch(howItWorks, /Strom, Gas oder beides/, 'public copy must not promise unsupported combined-energy submit')
+const agb = read('app/agb/page.js')
+assert.doesNotMatch(agb, /Strom, Gas oder beides/, 'AGB must not describe an unsupported combined-energy form input')
+
 const homePage = read('app/page.js')
 assert.match(homePage, /<Hero\s*\/>/, 'home: Hero form must remain mounted')
 assert.match(homePage, /<FunnelSection\s*\/>/, 'home: Funnel form must remain mounted')
