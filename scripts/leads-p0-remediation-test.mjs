@@ -105,6 +105,9 @@ const TOKEN = 'token-from-browser-ok-12345'
 async function assertServerOwnedActionBinding() {
   const business = resolveExpectedCaptchaAction({ endpoint: 'leads', pageSource: 'unternehmen' })
   assert.equal(business.ok, true)
+  const missingLeadSource = resolveExpectedCaptchaAction({ endpoint: 'leads', pageSource: '' })
+  assert.equal(missingLeadSource.ok, false)
+  assert.equal(missingLeadSource.code, 'captcha-action-unknown-context')
   assert.equal(business.expectedAction, 'unternehmen')
   const career = resolveExpectedCaptchaAction({ endpoint: 'careers', pageSource: 'anything' })
   assert.equal(career.expectedAction, 'career')
@@ -515,6 +518,10 @@ function assertValidationBoundaries() {
   }
   assert.equal(validateUnternehmenPayload(businessBase).ok, true)
   assert.equal(
+    validateUnternehmenPayload({ ...businessBase, page_source: undefined }).code,
+    'unsupported-page-source',
+  )
+  assert.equal(
     validateUnternehmenPayload({ ...businessBase, plz: '691150' }).code,
     'invalid-message',
   )
@@ -534,6 +541,10 @@ function assertValidationBoundaries() {
     form_version: '2.0',
   }
   assert.equal(validateCareerPayload(careerBase).ok, true)
+  assert.equal(
+    validateCareerPayload({ ...careerBase, page_source: undefined }).code,
+    'unsupported-page-source',
+  )
   assert.equal(
     validateCareerPayload({ ...careerBase, telefon: '1'.repeat(41), phone: '' }).code,
     'invalid-message',
