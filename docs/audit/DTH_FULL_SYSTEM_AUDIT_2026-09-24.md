@@ -41,9 +41,11 @@ Lead backend:
 
 Production mail evidence currently established:
 - lead storage and the form/API path were proven
-- internal Resend notification was proven Delivered after removing the stale recipient suppression
-- production was then switched to `LEADS_MAIL_MODE=live` with `ALLOW_CUSTOMER_MAIL=YES` and redeployed
-- a final two-message E2E proof (internal + customer confirmation for the same fresh lead) is still required before this audit records customer confirmation as production-verified
+- stale Resend suppression on `kontakt@deintarifheld.de` was removed
+- production was switched to `LEADS_MAIL_MODE=live` with `ALLOW_CUSTOMER_MAIL=YES` and redeployed
+- for fresh lead `HER-20260923191420-A67D0W`, the customer confirmation was received and the matching internal notification to `kontakt@deintarifheld.de` was shown as Delivered by Resend
+- Checkdomain forwarding from `kontakt@deintarifheld.de` to the central Google mailbox was later proven with an external sender
+- before the next API redeploy, `LEADS_TO_EMAIL` must be normalized back to the single official recipient `kontakt@deintarifheld.de`; see `docs/deployment/CURRENT_PRODUCTION_RELEASE_GATE.md`
 
 ## Findings confirmed so far
 
@@ -312,6 +314,10 @@ Additional findings resolved during the same review:
 - A-25 OPEN — `public/images/tari-nobg.png` remains approximately 2.49 MB and is used in prominent UI. Binary optimization is required before the performance wave can be closed.
 - A-26 OPEN/DECISION — `/unternehmen/` and `/unternehmen-neu/` still coexist. The preview route is noindex; deletion or promotion requires an explicit product/design decision rather than an audit guess.
 - A-27 CONTROLLED DEBT — current npm audit policy still records reviewed transitive findings and ESLint 8 / `next lint` deprecation. No blind `npm audit fix` or Next-major migration is allowed inside this stabilization PR.
+- A-28 RESOLVED — uncertain browser/network outcomes now retain retry-safe idempotency keys in a bounded TTL cache instead of an unbounded session-lifetime map.
+- A-29 RESOLVED — partial live-mail failure now writes truthful audit events for an already-sent internal notification and a failed customer confirmation.
+- A-30 RESOLVED — public admin login and erase request bodies are stream-bounded instead of using unbounded `request.text()` / `request.json()`.
+- A-31 OPS GATE — future Vercel redeploy must normalize `LEADS_TO_EMAIL` to the single official DTH recipient because Checkdomain forwarding is now the Google delivery path.
 
 ## Controls already strong — preserve them
 
