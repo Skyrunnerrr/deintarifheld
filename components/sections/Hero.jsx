@@ -182,9 +182,12 @@ export function Hero() {
 
   function goStep2() {
     const newErrors = {}
-    if (!formData.firstName.trim()) newErrors.firstName = 'Bitte gib deinen Vornamen ein'
-    if (!PHONE_INPUT_RE.test(formData.phone.trim())) newErrors.phone = 'Bitte gib eine gültige Telefonnummer ein'
-    if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) newErrors.email = 'Bitte gib eine gültige E-Mail ein'
+    const firstName = formData.firstName.trim()
+    const phone = formData.phone.trim()
+    const email = formData.email.trim()
+    if (!firstName || firstName.length > 120) newErrors.firstName = 'Bitte gib einen gültigen Vornamen ein'
+    if (phone.length > 40 || !PHONE_INPUT_RE.test(phone)) newErrors.phone = 'Bitte gib eine gültige Telefonnummer ein'
+    if (!email || email.length > 180 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Bitte gib eine gültige E-Mail ein'
     setErrors(newErrors)
     if (Object.keys(newErrors).length === 0) setStep(2)
   }
@@ -195,8 +198,10 @@ export function Hero() {
     setRateLimitMsg('')
     setRecaptchaError('')
     const newErrors = {}
-    if (!formData.provider.trim()) newErrors.provider = 'Bitte gib deinen Anbieter ein'
-    if (!/^\d+$/.test(formData.usage.trim()) || Number(formData.usage) <= 0) {
+    const provider = formData.provider.trim()
+    const usage = formData.usage.trim()
+    if (!provider || provider.length > 120) newErrors.provider = 'Bitte gib einen gültigen Anbieter ein'
+    if (usage.length > 40 || !/^\d+$/.test(usage) || Number(usage) <= 0) {
       newErrors.usage = 'Bitte gib einen gültigen Verbrauch in ganzen kWh ein'
     }
     if (!formData.zip.trim() || !/^\d{5}$/.test(formData.zip.trim())) newErrors.zip = 'Bitte gib eine gültige 5-stellige PLZ ein'
@@ -493,10 +498,10 @@ export function Hero() {
                 {step === 1 && (
                   <motion.div key="s1" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.25 }}>
                     <FunnelInputGrid>
-                      <FunnelInput label="VORNAME" id="fn" type="text" placeholder="Max" value={formData.firstName} onChange={handleInput('firstName')} error={errors.firstName} />
-                      <FunnelInput label="TELEFON" id="ph" type="tel" placeholder="+49 170 …" value={formData.phone} onChange={handleInput('phone')} error={errors.phone} />
+                      <FunnelInput label="VORNAME" id="fn" type="text" placeholder="Max" maxLength={120} value={formData.firstName} onChange={handleInput('firstName')} error={errors.firstName} />
+                      <FunnelInput label="TELEFON" id="ph" type="tel" placeholder="+49 170 …" maxLength={40} value={formData.phone} onChange={handleInput('phone')} error={errors.phone} />
                     </FunnelInputGrid>
-                    <FunnelInput label="E-MAIL" id="em" type="email" placeholder="max@beispiel.de" value={formData.email} onChange={handleInput('email')} style={{ marginTop: 8 }} error={errors.email} />
+                    <FunnelInput label="E-MAIL" id="em" type="email" placeholder="max@beispiel.de" maxLength={180} value={formData.email} onChange={handleInput('email')} style={{ marginTop: 8 }} error={errors.email} />
                     {/* Honeypot — unsichtbar für echte Nutzer */}
                     <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true" tabIndex={-1}>
                       <input type="text" name={HONEYPOT_FIELD} value={formData[HONEYPOT_FIELD]} onChange={handleInput(HONEYPOT_FIELD)} autoComplete="off" tabIndex={-1} />
@@ -511,8 +516,8 @@ export function Hero() {
                 {step === 2 && (
                   <motion.div key="s2" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.25 }}>
                     <FunnelInputGrid>
-                      <FunnelInput label="AKTUELLER ANBIETER" id="prov" type="text" placeholder="E.ON, Vattenfall …" value={formData.provider} onChange={handleInput('provider')} error={errors.provider} />
-                      <FunnelInput label="JAHRESVERBRAUCH (KWH)" id="usage" type="number" placeholder="3500" value={formData.usage} onChange={handleInput('usage')} error={errors.usage} />
+                      <FunnelInput label="AKTUELLER ANBIETER" id="prov" type="text" placeholder="E.ON, Vattenfall …" maxLength={120} value={formData.provider} onChange={handleInput('provider')} error={errors.provider} />
+                      <FunnelInput label="JAHRESVERBRAUCH (KWH)" id="usage" type="number" placeholder="3500" inputMode="numeric" value={formData.usage} onChange={handleInput('usage')} error={errors.usage} />
                     </FunnelInputGrid>
                     <FunnelInputGrid style={{ marginTop: 8 }}>
                       <FunnelInput label="POSTLEITZAHL" id="zip" type="text" placeholder="10115" maxLength={5} value={formData.zip} onChange={handleInput('zip')} error={errors.zip} />
