@@ -34,6 +34,11 @@ function assertStoredMailMatrix() {
   assert.equal(internal.mail, true)
   assert.equal(internal.mailStatus, 'internal_sent')
 
+  const partial = mailFieldsFromStored({ mail_status: 'partial_failed', mail_mode: 'live' })
+  assert.equal(partial.mail, true)
+  assert.equal(partial.mailStatus, 'partial_failed')
+  assert.equal(partial.customerConfirmation, 'failed')
+
   const accepted = mailFieldsFromStored({ mail_status: 'accepted', mail_mode: 'mock' })
   assert.equal(accepted.mail, true)
   assert.equal(accepted.mailStatus, 'accepted')
@@ -49,6 +54,7 @@ function assertStoredMailMatrix() {
 
   console.log('DUPLICATE_STATUS_FAILED=PASS')
   console.log('DUPLICATE_STATUS_INTERNAL_SENT=PASS')
+  console.log('DUPLICATE_STATUS_PARTIAL_FAILED=PASS')
   console.log('DUPLICATE_STATUS_ACCEPTED=PASS')
   console.log('DUPLICATE_STATUS_LEGACY_NULL=PASS')
 }
@@ -59,8 +65,8 @@ function assertChannelWiring() {
   const supabase = read('lib/leads/supabase.js')
   assert.match(leads, /mailFieldsFromStored/)
   assert.match(careers, /mailFieldsFromStored/)
-  assert.match(leads, /mail: mailStatus === 'accepted' \|\| mailStatus === 'internal_sent'/)
-  assert.match(careers, /mail: mailStatus === 'accepted' \|\| mailStatus === 'internal_sent'/)
+  assert.match(leads, /partial_failed/)
+  assert.match(careers, /partial_failed/)
   assert.match(supabase, /mail_status, mail_mode, mail_sent_at/)
   assert.match(supabase, /findLeadByIdempotencyKey/)
   assert.match(supabase, /findCareerByIdempotencyKey/)
