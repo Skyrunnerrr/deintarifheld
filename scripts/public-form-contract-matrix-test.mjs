@@ -179,9 +179,15 @@ for (const surface of surfaces) {
     assert.match(source, /max\(4000, 'Deine Nachricht ist zu lang'\)/, 'career: motivation max must mirror server')
   }
   if (surface.name === 'business-live' || surface.name === 'business-preview') {
-    assert.match(source, /phoneRegex\.test\(form\.telefon\.trim\(\)\)/, `${surface.name}: optional phone must be validated when present`)
+    assert.match(source, /phoneRegex\.test\(telefon\)/, `${surface.name}: optional phone must be validated when present`)
     assert.match(source, /activeConsumptionValid/, `${surface.name}: optional consumption must be validated before advancing`)
     assert.match(source, /Number\(activeConsumption\) > 0/, `${surface.name}: zero consumption must not pass client validation`)
+    assert.match(source, /firma\.length > 160/, `${surface.name}: company max must mirror server`)
+    assert.match(source, /ansprechpartner\.length > 120/, `${surface.name}: contact max must mirror server`)
+    assert.match(source, /email\.length > 180/, `${surface.name}: email max must mirror server`)
+    assert.match(source, /telefon\.length > 40/, `${surface.name}: phone max must mirror server`)
+    assert.match(source, /maxLength=\{120\}/, `${surface.name}: text maxLength constraints missing`)
+    assert.match(source, /maxLength=\{2000\}/, `${surface.name}: message maxLength constraint missing`)
   }
   const binding = resolveExpectedCaptchaAction({
     endpoint: surface.endpoint,
