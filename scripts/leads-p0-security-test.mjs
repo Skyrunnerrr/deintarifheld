@@ -28,6 +28,7 @@ import { inboxGetResponse } from '../lib/leads/admin-inbox-http.js'
 import { withCors } from '../lib/leads/cors.js'
 import { normalizeRequestId, resolveRequestId } from '../lib/leads/request-id.js'
 import { sanitizeLogFields } from '../lib/leads/log.js'
+import { assertProductionApiEnv, productionApiEnvProblems } from '../lib/leads/production-env-preflight.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const STRONG_ADMIN = 'p0-admin-secret-value-32chars!!'
@@ -293,6 +294,51 @@ async function assertBodyLimit() {
   console.log('P0_BODY_LIMIT=PASS')
 }
 
+function assertProductionEnvPreflight() {
+  const valid = {
+    SUPABASE_URL: 'https://example.supabase.co',
+    SUPABASE_SERVICE_ROLE_KEY: 'service-role-test-only',
+    RECAPTCHA_PROJECT_ID: 'dth-project',
+    RECAPTCHA_API_KEY: 'recaptcha-api-key-test-only',
+    NEXT_PUBLIC_RECAPTCHA_PUBLIC_KEY: 'ci_public_recaptcha_key_1234567890',
+    LEADS_ADMIN_SECRET: 'admin-secret-012345678901234567890123456789',
+    CRON_SECRET: 'cron-secret-0123456789012345678901234567890',
+    LEADS_RATE_LIMIT_SALT: 'rate-salt-012345678901234567890123',
+    AUDIT_EMAIL_HASH_SALT: 'audit-salt-01234567890123456789012',
+    LEADS_RATE_LIMIT_PROVIDER: 'supabase',
+    LEADS_ALLOW_MEMORY_RATE_LIMIT: 'NO',
+    LEADS_ALLOW_SMOKE_BYPASS: 'NO',
+    LEADS_MAIL_MODE: 'live',
+    ALLOW_CUSTOMER_MAIL: 'YES',
+    RESEND_API_KEY: 're_test_only_not_real',
+    LEADS_FROM_EMAIL: 'DeinTarifheld <kontakt@deintarifheld.de>',
+    LEADS_TO_EMAIL: 'kontakt@deintarifheld.de',
+  }
+  assert.deepEqual(productionApiEnvProblems(valid), [])
+  assert.equal(assertProductionApiEnv(valid), true)
+
+  const badRecipients = productionApiEnvProblems({
+    ...valid,
+    LEADS_TO_EMAIL: 'kontakt@deintarifheld.de,office@example.invalid',
+  })
+  assert.ok(badRecipients.includes('LEADS_TO_EMAIL'))
+
+  const badMail = productionApiEnvProblems({ ...valid, LEADS_MAIL_MODE: 'mock' })
+  assert.ok(badMail.includes('LEADS_MAIL_MODE'))
+
+  const reusedSalt = productionApiEnvProblems({
+    ...valid,
+    AUDIT_EMAIL_HASH_SALT: valid.LEADS_RATE_LIMIT_SALT,
+  })
+  assert.ok(reusedSalt.includes('AUDIT_RATE_SALT_REUSE'))
+
+  assert.throws(
+    () => assertProductionApiEnv({ ...valid, ALLOW_CUSTOMER_MAIL: 'NO' }),
+    /ALLOW_CUSTOMER_MAIL/,
+  )
+  console.log('P0_PRODUCTION_ENV_PREFLIGHT=PASS')
+}
+
 function assertRateLimitIdentityResistsUserAgentRotation() {
   const prevSalt = process.env.LEADS_RATE_LIMIT_SALT
   const prevRuntime = process.env.LEADS_RUNTIME_ENV
@@ -546,7 +592,8 @@ function assertRequestIds() {
 }
 
 async function main() {
-  assertRateLimitIdentityResistsUserAgentRotation()
+  assertProductionEnvPreflight()
+assertRateLimitIdentityResistsUserAgentRotation()
 assertLogAllowlist()
 await assertCaptcha()
   await assertOrigin()
