@@ -389,8 +389,7 @@ async function assertProductionIntakeFailsClosedOnBrokenEnv() {
   console.log('P0_PRODUCTION_INTAKE_CONFIG_FAIL_CLOSED=PASS')
 }
 
-function await assertProductionIntakeFailsClosedOnBrokenEnv()
-assertRateLimitIdentityResistsUserAgentRotation() {
+function assertRateLimitIdentityResistsUserAgentRotation() {
   const prevSalt = process.env.LEADS_RATE_LIMIT_SALT
   const prevRuntime = process.env.LEADS_RUNTIME_ENV
   process.env.LEADS_RATE_LIMIT_SALT = 'p0-rate-limit-identity-salt'
