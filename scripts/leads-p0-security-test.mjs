@@ -161,8 +161,10 @@ async function assertCaptcha() {
 }
 
 async function assertOrigin() {
-  await withEnv({ LEADS_RUNTIME_ENV: 'production', LEADS_ALLOWED_ORIGINS: 'http://localhost:3000' }, () => {
+  await withEnv({ LEADS_RUNTIME_ENV: 'production', LEADS_ALLOWED_ORIGINS: 'http://localhost:3000,https://evil.example' }, () => {
     assert.equal(allowedOrigins().includes('http://localhost:3000'), false)
+    assert.equal(allowedOrigins().includes('https://evil.example'), false)
+    assert.deepEqual(allowedOrigins().sort(), ['https://deintarifheld.de', 'https://www.deintarifheld.de'].sort())
     assert.equal(allowedOrigins().includes('https://www.deintarifheld.de'), true)
     assert.equal(
       isBlockedOrigin(fakeRequest({})),
@@ -325,6 +327,18 @@ function assertProductionEnvPreflight() {
 
   const badMail = productionApiEnvProblems({ ...valid, LEADS_MAIL_MODE: 'mock' })
   assert.ok(badMail.includes('LEADS_MAIL_MODE'))
+
+  const widenedOrigins = productionApiEnvProblems({
+    ...valid,
+    LEADS_ALLOWED_ORIGINS: 'https://deintarifheld.de,https://www.deintarifheld.de,https://evil.example',
+  })
+  assert.ok(widenedOrigins.includes('LEADS_ALLOWED_ORIGINS'))
+
+  const canonicalOrigins = productionApiEnvProblems({
+    ...valid,
+    LEADS_ALLOWED_ORIGINS: 'https://www.deintarifheld.de,https://deintarifheld.de',
+  })
+  assert.equal(canonicalOrigins.includes('LEADS_ALLOWED_ORIGINS'), false)
 
   const reusedSalt = productionApiEnvProblems({
     ...valid,
