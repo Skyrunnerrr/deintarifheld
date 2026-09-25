@@ -91,11 +91,34 @@ if (!hasOrigin) fail('EXPECTED_API_ORIGIN_MISSING', apiOrigin)
 if (!hasLeads) fail('LEADS_API_REFERENCE_MISSING', expectedLeads)
 if (!hasCareers) fail('CAREERS_API_REFERENCE_MISSING', expectedCareers)
 
-// Route presence
+// Route presence. A production export is not release-safe unless every public
+// lead surface and legal route exists in the exact artifact being uploaded.
+const requiredRouteFiles = [
+  ['HOME_ROUTE_MISSING', 'index.html'],
+  ['BUSINESS_ROUTE_MISSING', 'unternehmen/index.html'],
+  ['BUSINESS_PREVIEW_ROUTE_MISSING', 'unternehmen-neu/index.html'],
+  ['CAREER_ROUTE_MISSING', 'karriere/index.html'],
+  ['DATENSCHUTZ_ROUTE_MISSING', 'datenschutz/index.html'],
+  ['AGB_ROUTE_MISSING', 'agb/index.html'],
+  ['IMPRESSUM_ROUTE_MISSING', 'impressum/index.html'],
+]
+for (const [code, rel] of requiredRouteFiles) {
+  if (!existsSync(join(outDir, rel))) fail(code, rel)
+}
 if (!existsSync(join(outDir, 'rechner/index.html')) && !existsSync(join(outDir, 'rechner.html'))) {
   fail('RECHNER_ROUTE_MISSING')
 }
-if (!existsSync(join(outDir, 'karriere/index.html'))) fail('CAREER_ROUTE_MISSING')
+
+// Runtime form markers prove that all public submit contracts survived the
+// static production build and were not accidentally tree-shaken/replaced.
+for (const [name, marker] of [
+  ['hero', 'hero-funnel'],
+  ['main-funnel', 'main_funnel'],
+  ['business', 'unternehmen'],
+  ['career', 'career'],
+]) {
+  if (!blob.includes(marker)) fail('FORM_SURFACE_MARKER_MISSING', name)
+}
 
 const report = {
   GOOGLE_APPS_SCRIPT_REFERENCES_IN_OUT: 0,
@@ -114,6 +137,8 @@ const report = {
   filesScanned: textFiles.length,
   RECHNER_500_IN_NEW_BUILD: 'NO',
   CAREER_CANONICAL_PRESENT: 'YES',
+  PUBLIC_FORM_SURFACE_MARKERS: 'PASS',
+  REQUIRED_PUBLIC_ROUTES: 'PASS',
 }
 
 console.log('STATIC_OUTPUT_SCAN=PASS')
