@@ -144,6 +144,8 @@ for (const surface of surfaces) {
   }
   if (surface.name === 'business-live' || surface.name === 'business-preview') {
     assert.match(source, /phoneRegex\.test\(form\.telefon\.trim\(\)\)/, `${surface.name}: optional phone must be validated when present`)
+    assert.match(source, /activeConsumptionValid/, `${surface.name}: optional consumption must be validated before advancing`)
+    assert.match(source, /Number\(activeConsumption\) > 0/, `${surface.name}: zero consumption must not pass client validation`)
   }
   const binding = resolveExpectedCaptchaAction({
     endpoint: surface.endpoint,
