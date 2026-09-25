@@ -309,6 +309,25 @@ async function assertFailurePath() {
   await withEnv(
     {
       LEADS_MAIL_MODE: 'internal_live',
+      RESEND_API_KEY: 're_test_key',
+      LEADS_FROM_EMAIL: 'DeinTarifheld <kontakt@deintarifheld.de>\r\nBcc: attacker@example.invalid',
+      LEADS_TO_EMAIL: 'ops@example.invalid',
+    },
+    async () => {
+      const r = await sendLeadEmails({
+        leadRef: 'REF-BAD-FROM',
+        data: businessData,
+        submittedAt: new Date().toISOString(),
+        channel: 'business',
+      })
+      assert.equal(r.ok, false)
+      assert.equal(r.code, 'mail-not-configured')
+    },
+  )
+
+  await withEnv(
+    {
+      LEADS_MAIL_MODE: 'internal_live',
       RESEND_API_KEY: undefined,
       LEADS_FROM_EMAIL: undefined,
       LEADS_TO_EMAIL: undefined,
@@ -466,6 +485,10 @@ function assertInquiryFieldsInOpsMail() {
     'kontakt@deintarifheld.de',
   ])
   assert.deepEqual(parseLeadToAddresses('  '), [])
+  assert.deepEqual(parseLeadToAddresses('ops@example.invalid,ops@example.invalid'), ['ops@example.invalid'])
+  assert.deepEqual(parseLeadToAddresses('ops@example.invalid,'), [])
+  assert.deepEqual(parseLeadToAddresses('ops@example.invalid\r\nBcc:evil@example.invalid'), [])
+  assert.deepEqual(parseLeadToAddresses('not-an-email'), [])
   console.log('INQUIRY_FIELDS_IN_OPS_MAIL=PASS')
   console.log('AUDIT_REDACTION_AND_MINIMIZATION=PASS')
 }
