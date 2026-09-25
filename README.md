@@ -124,6 +124,10 @@ The 2026-09-24 full-system review is tracked in:
 
 `docs/audit/DTH_FULL_SYSTEM_AUDIT_2026-09-24.md`
 
+The current operational release gate is:
+
+`docs/deployment/CURRENT_PRODUCTION_RELEASE_GATE.md`
+
 The review covers correctness, security, reCAPTCHA, mail, Supabase, retention, admin access, deployment/rollback, dependencies, repository hygiene, performance, accessibility, SEO and public claims.
 
 ## Secrets
