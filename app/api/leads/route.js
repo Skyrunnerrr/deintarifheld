@@ -131,7 +131,6 @@ export async function POST(request) {
       ok: true,
       duplicate: true,
       idempotent: true,
-      leadId: existingByKey.id,
       leadRef: existingByKey.lead_ref,
       ...mailFieldsFromStored(existingByKey),
     })
@@ -173,7 +172,6 @@ export async function POST(request) {
           ok: true,
           duplicate: true,
           idempotent: true,
-          leadId: raced.id,
           leadRef: raced.lead_ref,
           ...mailFieldsFromStored(raced),
         })
@@ -188,7 +186,6 @@ export async function POST(request) {
   }
 
   await writeAuditObserved(supabase, {
-    leadId: inserted.id,
     eventType: 'lead.accepted',
     detail: { lead_ref: leadRef, page_source: pageSource, lead_type: leadType },
   })
@@ -210,7 +207,6 @@ export async function POST(request) {
       code: mailMeta.error.code || 'unknown',
     })
     await writeAuditObserved(supabase, {
-      leadId: inserted.id,
       eventType: 'lead.mail_meta_update_failed',
       detail: { lead_ref: leadRef, code: mailMeta.error.code || 'unknown' },
     })
@@ -219,7 +215,6 @@ export async function POST(request) {
   if (!mailResult.ok) {
     if (mailResult.internalDelivery === 'sent') {
       await writeAuditObserved(supabase, {
-        leadId: inserted.id,
         eventType: 'lead.internal_mail_sent',
         detail: {
           lead_ref: leadRef,
@@ -230,7 +225,6 @@ export async function POST(request) {
       })
       if (mailResult.customerConfirmation === 'failed') {
         await writeAuditObserved(supabase, {
-          leadId: inserted.id,
           eventType: 'lead.customer_confirmation_failed',
           detail: {
             lead_ref: leadRef,
@@ -244,7 +238,6 @@ export async function POST(request) {
     const failEvent =
       mailResult.mode === 'internal_live' ? 'lead.internal_mail_failed' : 'lead.mail_failed'
     await writeAuditObserved(supabase, {
-      leadId: inserted.id,
       eventType: failEvent,
       detail: {
         code: mailResult.code,
@@ -256,7 +249,6 @@ export async function POST(request) {
     })
     if (mailResult.mode === 'internal_live') {
       await writeAuditObserved(supabase, {
-        leadId: inserted.id,
         eventType: 'lead.customer_confirmation_skipped',
         detail: { lead_ref: leadRef, mode: 'internal_live', reason: 'temporary_internal_mode' },
       })
@@ -270,7 +262,6 @@ export async function POST(request) {
       request,
       {
         ok: true,
-        leadId: inserted.id,
         leadRef,
         duplicate: false,
         idempotent: false,
@@ -283,7 +274,6 @@ export async function POST(request) {
 
   if (mailResult.mode === 'internal_live') {
     await writeAuditObserved(supabase, {
-      leadId: inserted.id,
       eventType: 'lead.internal_mail_sent',
       detail: {
         lead_ref: leadRef,
@@ -294,13 +284,11 @@ export async function POST(request) {
       },
     })
     await writeAuditObserved(supabase, {
-      leadId: inserted.id,
       eventType: 'lead.customer_confirmation_skipped',
       detail: { lead_ref: leadRef, mode: 'internal_live', reason: 'temporary_internal_mode' },
     })
   } else {
     await writeAuditObserved(supabase, {
-      leadId: inserted.id,
       eventType: 'lead.mail_sent',
       detail: {
         lead_ref: leadRef,
@@ -315,7 +303,6 @@ export async function POST(request) {
 
   return json(request, {
     ok: true,
-    leadId: inserted.id,
     leadRef,
     duplicate: false,
     idempotent: false,
