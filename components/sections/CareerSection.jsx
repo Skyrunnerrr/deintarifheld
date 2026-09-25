@@ -34,13 +34,15 @@ const KF = `
 `
 
 const schema = z.object({
-  name:       z.string().min(2, 'Bitte gib deinen Namen ein'),
-  email:      z.string().email('Bitte gib eine gültige E-Mail ein'),
-  phone:      z.string().refine(
+  name:       z.string().min(2, 'Bitte gib deinen Namen ein').max(160, 'Der Name ist zu lang'),
+  email:      z.string().max(180, 'Die E-Mail-Adresse ist zu lang').email('Bitte gib eine gültige E-Mail ein'),
+  phone:      z.string().max(40, 'Die Telefonnummer ist zu lang').refine(
     (value) => /^(?=(?:\D*\d){6,20}\D*$)[0-9+()\s./-]+$/.test(value.trim()),
     'Bitte gib eine gültige Telefonnummer ein',
   ),
-  motivation: z.string().min(10, 'Bitte schreib uns kurz, warum dich das interessiert'),
+  motivation: z.string()
+    .min(10, 'Bitte schreib uns kurz, warum dich das interessiert')
+    .max(4000, 'Deine Nachricht ist zu lang'),
   gdpr:       z.literal(true, { errorMap: () => ({ message: 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.' }) }),
 })
 
