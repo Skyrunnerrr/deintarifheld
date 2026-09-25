@@ -337,6 +337,20 @@ function assertProductionEnvPreflight() {
   const badMail = productionApiEnvProblems({ ...valid, LEADS_MAIL_MODE: 'mock' })
   assert.ok(badMail.includes('LEADS_MAIL_MODE'))
 
+  const mailOnlyBrokenAtRuntime = productionPublicIntakeEnvProblems({
+    ...valid,
+    LEADS_MAIL_MODE: 'mock',
+    ALLOW_CUSTOMER_MAIL: 'NO',
+    RESEND_API_KEY: '',
+    LEADS_FROM_EMAIL: '',
+    LEADS_TO_EMAIL: '',
+  })
+  assert.deepEqual(
+    mailOnlyBrokenAtRuntime,
+    [],
+    'runtime intake must stay storage-first when mail configuration is temporarily broken',
+  )
+
   const widenedOrigins = productionApiEnvProblems({
     ...valid,
     LEADS_ALLOWED_ORIGINS: 'https://deintarifheld.de,https://www.deintarifheld.de,https://evil.example',
@@ -383,7 +397,8 @@ async function assertProductionIntakeFailsClosedOnBrokenEnv() {
     async () => {
       const problems = productionPublicIntakeEnvProblems()
       assert.ok(problems.includes('SUPABASE_URL'))
-      assert.ok(problems.includes('LEADS_MAIL_MODE'))
+      assert.equal(problems.includes('LEADS_MAIL_MODE'), false)
+      assert.equal(problems.includes('RESEND_API_KEY'), false)
       const result = await enforcePublicIntake(
         jsonRequest({
           origin: 'https://www.deintarifheld.de',
