@@ -27,6 +27,7 @@ import { publicCareersHealth, publicLeadsHealth } from '../lib/leads/public-heal
 import { inboxGetResponse } from '../lib/leads/admin-inbox-http.js'
 import { withCors } from '../lib/leads/cors.js'
 import { normalizeRequestId, resolveRequestId } from '../lib/leads/request-id.js'
+import { sanitizeLogFields } from '../lib/leads/log.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const STRONG_ADMIN = 'p0-admin-secret-value-32chars!!'
@@ -265,6 +266,32 @@ async function assertBodyLimit() {
   console.log('P0_BODY_LIMIT=PASS')
 }
 
+function assertLogAllowlist() {
+  const safe = sanitizeLogFields({
+    code: 'storage-failed',
+    leadRef: 'LED-TEST-123',
+    score: 0.9,
+    email: 'person@example.invalid',
+    name: 'Max Mustermann',
+    firma: 'Example GmbH',
+    plz: '68159',
+    ip: '203.0.113.5',
+    telefon: '012345',
+    payload: { secret: 'nope' },
+  })
+  assert.equal(safe.code, 'storage-failed')
+  assert.equal(safe.leadRef, 'LED-TEST-123')
+  assert.equal(safe.score, 0.9)
+  assert.equal(safe.email, undefined)
+  assert.equal(safe.name, undefined)
+  assert.equal(safe.firma, undefined)
+  assert.equal(safe.plz, undefined)
+  assert.equal(safe.ip, undefined)
+  assert.equal(safe.telefon, undefined)
+  assert.equal(safe.payload, undefined)
+  console.log('P0_LOG_ALLOWLIST=PASS')
+}
+
 async function assertAdminAuth() {
   await withEnv({ LEADS_ADMIN_SECRET: STRONG_ADMIN, CRON_SECRET: STRONG_CRON, LEADS_RUNTIME_ENV: undefined }, () => {
     assert.equal(isAdminAuthorized(fakeRequest({ authorization: `Bearer ${STRONG_ADMIN}` })), true)
@@ -469,7 +496,8 @@ function assertRequestIds() {
 }
 
 async function main() {
-  await assertCaptcha()
+  assertLogAllowlist()
+await assertCaptcha()
   await assertOrigin()
   await assertBodyLimit()
   await assertAdminAuth()
