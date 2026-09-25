@@ -194,7 +194,9 @@ export function Hero() {
     setRecaptchaError('')
     const newErrors = {}
     if (!formData.provider.trim()) newErrors.provider = 'Bitte gib deinen Anbieter ein'
-    if (!formData.usage.trim()) newErrors.usage = 'Bitte gib deinen Verbrauch ein'
+    if (!/^\d+$/.test(formData.usage.trim()) || Number(formData.usage) <= 0) {
+      newErrors.usage = 'Bitte gib einen gültigen Verbrauch in ganzen kWh ein'
+    }
     if (!formData.zip.trim() || !/^\d{5}$/.test(formData.zip.trim())) newErrors.zip = 'Bitte gib eine gültige 5-stellige PLZ ein'
     if (!['strom', 'gas'].includes(formData.type)) newErrors.type = 'Bitte wähle Strom oder Gas aus'
     if (!formData.gdpr) newErrors.gdpr = 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.'
