@@ -366,7 +366,7 @@ async function assertFailurePath() {
         channel: 'business',
       })
       assert.equal(r.ok, false)
-      assert.equal(r.mailStatus, 'internal_sent')
+      assert.equal(r.mailStatus, 'partial_failed')
       assert.equal(r.internalDelivery, 'sent')
       assert.equal(r.customerConfirmation, 'failed')
       assert.ok(r.providerEmailId)
