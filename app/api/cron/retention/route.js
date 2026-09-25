@@ -8,7 +8,10 @@ import { resolveRetentionConfig } from '@/lib/leads/retention-config'
 export const runtime = 'nodejs'
 
 function json(body, status = 200) {
-  const response = NextResponse.json(body, { status })
+  const response = NextResponse.json(body, {
+    status,
+    headers: { 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow, noarchive' },
+  })
   applySecurityHeaders(response.headers)
   return response
 }
