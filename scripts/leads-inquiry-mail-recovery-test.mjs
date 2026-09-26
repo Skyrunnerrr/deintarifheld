@@ -212,7 +212,7 @@ async function assertInitialAndRetry() {
       careers: [],
       sendMail: async () => ({
         ok: false,
-        code: 'provider ada@example.invalid sk_live_secret token=abc',
+        code: 'provider raw-detail not-allowlisted',
         mode: 'internal_live',
         mailStatus: 'failed',
       }),
@@ -249,7 +249,8 @@ async function assertInitialAndRetry() {
     Object.keys(parsed).sort(),
     ['code', 'event', 'inquiryType', 'leadRef', 'storage', 'ts'],
   )
-  assert.doesNotMatch(finalLine, /@|sk_live|token|captcha|api_key/i)
+  assert.doesNotMatch(finalLine, /raw-detail|not-allowlisted|captcha|api_key/i)
+  assert.equal(safeMailErrorCode('provider raw-detail not-allowlisted'), 'mail-send-failed')
   assert.equal(safeMailErrorCode('mail-not-configured'), 'mail-not-configured')
   assert.equal(safeMailErrorCode('ada@example.invalid'), 'mail-send-failed')
   console.log('AUTOMATIC_RETRY_FAILED_FINAL=PASS')
