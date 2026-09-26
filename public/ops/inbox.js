@@ -7,6 +7,8 @@
     verbrauchGas: 'Verbrauch Gas', usage: 'Verbrauch', standorte: 'Standorte',
     versorger: 'Versorger', provider: 'Anbieter', vertragslaufzeit: 'Vertragslaufzeit',
     nachricht: 'Nachricht', firstName: 'Name', name: 'Name', motivation: 'Motivation',
+    inquiry_type: 'Anfragetyp', verbrauch: 'Verbrauch', tarifinfo: 'Tarifinfo',
+    zaehler: 'Zähler', beschreibung: 'Beschreibung',
     page_source: 'Kanal', source_page: 'Quelle', lead_type: 'Typ',
     form_version: 'Formularversion', dsgvo: 'Kenntnisnahme'
   }
@@ -34,23 +36,39 @@
     try { return new Date(iso).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }) } catch { return iso || '' }
   }
   function titleOf(item) {
-    if (item.kind === 'career') return 'Karriere · ' + (item.full_name || item.email || item.application_ref)
-    if (item.page_source === 'unternehmen') return 'Unternehmen · ' + (item.firma || item.email || item.lead_ref)
-    return 'Privat · ' + ((item.payload && item.payload.firstName) || item.email || item.lead_ref)
+    const inquiry = item.payload && item.payload.inquiry_type
+    if (item.kind === 'career' || inquiry === 'partner') return 'Partner · ' + (item.full_name || (item.payload && item.payload.name) || item.email || item.application_ref)
+    if (inquiry === 'general') return 'Allgemein · ' + ((item.payload && item.payload.name) || item.email || item.lead_ref)
+    if (inquiry === 'business_energy' || item.page_source === 'unternehmen') return 'Gewerbe · ' + (item.firma || item.email || item.lead_ref)
+    if (inquiry === 'private_energy') return 'Privat · ' + ((item.payload && item.payload.name) || item.email || item.lead_ref)
+    return 'Privat · ' + ((item.payload && (item.payload.firstName || item.payload.name)) || item.email || item.lead_ref)
   }
   let allItems = []
   let lastCounts = { leads: 0, careers: 0 }
+  const STATUS_LABEL = {
+    internal_sent: 'zugestellt',
+    accepted: 'zugestellt',
+    failed: 'fehlgeschlagen',
+    retrying: 'wird nachgeholt',
+    failed_final: 'endgültig fehlgeschlagen',
+    unknown: 'unbekannt'
+  }
   function mailStatusOf(item) {
     const raw = typeof item.mail_status === 'string' ? item.mail_status.trim() : ''
-    if (raw === 'failed' || raw === 'internal_sent' || raw === 'accepted') return raw
+    if (raw === 'failed' || raw === 'failed_final' || raw === 'retrying' || raw === 'internal_sent' || raw === 'accepted') return raw
     return 'unknown'
   }
-  function isFailed(item) { return mailStatusOf(item) === 'failed' }
+  function isMailAttention(item) {
+    const status = mailStatusOf(item)
+    return status === 'failed' || status === 'failed_final' || status === 'retrying'
+  }
   function render() {
     const failedOnly = $('failedOnly').checked
-    const items = failedOnly ? allItems.filter(isFailed) : allItems
-    const failedCount = allItems.filter(isFailed).length
-    $('counts').textContent = lastCounts.leads + ' Anfragen · ' + lastCounts.careers + ' Bewerbungen · ' + failedCount + ' Mail fehlgeschlagen'
+    const items = failedOnly ? allItems.filter(isMailAttention) : allItems
+    const failedCount = allItems.filter((item) => mailStatusOf(item) === 'failed').length
+    const retryingCount = allItems.filter((item) => mailStatusOf(item) === 'retrying').length
+    const finalCount = allItems.filter((item) => mailStatusOf(item) === 'failed_final').length
+    $('counts').textContent = lastCounts.leads + ' Anfragen · ' + lastCounts.careers + ' Bewerbungen · ' + failedCount + ' fehlgeschlagen · ' + retryingCount + ' Nachholung · ' + finalCount + ' endgültig'
     if (!items.length) {
       $('list').innerHTML = '<p class="empty">' + (failedOnly ? 'Keine fehlgeschlagenen Mails.' : 'Keine Einträge.') + '</p>'
       return
@@ -59,9 +77,12 @@
       const ref = item.lead_ref || item.application_ref || ''
       const extra = rowsFromPayload(item.payload)
       const status = mailStatusOf(item)
-      const failed = status === 'failed'
-      return '<article class="card' + (failed ? ' mail-failed' : '') + '"><h2>' + esc(titleOf(item)) + '</h2>' +
-        '<p class="meta' + (failed ? ' badge-failed' : '') + '">' + esc(ref) + ' · ' + esc(when(item.created_at)) + ' · Mail ' + esc(status) + '</p>' +
+      const failed = status === 'failed' || status === 'failed_final'
+      const retrying = status === 'retrying'
+      const cardClass = failed ? ' mail-failed' + (status === 'failed_final' ? ' mail-failed-final' : '') : retrying ? ' mail-retrying' : ''
+      const badgeClass = failed ? ' badge-failed' : retrying ? ' badge-retrying' : ''
+      return '<article class="card' + cardClass + '"><h2>' + esc(titleOf(item)) + '</h2>' +
+        '<p class="meta' + badgeClass + '">' + esc(ref) + ' · ' + esc(when(item.created_at)) + ' · Mail ' + esc(status) + ' · ' + esc(STATUS_LABEL[status] || STATUS_LABEL.unknown) + '</p>' +
         '<table>' +
         '<tr><th>E-Mail</th><td>' + esc(item.email || '') + '</td></tr>' +
         extra +

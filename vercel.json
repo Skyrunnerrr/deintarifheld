@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/retention",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/inquiry-mail",
+      "schedule": "15 4 * * *"
     }
   ]
 }

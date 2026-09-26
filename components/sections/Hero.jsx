@@ -3,10 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
-import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
-import { leadsApiUrl, postJsonLead } from '@/lib/leads/browser-api'
-import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
+import { UnifiedInquiryForm } from '@/components/forms/UnifiedInquiryForm'
 
 // ─── Keyframes via inline style tag ────────────────────────────────
 const KEYFRAMES = `
@@ -45,13 +42,6 @@ function IconArrow({ size = 16 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-function IconArrowLeft({ size = 12 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 12 12" fill="none" aria-hidden="true">
-      <path d="M9 6H3M5 4l-2 2 2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -94,14 +84,6 @@ function IconCheckCircle({ size = 16 }) {
     </svg>
   )
 }
-function IconCheckmarkSuccess() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 12l5 5L19 7" stroke="#D4FF3E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 // ─── Floating Chip ────────────────────────────────────────────────
 function FloatingChip({ icon, title, subtitle, style, floatStyle }) {
   return (
@@ -137,24 +119,7 @@ function FloatingChip({ icon, title, subtitle, style, floatStyle }) {
 // ─── Main Hero Component ──────────────────────────────────────────
 export function Hero() {
   const [funnelOpen, setFunnelOpen] = useState(false)
-  const [step,       setStep]       = useState(1)
-  const [formData,   setFormData]   = useState({
-    firstName: '', phone: '', email: '',
-    provider: '', usage: '', zip: '', type: '', gdpr: false,
-    [HONEYPOT_FIELD]: '', [HONEYPOT_FIELD_2]: '',
-  })
-  const [errors, setErrors] = useState({})
-  const [rateLimitMsg, setRateLimitMsg] = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
-  const [recaptchaError, setRecaptchaError] = useState('')
-  const [sending, setSending] = useState(false)
 
-  // Security: record form load time
-  useEffect(() => {
-    recordFormLoad('hero-funnel')
-  }, [])
-
-  // Scroll-Trigger
   useEffect(() => {
     const handleScroll = () => {
       if (funnelOpen) return
@@ -172,79 +137,6 @@ export function Hero() {
     setTimeout(() => {
       document.getElementById('hero-funnel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }, 100)
-  }
-
-  function goStep2() {
-    const newErrors = {}
-    if (!formData.firstName.trim()) newErrors.firstName = 'Bitte gib deinen Vornamen ein'
-    if (!formData.phone.trim() || formData.phone.trim().length < 6) newErrors.phone = 'Bitte gib deine Telefonnummer ein'
-    if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) newErrors.email = 'Bitte gib eine gültige E-Mail ein'
-    setErrors(newErrors)
-    if (Object.keys(newErrors).length === 0) setStep(2)
-  }
-  function goStep1() { setStep(1); setErrors({}) }
-
-  async function submitForm() {
-    if (sending) return
-    setRateLimitMsg('')
-    setRecaptchaError('')
-    const newErrors = {}
-    if (!formData.provider.trim()) newErrors.provider = 'Bitte gib deinen Anbieter ein'
-    if (!formData.usage.trim()) newErrors.usage = 'Bitte gib deinen Verbrauch ein'
-    if (!formData.zip.trim() || !/^\d{5}$/.test(formData.zip.trim())) newErrors.zip = 'Bitte gib eine gültige 5-stellige PLZ ein'
-    if (!formData.gdpr) newErrors.gdpr = 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.'
-    setErrors(newErrors)
-    if (Object.keys(newErrors).length > 0) return
-
-    // Rate limiting
-    const rl = checkRateLimit('hero-funnel')
-    if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s bevor du erneut absendest.`); return }
-
-    setSending(true)
-    try {
-      const captcha = await resolveSubmitCaptchaToken('hero_funnel', recaptchaToken)
-      if (!captcha.ok) {
-        setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
-        return
-      }
-      recordSubmission('hero-funnel')
-      const { [HONEYPOT_FIELD]: _hp, [HONEYPOT_FIELD_2]: _hp2, ...rest } = formData
-      const { _formLoadedAt } = getFormTiming('hero-funnel')
-      const payload = {
-        ...sanitizePayload({
-          ...rest,
-          firstName: rest.firstName,
-          gdpr: true,
-          _recaptchaAction: 'hero_funnel',
-          page_source: 'hero-funnel',
-          lead_type: 'private_energy',
-          brand_theme: 'privat',
-          form_version: '2.0',
-          timestamp: new Date().toISOString(),
-          _formLoadedAt,
-          source_page: '/',
-          website_url: formData[HONEYPOT_FIELD] || '',
-          company_fax: formData[HONEYPOT_FIELD_2] || '',
-        }),
-        _recaptchaToken: captcha.token,
-      }
-      const { res, json } = await postJsonLead(leadsApiUrl(), payload)
-      if (!res.ok || !json?.ok) {
-        console.error('Lead submit error:', json?.code || 'submit-failed', res.status)
-        setRateLimitMsg(mapLeadSubmitUserMessage({ status: res.status, code: json?.code }, { tone: 'informal' }))
-        return
-      }
-      setStep('success')
-    } catch (e) {
-      console.error('Lead submit error:', e?.code || e?.name || 'submit-failed')
-      setRateLimitMsg(mapLeadSubmitUserMessage({ thrown: e }, { tone: 'informal' }))
-    } finally {
-      setSending(false)
-    }
-  }
-
-  function handleInput(field) {
-    return (e) => setFormData(prev => ({ ...prev, [field]: e.target.value }))
   }
 
   return (
@@ -450,7 +342,7 @@ export function Hero() {
           <motion.div
             id="hero-funnel"
             initial={{ maxHeight: 0, opacity: 0 }}
-            animate={funnelOpen ? { maxHeight: 600, opacity: 1 } : { maxHeight: 0, opacity: 0 }}
+            animate={funnelOpen ? { maxHeight: 1600, opacity: 1 } : { maxHeight: 0, opacity: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             style={{ overflow: 'hidden', marginBottom: funnelOpen ? 28 : 0 }}
           >
@@ -462,10 +354,7 @@ export function Hero() {
               backdropFilter: 'blur(14px)',
               WebkitBackdropFilter: 'blur(14px)',
             }}>
-              {step !== 'success' && (
-                <>
-                  {/* Funnel Header */}
-                  <div style={{ marginBottom: 14 }}>
+              <div style={{ marginBottom: 14 }}>
                     <div style={{
                       fontFamily: 'var(--font-cabinet, "Cabinet Grotesk", sans-serif)',
                       fontWeight: 700, fontSize: 11,
@@ -475,144 +364,8 @@ export function Hero() {
                     }}>
                       Deine kostenlose Analyse
                     </div>
-                    {/* Progress Bar */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.07)', borderRadius: 999, overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%',
-                          width: step === 1 ? '50%' : '100%',
-                          background: 'var(--volt, #D4FF3E)',
-                          borderRadius: 999,
-                          transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)',
-                        }} />
-                      </div>
-                      <span style={{
-                        fontFamily: 'var(--font-cabinet, "Cabinet Grotesk", sans-serif)',
-                        fontWeight: 700, fontSize: 11,
-                        color: 'var(--text-tertiary, #5A6272)',
-                        whiteSpace: 'nowrap',
-                      }}>
-                        Schritt {step} von 2
-                      </span>
-                    </div>
                   </div>
-                </>
-              )}
-
-              {/* STEP 1 */}
-              <AnimatePresence mode="wait">
-                {step === 1 && (
-                  <motion.div key="s1" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.25 }}>
-                    <FunnelInputGrid>
-                      <FunnelInput label="VORNAME" id="fn" type="text" placeholder="Max" value={formData.firstName} onChange={handleInput('firstName')} error={errors.firstName} />
-                      <FunnelInput label="TELEFON" id="ph" type="tel" placeholder="+49 170 …" value={formData.phone} onChange={handleInput('phone')} error={errors.phone} />
-                    </FunnelInputGrid>
-                    <FunnelInput label="E-MAIL" id="em" type="email" placeholder="max@beispiel.de" value={formData.email} onChange={handleInput('email')} style={{ marginTop: 8 }} error={errors.email} />
-                    {/* Honeypot — unsichtbar für echte Nutzer */}
-                    <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true" tabIndex={-1}>
-                      <input type="text" name={HONEYPOT_FIELD} value={formData[HONEYPOT_FIELD]} onChange={handleInput(HONEYPOT_FIELD)} autoComplete="off" tabIndex={-1} />
-                      <input type="text" name={HONEYPOT_FIELD_2} value={formData[HONEYPOT_FIELD_2]} onChange={handleInput(HONEYPOT_FIELD_2)} autoComplete="off" tabIndex={-1} />
-                    </div>
-                    <FunnelCTA onClick={goStep2} style={{ marginTop: 12 }}>Weiter</FunnelCTA>
-                    <DsgvoNote />
-                  </motion.div>
-                )}
-
-                {/* STEP 2 */}
-                {step === 2 && (
-                  <motion.div key="s2" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.25 }}>
-                    <FunnelInputGrid>
-                      <FunnelInput label="AKTUELLER ANBIETER" id="prov" type="text" placeholder="E.ON, Vattenfall …" value={formData.provider} onChange={handleInput('provider')} error={errors.provider} />
-                      <FunnelInput label="JAHRESVERBRAUCH (KWH)" id="usage" type="number" placeholder="3500" value={formData.usage} onChange={handleInput('usage')} error={errors.usage} />
-                    </FunnelInputGrid>
-                    <FunnelInputGrid style={{ marginTop: 8 }}>
-                      <FunnelInput label="POSTLEITZAHL" id="zip" type="text" placeholder="10115" maxLength={5} value={formData.zip} onChange={handleInput('zip')} error={errors.zip} />
-                      <FunnelSelect label="ART" id="type" value={formData.type} onChange={handleInput('type')} />
-                    </FunnelInputGrid>
-                    {/* DSGVO Checkbox */}
-                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginTop: 10 }}>
-                      <input
-                        type="checkbox"
-                        checked={formData.gdpr}
-                        onChange={e => setFormData(prev => ({ ...prev, gdpr: e.target.checked }))}
-                        required
-                        style={{ marginTop: 3, flexShrink: 0, width: 15, height: 15, accentColor: '#D4FF3E', cursor: 'pointer' }}
-                      />
-                      <span style={{ fontSize: 12, color: 'var(--text-tertiary, #5A6272)', lineHeight: 1.5 }}>
-                        Ich habe die{' '}
-                        <a href="/datenschutz" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(212,255,62,0.6)', textDecoration: 'underline' }}>Datenschutzerklärung</a>{' '}
-                        zur Kenntnis genommen.*
-                      </span>
-                    </label>
-                    {errors.gdpr && (
-                      <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{errors.gdpr}</p>
-                    )}
-                    <div style={{ marginTop: 10 }}>
-                      <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="hero_funnel" />
-                    </div>
-                    {recaptchaError && (
-                      <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{recaptchaError}</p>
-                    )}
-                    {rateLimitMsg && (
-                      <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>{rateLimitMsg}</p>
-                    )}
-                    <FunnelCTA onClick={submitForm} disabled={sending} style={{ marginTop: 10 }}>
-                      {sending ? 'Wird gesendet…' : 'Kostenloses Angebot anfordern'}
-                    </FunnelCTA>
-                    <button
-                      onClick={goStep1}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 4,
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: 'var(--text-tertiary, #5A6272)',
-                        fontFamily: 'var(--font-outfit, "Outfit", sans-serif)',
-                        fontSize: 12, margin: '8px auto 0', padding: '4px 0',
-                        transition: 'color 0.2s',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.color = 'var(--text-secondary, #8E97A8)'}
-                      onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary, #5A6272)'}
-                    >
-                      <IconArrowLeft /> Zurück
-                    </button>
-                    <DsgvoNote />
-                  </motion.div>
-                )}
-
-                {/* SUCCESS */}
-                {step === 'success' && (
-                  <motion.div key="success"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center', padding: '8px 0' }}
-                  >
-                    <div style={{
-                      width: 52, height: 52, borderRadius: '50%',
-                      background: 'rgba(212,255,62,0.1)',
-                      border: '2px solid rgba(212,255,62,0.35)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <IconCheckmarkSuccess />
-                    </div>
-                    <div style={{
-                      fontFamily: 'var(--font-cabinet, "Cabinet Grotesk", sans-serif)',
-                      fontWeight: 700, fontSize: 18,
-                      color: 'var(--volt, #D4FF3E)',
-                    }}>
-                      Anfrage gesendet
-                    </div>
-                    <p style={{
-                      fontFamily: 'var(--font-outfit, "Outfit", sans-serif)',
-                      fontSize: 13, color: 'var(--text-secondary, #8E97A8)',
-                      lineHeight: 1.55, margin: 0,
-                    }}>
-                      Wir prüfen deinen Tarif und melden uns{' '}
-                      <strong style={{ color: 'var(--volt, #D4FF3E)' }}>schnellstmöglich</strong>{' '}
-                      mit deinem Angebot.
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  <UnifiedInquiryForm initialType="private_energy" idPrefix="hero" />
             </div>
           </motion.div>
 
@@ -874,150 +627,3 @@ export function Hero() {
 }
 
 // ─── Helper Komponenten ────────────────────────────────────────────
-
-function FunnelInputGrid({ children, style }) {
-  return (
-    <div className="hero-funnel-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, ...style }}>
-      {children}
-    </div>
-  )
-}
-
-function FunnelInput({ label, id, style, error, ...props }) {
-  return (
-    <div style={style}>
-      <label htmlFor={id} style={{
-        display: 'block',
-        fontFamily: 'var(--font-cabinet, "Cabinet Grotesk", sans-serif)',
-        fontWeight: 700, fontSize: 12,
-        textTransform: 'uppercase', letterSpacing: '0.06em',
-        color: 'var(--text-tertiary, #5A6272)',
-        marginBottom: 5,
-      }}>
-        {label}
-      </label>
-      <input
-        id={id}
-        style={{
-          width: '100%', padding: '11px 14px', borderRadius: 12,
-          background: 'rgba(13,17,23,0.9)',
-          border: `1px solid ${error ? 'rgba(239,68,68,0.6)' : 'rgba(255,255,255,0.09)'}`,
-          color: 'var(--text-primary, #F2F4F8)',
-          fontFamily: 'var(--font-outfit, "Outfit", sans-serif)',
-          fontSize: 14, outline: 'none',
-          transition: 'border-color 200ms, box-shadow 200ms',
-          boxSizing: 'border-box',
-        }}
-        onFocus={e => {
-          e.currentTarget.style.borderColor = 'rgba(212,255,62,0.4)'
-          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,255,62,0.06)'
-        }}
-        onBlur={e => {
-          e.currentTarget.style.borderColor = error ? 'rgba(239,68,68,0.6)' : 'rgba(255,255,255,0.09)'
-          e.currentTarget.style.boxShadow = 'none'
-        }}
-        aria-invalid={error ? 'true' : undefined}
-        {...props}
-      />
-      {error && <p role="alert" style={{ fontSize: 11, color: '#EF4444', marginTop: 3 }}>{error}</p>}
-    </div>
-  )
-}
-
-function FunnelSelect({ label, id, value, onChange }) {
-  return (
-    <div>
-      <label htmlFor={id} style={{
-        display: 'block',
-        fontFamily: 'var(--font-cabinet, "Cabinet Grotesk", sans-serif)',
-        fontWeight: 700, fontSize: 12,
-        textTransform: 'uppercase', letterSpacing: '0.06em',
-        color: 'var(--text-tertiary, #5A6272)',
-        marginBottom: 5,
-      }}>
-        {label}
-      </label>
-      <select
-        id={id}
-        value={value}
-        onChange={onChange}
-        style={{
-          width: '100%', padding: '11px 14px', borderRadius: 12,
-          background: 'rgba(13,17,23,0.9)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          color: value ? 'var(--text-primary, #F2F4F8)' : 'rgba(255,255,255,0.22)',
-          fontFamily: 'var(--font-outfit, "Outfit", sans-serif)',
-          fontSize: 14, outline: 'none',
-          appearance: 'none', cursor: 'pointer',
-          boxSizing: 'border-box',
-        }}
-      >
-        <option value="" disabled>Strom oder Gas?</option>
-        <option value="strom">Strom</option>
-        <option value="gas">Gas</option>
-      </select>
-    </div>
-  )
-}
-
-function FunnelCTA({ children, onClick, style, disabled = false }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-busy={disabled || undefined}
-      style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-        width: '100%',
-        background: 'var(--volt, #D4FF3E)',
-        color: 'var(--bg-base, #090B0F)',
-        fontFamily: 'var(--font-cabinet, "Cabinet Grotesk", sans-serif)',
-        fontWeight: 700, fontSize: 15,
-        padding: '13px 24px', borderRadius: 14,
-        border: 'none',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.7 : 1,
-        boxShadow: '0 0 22px rgba(212,255,62,0.22)',
-        transition: 'all 0.2s ease',
-        ...style,
-      }}
-      onMouseEnter={e => {
-        if (disabled) return
-        e.currentTarget.style.background = '#B8E032'
-        e.currentTarget.style.transform = 'translateY(-1px)'
-        e.currentTarget.style.boxShadow = '0 0 36px rgba(212,255,62,0.35)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.background = 'var(--volt, #D4FF3E)'
-        e.currentTarget.style.transform = ''
-        e.currentTarget.style.boxShadow = '0 0 22px rgba(212,255,62,0.22)'
-      }}
-    >
-      {children}
-      <IconArrow />
-    </button>
-  )
-}
-
-function DsgvoNote() {
-  return (
-    <p style={{
-      fontFamily: 'var(--font-outfit, "Outfit", sans-serif)',
-      fontSize: 12, color: 'var(--text-tertiary, #5A6272)',
-      textAlign: 'center', marginTop: 6, lineHeight: 1.5,
-    }}>
-      Deine Daten werden ausschließlich zur Angebotserstellung verwendet.{' '}
-      <a
-        href="/datenschutz"
-        style={{ color: 'rgba(212,255,62,0.5)', textDecoration: 'none', transition: 'color 0.2s' }}
-        onMouseEnter={e => e.currentTarget.style.color = 'var(--volt, #D4FF3E)'}
-        onMouseLeave={e => e.currentTarget.style.color = 'rgba(212,255,62,0.5)'}
-      >
-        Datenschutz
-      </a>
-    </p>
-  )
-}
-
-export default Hero

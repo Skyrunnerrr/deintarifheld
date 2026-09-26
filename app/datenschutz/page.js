@@ -326,8 +326,8 @@ export default function DatenschutzPage() {
           </p>
           <p style={{ marginBottom: '0.75rem' }}>
             Die Angaben werden an{' '}
-            <ExtLink href="https://deintarifheld-leads-api.vercel.app/api/careers/">
-              https://deintarifheld-leads-api.vercel.app/api/careers/
+            <ExtLink href="https://deintarifheld-leads-api.vercel.app/api/leads/">
+              https://deintarifheld-leads-api.vercel.app/api/leads/
             </ExtLink>{' '}
             übermittelt und getrennt von Privat- und Unternehmensanfragen gespeichert.
           </p>

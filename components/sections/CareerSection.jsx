@@ -1,18 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { ArrowRight, CheckCircle, MapPin, Clock, TrendingUp, Users, Zap, Star } from 'lucide-react'
+import { MapPin, Clock, TrendingUp, Users, Zap, Star } from 'lucide-react'
 import { AmbientBg, GridBg } from '@/components/ui/Background'
-import { Button } from '@/components/ui/Button'
-import { Input, Textarea, Checkbox } from '@/components/ui/Form'
-import { RecaptchaBox } from '@/components/ui/RecaptchaBox'
-import { sanitizePayload, HONEYPOT_FIELD, HONEYPOT_FIELD_2, checkRateLimit, recordSubmission, recordFormLoad, getFormTiming } from '@/lib/security'
-import { careersApiUrl, postJsonLead } from '@/lib/leads/browser-api'
-import { leadSubmitCaptchaClientMessage, mapLeadSubmitUserMessage, resolveSubmitCaptchaToken } from '@/lib/leads/form-submit'
+import { UnifiedInquiryForm } from '@/components/forms/UnifiedInquiryForm'
 
 const KF = `
   @keyframes career-orb1 {
@@ -33,14 +24,6 @@ const KF = `
   }
 `
 
-const schema = z.object({
-  name:       z.string().min(2, 'Bitte gib deinen Namen ein'),
-  email:      z.string().email('Bitte gib eine gültige E-Mail ein'),
-  phone:      z.string().min(6, 'Bitte gib deine Telefonnummer ein'),
-  motivation: z.string().min(10, 'Bitte schreib uns kurz, warum dich das interessiert'),
-  gdpr:       z.literal(true, { errorMap: () => ({ message: 'Bitte bestätige, dass du die Datenschutzerklärung zur Kenntnis genommen hast.' }) }),
-})
-
 const BENEFITS = [
   { icon: <TrendingUp className="w-5 h-5" />, title: '1.400 – 5.500 €', sub: 'monatlich möglich', color: '#0A5ADB' },
   { icon: <Clock className="w-5 h-5" />,      title: 'Flexibel',         sub: 'Zeit & Ort frei wählen', color: '#217CFF' },
@@ -52,65 +35,6 @@ const BENEFITS = [
 
 export function CareerSection({ headingLevel = 'h1' }) {
   const HeadingTag = headingLevel
-  const [submitted, setSubmitted]       = useState(false)
-  const [loading, setLoading]           = useState(false)
-  const [rateLimitMsg, setRateLimitMsg] = useState('')
-  const [honeypot, setHoneypot]         = useState('')
-  const [honeypot2, setHoneypot2]       = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
-  const [recaptchaError, setRecaptchaError] = useState('')
-
-  // Security: record form load time
-  useEffect(() => {
-    recordFormLoad('career-form')
-  }, [])
-
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(schema),
-  })
-
-  async function onSubmit(data) {
-    if (loading) return
-    setRateLimitMsg('')
-    setRecaptchaError('')
-    const rl = checkRateLimit('career-form')
-    if (!rl.allowed) { setRateLimitMsg(`Bitte warte ${rl.remainingSeconds}s.`); return }
-    setLoading(true)
-    try {
-      const captcha = await resolveSubmitCaptchaToken('career', recaptchaToken)
-      if (!captcha.ok) {
-        setRecaptchaError(leadSubmitCaptchaClientMessage('informal'))
-        return
-      }
-      recordSubmission('career-form')
-      const payload = {
-        ...sanitizePayload({
-          ...data,
-          _recaptchaAction: 'career',
-          page_source: 'career',
-          timestamp: new Date().toISOString(),
-          _formLoadedAt: getFormTiming('career-form')._formLoadedAt,
-          form_version: '2.0',
-          source_page: typeof window !== 'undefined' ? window.location.pathname : '/karriere/',
-          website_url: honeypot,
-          company_fax: honeypot2,
-        }),
-        _recaptchaToken: captcha.token,
-      }
-      const { res, json } = await postJsonLead(careersApiUrl(), payload)
-      if (!res.ok || !json?.ok) {
-        console.error('Career submit error:', json?.code || 'submit-failed', res.status)
-        setRateLimitMsg(mapLeadSubmitUserMessage({ status: res.status, code: json?.code }, { tone: 'informal' }))
-        return
-      }
-      setSubmitted(true)
-    } catch (error) {
-      console.error('Career submit error:', error?.code || error?.name || 'submit-failed')
-      setRateLimitMsg(mapLeadSubmitUserMessage({ thrown: error }, { tone: 'informal' }))
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <>
@@ -269,119 +193,19 @@ export function CareerSection({ headingLevel = 'h1' }) {
                   boxShadow: '0 0 0 1px rgba(10,90,219,0.18), 0 40px 100px rgba(0,0,0,0.5), 0 0 60px rgba(10,90,219,0.06) inset',
                 }}
               >
-                {submitted ? (
-                  <div className="flex flex-col items-center gap-5 py-10 text-center">
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(10,90,219,0.15)', border: '1px solid rgba(10,90,219,0.3)' }}>
-                      <CheckCircle className="w-10 h-10" style={{ color: '#217CFF' }} />
-                    </div>
-                    <div>
-                      <h3 className="font-display font-bold text-2xl mb-2" style={{ color: '#F0F4FF' }}>Partneranfrage gesendet</h3>
-                      <p className="font-body text-base" style={{ color: 'rgba(180,200,255,0.65)' }}>Wir melden uns innerhalb von 48 Stunden für ein Kennenlerngespräch.</p>
-                    </div>
+                <div className="mb-6">
+                  <div
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-3"
+                    style={{ background: 'rgba(10,90,219,0.15)', color: '#5B9BFF', border: '1px solid rgba(10,90,219,0.25)' }}
+                  >
+                    Partneranfrage
                   </div>
-                ) : (
-                  <form onSubmit={handleSubmit(onSubmit)} noValidate>
-                    <div className="mb-7">
-                      <div
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-3"
-                        style={{ background: 'rgba(10,90,219,0.15)', color: '#5B9BFF', border: '1px solid rgba(10,90,219,0.25)' }}
-                      >
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#217CFF', display: 'inline-block' }} />
-                        Partneranfrage
-                      </div>
-                      <h3 className="font-display font-bold text-2xl" style={{ color: '#F0F4FF' }}>Interesse an Zusammenarbeit</h3>
-                      <p className="font-body text-sm mt-1" style={{ color: 'rgba(180,200,255,0.55)' }}>
-                        Unverbindliche Anfrage für eine selbstständige Tätigkeit — kein Arbeitsverhältnis, keine Datei-Uploads.
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col gap-4">
-                      <Input
-                        label="Vollständiger Name"
-                        placeholder="Max Mustermann"
-                        required
-                        error={errors.name?.message}
-                        {...register('name')}
-                      />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Input
-                          label="E-Mail"
-                          type="email"
-                          placeholder="max@beispiel.de"
-                          required
-                          error={errors.email?.message}
-                          {...register('email')}
-                        />
-                        <Input
-                          label="Telefon"
-                          type="tel"
-                          placeholder="+49 89 123456"
-                          required
-                          error={errors.phone?.message}
-                          {...register('phone')}
-                        />
-                      </div>
-                      <Textarea
-                        label="Warum interessiert dich das?"
-                        placeholder="Erzähl uns kurz von dir..."
-                        rows={3}
-                        required
-                        error={errors.motivation?.message}
-                        {...register('motivation')}
-                      />
-
-                      {/* Honeypot */}
-                      <div className="absolute -left-[9999px] opacity-0 h-0 overflow-hidden" aria-hidden="true">
-                        <input type="text" name={HONEYPOT_FIELD} value={honeypot} onChange={e => setHoneypot(e.target.value)} autoComplete="off" tabIndex={-1} />
-                        <input type="text" name={HONEYPOT_FIELD_2} value={honeypot2} onChange={e => setHoneypot2(e.target.value)} autoComplete="off" tabIndex={-1} />
-                      </div>
-
-                      <Checkbox
-                        label={
-                          <>
-                            Ich habe die{' '}
-                            <a href="/datenschutz" style={{ color: '#5B9BFF' }} className="underline underline-offset-2 hover:opacity-80" target="_blank" rel="noopener noreferrer">
-                              Datenschutzerklärung
-                            </a>{' '}
-                            zur Kenntnis genommen.*
-                          </>
-                        }
-                        required
-                        error={errors.gdpr?.message}
-                        {...register('gdpr')}
-                      />
-
-                      <RecaptchaBox onToken={setRecaptchaToken} theme="dark" action="career" />
-
-                      {recaptchaError && (
-                        <p className="text-xs text-center font-body" style={{ color: '#FF6B2B' }} role="alert">{recaptchaError}</p>
-                      )}
-
-                      <Button
-                        type="submit"
-                        variant="partner"
-                        size="lg"
-                        className="w-full justify-center mt-1"
-                        loading={loading}
-                      >
-                        Partneranfrage senden
-                        <ArrowRight className="w-5 h-5" aria-hidden="true" />
-                      </Button>
-
-                      {rateLimitMsg && (
-                        <p className="text-xs text-center font-body" style={{ color: '#FF6B2B' }} role="alert">{rateLimitMsg}</p>
-                      )}
-
-                      <div className="flex items-center justify-center gap-4 pt-1">
-                        {['Kostenlos', 'Unverbindlich', '48h Antwort'].map((t, i) => (
-                          <span key={i} className="flex items-center gap-1 font-body text-xs" style={{ color: 'rgba(180,200,255,0.45)' }}>
-                            <span style={{ color: '#217CFF' }}>✓</span> {t}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </form>
-                )}
+                  <h3 className="font-display font-bold text-2xl" style={{ color: '#F0F4FF' }}>Interesse an Zusammenarbeit</h3>
+                  <p className="font-body text-sm mt-1" style={{ color: 'rgba(180,200,255,0.55)' }}>
+                    Unverbindliche Anfrage für eine selbstständige Tätigkeit — kein Arbeitsverhältnis, keine Datei-Uploads.
+                  </p>
+                </div>
+                <UnifiedInquiryForm initialType="partner" idPrefix="partner" buttonVariant="partner" />
               </div>
             </motion.div>
 
