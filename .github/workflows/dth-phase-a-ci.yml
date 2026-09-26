@@ -76,6 +76,10 @@ jobs:
         run: npm run leads:admin:inbox
       - name: Duplicate mail-status truth
         run: npm run leads:duplicate-status
+      - name: Unified inquiry intake
+        run: npm run leads:inquiry
+      - name: Inquiry mail recovery
+        run: npm run leads:inquiry:recovery
       - name: Internal live mail mode + cutover gate
         run: npm run leads:mail:internal-live
       - name: P0 server enforcement + admin + headers + mail guards

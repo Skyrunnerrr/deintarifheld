@@ -12,9 +12,12 @@ button.secondary { background: #e8edf3; color: #152033; }
 .err { background: #fff1f0; border: 1px solid #f5c2c0; color: #8a1f1b; padding: 10px 12px; border-radius: 8px; margin: 0 0 16px; }
 .card { background: #fff; border: 1px solid #d7dce3; border-radius: 12px; padding: 16px 18px; margin: 0 0 12px; }
 .card.mail-failed { border-color: #c0392b; background: #fff6f5; }
+.card.mail-failed-final { border-color: #6b1d1d; }
+.card.mail-retrying { border-color: #b86e00; background: #fff8ef; }
 .card h2 { font-size: 16px; margin: 0 0 8px; }
 .meta { color: #5b6578; font-size: 13px; margin: 0 0 12px; }
 .mail-failed .meta, .badge-failed { color: #8a1f1b; font-weight: 700; }
+.mail-retrying .meta, .badge-retrying { color: #8a5a00; font-weight: 700; }
 label.filter { font-size: 14px; color: #152033; display: inline-flex; align-items: center; gap: 6px; }
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; vertical-align: top; padding: 5px 10px 5px 0; font-size: 14px; }

@@ -187,6 +187,7 @@ async function assertDispatch() {
   assert.equal(isDocumentedInquirySuccess(first.status, first.body), true)
   assert.equal(io.leads.length, 1)
   assert.equal(io.state.sends, 1)
+  assert.equal(io.leads[0].mail_status, 'internal_sent')
   assert.equal(io.leads[0].payload._recaptchaToken, undefined)
   assert.equal(io.leads[0].lead_type, 'private_energy')
 
@@ -209,14 +210,21 @@ async function assertDispatch() {
   assert.equal(io.leads.length, 2)
   assert.equal(io.leads[1].mail_status, 'failed')
 
+  const sendsAfterFail = io.state.sends
   io.state.failMail = false
   const retried = await dispatchUnifiedInquiry({
     request: request('idem-business-1'),
     raw: base('business_energy', { plz: '10115', firma: 'Nord GmbH', email: 'biz@example.invalid' }),
     rlKey: 'k',
   }, io)
-  assert.equal(isDocumentedInquirySuccess(retried.status, retried.body), true)
-  assert.equal(io.leads.length, 2, 'mail retry must not create a second lead')
+  assert.equal(retried.status, 202)
+  assert.equal(retried.body.ok, false)
+  assert.equal(retried.body.stored, true)
+  assert.equal(retried.body.mail, false)
+  assert.equal(retried.body.code, 'mail-pending-recovery')
+  assert.equal(io.state.sends, sendsAfterFail, 'user resubmit must not send; cron owns the one retry')
+  assert.equal(io.leads[1].mail_status, 'failed')
+  assert.equal(io.leads.length, 2, 'resubmit must not create a second lead')
 
   const partner = await dispatchUnifiedInquiry({
     request: request('idem-partner-1'),

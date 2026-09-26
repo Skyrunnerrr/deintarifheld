@@ -19,7 +19,7 @@ No Resend API call and no customer mail were sent in this pass.
 | `live` | YES | only if `ALLOW_CUSTOMER_MAIL=YES` (`customerMailDualGuardOpen`) |
 | any other value | fail-closed, no network | n/a |
 
-Missing `RESEND_API_KEY` / `LEADS_FROM_EMAIL` / `LEADS_TO_EMAIL` in `internal_live` or `live` → `mail-not-configured`, `mail_status=failed`. Provider errors → `mail_status=failed` (not invented success).
+Missing `RESEND_API_KEY` / `LEADS_FROM_EMAIL` / `LEADS_TO_EMAIL` in `internal_live` or `live` → `mail-not-configured`, `mail_status=failed`. Provider errors → `mail_status=failed` (not invented success). Unified inquiry then gets one cron retry (`/api/cron/inquiry-mail`): success `internal_sent`, second failure `failed_final`. Inquiry types never send customer mail, including `live` + `ALLOW_CUSTOMER_MAIL=YES`.
 
 Unit tests cover dual-guard block, mock, fail, and internal-live. `CUSTOMER_CONFIRMATION_SEND_COUNT=0` in CI.
 
