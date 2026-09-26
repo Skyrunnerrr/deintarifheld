@@ -10,6 +10,7 @@ const FAIL = []
 
 const files = [
   'components/sections/CareerSection.jsx',
+  'components/forms/UnifiedInquiryForm.jsx',
   'app/karriere/page.js',
   'components/sections/JobDescription.jsx',
 ]
@@ -46,17 +47,21 @@ const career = readFileSync(join(ROOT, 'components/sections/CareerSection.jsx'),
 for (const re of REQUIRED_ANY) {
   if (!re.test(career)) FAIL.push(`CareerSection.jsx: missing required theme ${re}`)
 }
-if (!/careersApiUrl|\/api\/careers/.test(career) && !/careersApiUrl/.test(career)) {
-  FAIL.push('CareerSection.jsx: career API channel missing')
+const unified = readFileSync(join(ROOT, 'components/forms/UnifiedInquiryForm.jsx'), 'utf8')
+if (!/leadsApiUrl/.test(unified) || /careersApiUrl\(/.test(unified)) {
+  FAIL.push('UnifiedInquiryForm.jsx: must post through the leads API only')
 }
-if (!/Partneranfrage senden|Interesse senden/.test(career)) {
-  FAIL.push('CareerSection.jsx: CTA must be Partneranfrage/Interesse')
+if (!/initialType="partner"/.test(career)) {
+  FAIL.push('CareerSection.jsx: partner initialType missing')
 }
-if (/type=["']file["']|input.*file|Lebenslauf|CV upload/i.test(career)) {
-  FAIL.push('CareerSection.jsx: file upload must not be present')
+if (!/Partneranfrage senden/.test(unified)) {
+  FAIL.push('UnifiedInquiryForm.jsx: CTA must be Partneranfrage')
 }
-if (!/zur Kenntnis genommen/.test(career)) {
-  FAIL.push('CareerSection.jsx: privacy acknowledgement missing')
+if (/type=["']file["']|Lebenslauf|CV upload/i.test(career + unified)) {
+  FAIL.push('partner form: file upload must not be present')
+}
+if (!/zur Kenntnis genommen/.test(unified)) {
+  FAIL.push('UnifiedInquiryForm.jsx: privacy acknowledgement missing')
 }
 
 const page = readFileSync(join(ROOT, 'app/karriere/page.js'), 'utf8')

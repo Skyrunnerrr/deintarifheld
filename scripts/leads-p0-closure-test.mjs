@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 import {
   CAPTCHA_ACTION_FUNNEL,
   CAPTCHA_ACTION_HERO,
+  CAPTCHA_ACTION_INQUIRY,
   PAGE_SOURCE_HERO,
   isValidGoogleV3Action,
   resolveExpectedCaptchaAction,
@@ -142,11 +143,16 @@ function assertRecaptchaV3Actions() {
   assert.equal(CAPTCHA_ACTION_HERO, 'hero_funnel')
   assert.equal(isValidGoogleV3Action('hero-funnel'), false)
   assert.equal(isValidGoogleV3Action(CAPTCHA_ACTION_FUNNEL), true)
-  const heroSrc = read('components/sections/Hero.jsx')
-  assert.match(heroSrc, /action="hero_funnel"/)
-  assert.match(heroSrc, /_recaptchaAction:\s*'hero_funnel'/)
-  assert.match(heroSrc, /page_source:\s*'hero-funnel'/)
-  assert.doesNotMatch(heroSrc, /action="hero-funnel"/)
+  const inquiry = resolveExpectedCaptchaAction({ endpoint: 'leads', pageSource: 'inquiry' })
+  assert.equal(inquiry.expectedAction, CAPTCHA_ACTION_INQUIRY)
+  assert.equal(CAPTCHA_ACTION_INQUIRY, 'inquiry')
+  assert.equal(isValidGoogleV3Action(CAPTCHA_ACTION_INQUIRY), true)
+  const formSrc = read('components/forms/UnifiedInquiryForm.jsx')
+  assert.match(formSrc, /CAPTCHA_ACTION_INQUIRY/)
+  assert.match(formSrc, /PAGE_SOURCE_INQUIRY/)
+  assert.doesNotMatch(formSrc, /_recaptchaAction/)
+  assert.doesNotMatch(formSrc, /action="hero-funnel"/)
+  assert.doesNotMatch(read('components/sections/Hero.jsx'), /action="hero-funnel"/)
   console.log('RECAPTCHA_V3_ACTIONS=PASS')
 }
 

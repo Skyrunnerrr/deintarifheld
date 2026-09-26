@@ -7,6 +7,8 @@
     verbrauchGas: 'Verbrauch Gas', usage: 'Verbrauch', standorte: 'Standorte',
     versorger: 'Versorger', provider: 'Anbieter', vertragslaufzeit: 'Vertragslaufzeit',
     nachricht: 'Nachricht', firstName: 'Name', name: 'Name', motivation: 'Motivation',
+    inquiry_type: 'Anfragetyp', verbrauch: 'Verbrauch', tarifinfo: 'Tarifinfo',
+    zaehler: 'Zähler', beschreibung: 'Beschreibung',
     page_source: 'Kanal', source_page: 'Quelle', lead_type: 'Typ',
     form_version: 'Formularversion', dsgvo: 'Kenntnisnahme'
   }
@@ -34,9 +36,12 @@
     try { return new Date(iso).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }) } catch { return iso || '' }
   }
   function titleOf(item) {
-    if (item.kind === 'career') return 'Karriere · ' + (item.full_name || item.email || item.application_ref)
-    if (item.page_source === 'unternehmen') return 'Unternehmen · ' + (item.firma || item.email || item.lead_ref)
-    return 'Privat · ' + ((item.payload && item.payload.firstName) || item.email || item.lead_ref)
+    const inquiry = item.payload && item.payload.inquiry_type
+    if (item.kind === 'career' || inquiry === 'partner') return 'Partner · ' + (item.full_name || (item.payload && item.payload.name) || item.email || item.application_ref)
+    if (inquiry === 'general') return 'Allgemein · ' + ((item.payload && item.payload.name) || item.email || item.lead_ref)
+    if (inquiry === 'business_energy' || item.page_source === 'unternehmen') return 'Gewerbe · ' + (item.firma || item.email || item.lead_ref)
+    if (inquiry === 'private_energy') return 'Privat · ' + ((item.payload && item.payload.name) || item.email || item.lead_ref)
+    return 'Privat · ' + ((item.payload && (item.payload.firstName || item.payload.name)) || item.email || item.lead_ref)
   }
   let allItems = []
   let lastCounts = { leads: 0, careers: 0 }

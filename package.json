@@ -22,6 +22,7 @@
     "leads:admin:inbox": "node scripts/leads-admin-inbox-test.mjs",
     "leads:duplicate-status": "node scripts/leads-duplicate-status-test.mjs",
     "leads:contract": "node scripts/leads-contract-test.mjs",
+    "leads:inquiry": "node scripts/leads-inquiry-intake-test.mjs",
     "leads:mail:test": "node scripts/leads-mail-internal-live-test.mjs",
     "leads:mail:internal-live": "node scripts/leads-mail-internal-live-test.mjs",
     "leads:p0:security": "node scripts/leads-p0-security-test.mjs",

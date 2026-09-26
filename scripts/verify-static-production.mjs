@@ -81,7 +81,8 @@ const hasCareers = hasCareersPath && hasOrigin
 
 if (!hasOrigin) fail('EXPECTED_API_ORIGIN_MISSING', apiOrigin)
 if (!hasLeads) fail('LEADS_API_REFERENCE_MISSING', expectedLeads)
-if (!hasCareers) fail('CAREERS_API_REFERENCE_MISSING', expectedCareers)
+// Public forms post only to /api/leads. /api/careers remains on the API for
+// already deployed clients; the static bundle is not required to call it.
 
 // Route presence
 if (!existsSync(join(outDir, 'rechner/index.html')) && !existsSync(join(outDir, 'rechner.html'))) {
@@ -93,7 +94,7 @@ const report = {
   GOOGLE_APPS_SCRIPT_REFERENCES_IN_OUT: 0,
   PLACEHOLDER_ENDPOINTS_IN_OUT: 0,
   LEADS_API_REFERENCE_PRESENT: 'YES',
-  CAREERS_API_REFERENCE_PRESENT: 'YES',
+  CAREERS_API_REFERENCE_PRESENT: hasCareers ? 'YES' : 'NOT_REQUIRED',
   EXPECTED_API_ORIGIN_PRESENT: 'YES',
   LOCALHOST_REFERENCE_IN_PRODUCTION_OUT: 0,
   SECRET_REFERENCE_IN_OUT: 0,

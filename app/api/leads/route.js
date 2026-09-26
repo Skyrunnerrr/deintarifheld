@@ -17,6 +17,8 @@ import { mailFieldsFromStored, sendLeadEmails } from '@/lib/leads/mail'
 import { optionsResponse, withCors } from '@/lib/leads/cors'
 import { leadsLog } from '@/lib/leads/log'
 import { publicLeadsHealth } from '@/lib/leads/public-health'
+import { isUnifiedInquiryRequest } from '@/lib/leads/inquiry-contract'
+import { dispatchUnifiedInquiry } from '@/lib/leads/inquiry-dispatch'
 
 export const runtime = 'nodejs'
 
@@ -91,6 +93,11 @@ export async function POST(request) {
     return errorResponse(request, intake.code, intake.status, intake.headers)
   }
   const { raw, rlKey } = intake
+
+  if (isUnifiedInquiryRequest(raw)) {
+    const result = await dispatchUnifiedInquiry({ request, raw, rlKey })
+    return json(request, result.body, result.status)
+  }
 
   const { channel, validated } = resolveValidator(raw)
   if (!validated.ok) {

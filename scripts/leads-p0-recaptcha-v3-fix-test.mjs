@@ -52,11 +52,7 @@ const ENTERPRISE_ENV = {
 }
 
 const FORM_FILES = {
-  hero: 'components/sections/Hero.jsx',
-  funnel: 'components/sections/FunnelSection.jsx',
-  business: 'components/business/BusinessForm.jsx',
-  career: 'components/sections/CareerSection.jsx',
-  legacyBusiness: 'app/unternehmen/page.js',
+  inquiry: 'components/forms/UnifiedInquiryForm.jsx',
 }
 
 function withEnv(patch, fn) {
@@ -386,31 +382,24 @@ async function assertGetTokenContract() {
 }
 
 async function assertFormTokenFlow() {
-  const actions = {
-    hero: { action: 'hero_funnel', page: 'hero-funnel' },
-    funnel: { action: 'main_funnel', page: 'main_funnel' },
-    business: { action: 'unternehmen', page: 'unternehmen' },
-    career: { action: 'career', page: 'career' },
-    legacyBusiness: { action: 'unternehmen', page: 'unternehmen' },
-  }
-
   for (const [name, rel] of Object.entries(FORM_FILES)) {
     const src = read(rel)
-    const expected = actions[name]
     assert.match(src, /resolveSubmitCaptchaToken\(/)
-    assert.match(src, new RegExp(`resolveSubmitCaptchaToken\\(\\s*'${expected.action}'\\s*,\\s*recaptchaToken\\s*\\)`))
-    assert.match(src, new RegExp(`_recaptchaAction:\\s*'${expected.action}'`))
-    assert.match(src, new RegExp(`page_source:\\s*'${expected.page}'`))
+    assert.match(src, /resolveSubmitCaptchaToken\(\s*CAPTCHA_ACTION_INQUIRY\s*,\s*recaptchaToken\s*\)/)
+    assert.match(src, /from '@\/lib\/leads\/captcha-action'/)
+    assert.doesNotMatch(src, /_recaptchaAction/)
+    assert.match(src, /PAGE_SOURCE_INQUIRY/)
     assert.match(src, /_recaptchaToken:\s*captcha\.token/)
     assert.match(src, /const \[recaptchaToken,\s*setRecaptchaToken\]/)
     assert.match(src, /onToken=\{setRecaptchaToken\}/)
     assert.doesNotMatch(src, /_recaptchaToken:\s*recaptchaToken/)
     assert.doesNotMatch(src, /90_000|90000/)
     assert.match(src, /mapLeadSubmitUserMessage/)
+    assert.match(src, /isDocumentedInquirySuccess/)
     assert.doesNotMatch(src, /Bitte prüfe deine Verbindung und versuche es erneut/)
     assert.doesNotMatch(src, /Bitte prüfen Sie Ihre Verbindung und versuchen Sie es erneut/)
     assert.match(src, /if\s*\(\s*!captcha\.ok\s*\)/)
-    assert.match(src, /if\s*\(\s*(sending|loading)\s*\)\s*return/)
+    assert.match(src, /if\s*\(\s*lock\.current\s*\|\|\s*submitting\s*\)\s*return/)
     const submitAt = src.search(/async function (submitForm|onSubmit)|const handleSubmit = async/)
     assert.ok(submitAt >= 0, `${name} must have a submit handler`)
     const submitSlice = src.slice(submitAt)

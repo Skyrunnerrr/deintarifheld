@@ -144,29 +144,30 @@ assert.match(browserApi, /\/api\/careers\//)
 assert.match(browserApi, /Idempotency-Key/)
 assert.match(browserApi, /ensureTrailingSlash|joinOriginPath/)
 
-const form = read('components/business/BusinessForm.jsx')
+const form = read('components/forms/UnifiedInquiryForm.jsx')
 assert.match(form, /from '@\/lib\/leads\/browser-api'/)
 assert.match(form, /leadsApiUrl|postJsonLead/)
 assert.match(form, /RecaptchaBox/)
 assert.match(form, /_recaptchaToken/)
+assert.match(form, /CAPTCHA_ACTION_INQUIRY/)
+assert.match(form, /isDocumentedInquirySuccess/)
+assert.doesNotMatch(form, /careersApiUrl/)
 assert.doesNotMatch(form, /script\.google\.com/)
 assert.doesNotMatch(form, /function leadsApiUrl/)
 
-const hero = read('components/sections/Hero.jsx')
-assert.match(hero, /leadsApiUrl|postJsonLead/)
-assert.doesNotMatch(hero, /script\.google\.com/)
-
-const funnel = read('components/sections/FunnelSection.jsx')
-assert.match(funnel, /leadsApiUrl|postJsonLead/)
-assert.doesNotMatch(funnel, /script\.google\.com/)
-
-const career = read('components/sections/CareerSection.jsx')
-assert.match(career, /careersApiUrl|postJsonLead/)
-assert.doesNotMatch(career, /script\.google\.com/)
-
-const legacyBiz = read('app/unternehmen/page.js')
-assert.match(legacyBiz, /leadsApiUrl|postJsonLead/)
-assert.doesNotMatch(legacyBiz, /script\.google\.com/)
+for (const rel of [
+  'components/sections/Hero.jsx',
+  'components/sections/FunnelSection.jsx',
+  'components/sections/CareerSection.jsx',
+  'components/business/BusinessForm.jsx',
+  'app/unternehmen/page.js',
+  'app/kontakt/page.js',
+]) {
+  const src = read(rel)
+  assert.match(src, /UnifiedInquiryForm/)
+  assert.doesNotMatch(src, /script\.google\.com/)
+  assert.doesNotMatch(src, /careersApiUrl\(/)
+}
 
 const staticCareer = read('public/karriere.html')
 assert.doesNotMatch(staticCareer, /script\.google\.com\/macros/)

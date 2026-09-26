@@ -9,13 +9,9 @@ const ROOT = process.cwd()
 const FAIL = []
 
 const FORM_FILES = [
-  'components/sections/Hero.jsx',
-  'components/sections/FunnelSection.jsx',
-  'components/sections/CareerSection.jsx',
+  'components/forms/UnifiedInquiryForm.jsx',
   'components/sections/SavingsCalculator.jsx',
-  'components/business/BusinessForm.jsx',
   'lib/business-content.js',
-  'app/unternehmen/page.js',
 ]
 
 const FORBIDDEN = [
@@ -70,11 +66,7 @@ for (const f of FORM_FILES) {
 }
 
 for (const [f, field] of [
-  ['components/sections/Hero.jsx', 'gdpr'],
-  ['components/sections/FunnelSection.jsx', 'gdpr'],
-  ['components/sections/CareerSection.jsx', 'gdpr'],
-  ['components/business/BusinessForm.jsx', 'dsgvo'],
-  ['app/unternehmen/page.js', 'dsgvo'],
+  ['components/forms/UnifiedInquiryForm.jsx', 'dsgvo'],
 ]) {
   const text = read(f)
   if (!new RegExp(`\\b${field}\\b`).test(text)) FAIL.push(`${f}: field ${field} missing`)
