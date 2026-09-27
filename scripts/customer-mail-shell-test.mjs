@@ -26,12 +26,14 @@ function assertShell() {
       submittedAt,
     })
     assert.equal(mail.customerGate, 'off')
-    assert.match(mail.html, /ANFRAGE ERFOLGREICH EINGEGANGEN/)
+    assert.match(mail.html, /Eingegangen/)
     assert.match(mail.html, /Was passiert jetzt\?/)
     assert.match(mail.html, /kontakt@deintarifheld\.de/)
     assert.match(mail.html, /\/impressum\//)
     assert.match(mail.html, /\/datenschutz\//)
-    assert.match(mail.text, /ANFRAGE ERFOLGREICH EINGEGANGEN/)
+    assert.match(mail.text, /Eingegangen/)
+    assert.doesNotMatch(mail.html, /ANFRAGE ERFOLGREICH EINGEGANGEN/)
+    assert.doesNotMatch(mail.text, /ANFRAGE ERFOLGREICH EINGEGANGEN/)
     assert.doesNotMatch(mail.subject, /[\r\n]/)
     assert.equal((mail.html.match(/<html/g) || []).length, 1)
   }
@@ -59,6 +61,9 @@ function assertShell() {
   assert.match(business.html, /background:#F98540;color:#090B15/i)
   assert.match(business.html, /#F98540/i)
   assert.match(business.html, /#090B15/i)
+  assert.match(business.html, /#E6E4DF/i)
+  assert.match(business.html, /Anfrage bestätigt/)
+  assert.match(business.html, /Wir haben Ihre Anfrage\./)
   assert.equal(stripMailControls('A\r\nB\tC'), 'A B C')
   assert.equal(stripMailControls('0123456789', 4), '0123')
 
