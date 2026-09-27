@@ -80,6 +80,8 @@ jobs:
         run: npm run leads:inquiry
       - name: Inquiry mail recovery
         run: npm run leads:inquiry:recovery
+      - name: Customer mail shell gate
+        run: npm run mail:customer:shell
       - name: Internal live mail mode + cutover gate
         run: npm run leads:mail:internal-live
       - name: P0 server enforcement + admin + headers + mail guards

@@ -16,6 +16,7 @@ module.exports = {
     '/impressum', '/impressum/',
     '/404', '/404/', '/404.html',
     '/icon.png', '/icon.png/',
+    '/unternehmen', '/unternehmen/',
   ],
   changefreq: 'weekly',
   priority: 0.7,
@@ -25,7 +26,7 @@ module.exports = {
     // Custom priority per page
     const priorities = {
       '/': 1.0,
-      '/unternehmen/': 0.9,
+      '/unternehmen-neu/': 0.9,
       '/karriere/': 0.8,
     }
     return {

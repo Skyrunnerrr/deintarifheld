@@ -160,7 +160,6 @@ for (const rel of [
   'components/sections/FunnelSection.jsx',
   'components/sections/CareerSection.jsx',
   'components/business/BusinessForm.jsx',
-  'app/unternehmen/page.js',
   'app/kontakt/page.js',
 ]) {
   const src = read(rel)
@@ -168,6 +167,21 @@ for (const rel of [
   assert.doesNotMatch(src, /script\.google\.com/)
   assert.doesNotMatch(src, /careersApiUrl\(/)
 }
+
+const businessForm = read('components/business/BusinessForm.jsx')
+assert.match(businessForm, /initialType="business_energy"/)
+const oldBusiness = read('app/unternehmen/page.js')
+assert.match(oldBusiness, /unternehmen-neu/)
+assert.doesNotMatch(oldBusiness, /UnifiedInquiryForm/)
+const htaccess = read('public/.htaccess')
+assert.match(htaccess, /RewriteRule \^unternehmen\/\?\$ \/unternehmen-neu\/ \[R=301,L\]/)
+const nextConfig = read('next.config.mjs')
+assert.match(nextConfig, /destination: '\/unternehmen-neu\/'/)
+assert.match(nextConfig, /permanent: true/)
+assert.match(nextConfig, /if \(staticExport\) return \[\]/)
+const b2bEntry = read('components/sections/B2BSection.jsx')
+assert.match(b2bEntry, /href="\/unternehmen-neu"/)
+assert.match(read('lib/constants.js'), /href: '\/unternehmen-neu'/)
 
 const staticCareer = read('public/karriere.html')
 assert.doesNotMatch(staticCareer, /script\.google\.com\/macros/)
