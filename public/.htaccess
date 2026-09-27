@@ -7,6 +7,10 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 RewriteCond %{HTTP_HOST} ^deintarifheld\.de$ [NC]
 RewriteRule ^(.*)$ https://www.deintarifheld.de/$1 [R=301,L]
 
+# ── B2B: /unternehmen is only a permanent alias of /unternehmen-neu ─
+RewriteRule ^unternehmen/?$ /unternehmen-neu/ [R=301,L]
+RewriteRule ^unternehmen/index\.html$ /unternehmen-neu/ [R=301,L]
+
 # ── Canonical career routes (Phase B / cutover) ──────────────────
 RewriteRule ^karriere\.html$ /karriere/ [R=301,L]
 RewriteRule ^karriere$ /karriere/ [R=301,L]

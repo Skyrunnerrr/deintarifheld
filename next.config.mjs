@@ -13,6 +13,16 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    if (staticExport) return []
+    return [
+      {
+        source: '/unternehmen',
+        destination: '/unternehmen-neu/',
+        permanent: true,
+      },
+    ]
+  },
   async headers() {
     if (staticExport) return []
     return [

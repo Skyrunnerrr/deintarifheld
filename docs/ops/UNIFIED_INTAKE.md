@@ -11,7 +11,7 @@ One public form (`UnifiedInquiryForm`) posts to `POST /api/leads/`. The server o
 | `partner` | Partner / Zusammenarbeit | `career_applications` | Partneranfrage |
 | `general` | Allgemeine Anfrage | `leads.page_source=general` | allgemeine Anfrage |
 
-Pages may pass `initialType`. `/kontakt/` leaves it unset. Old page sources (`hero-funnel`, `main_funnel`, `unternehmen`, `/api/careers`) stay on the API for already deployed clients. New pages do not call them.
+Pages may pass `initialType`. `/kontakt/` leaves it unset. The business form lives on `/unternehmen-neu/` (`initialType=business_energy`). `/unternehmen/` redirects there (301 on the static host, permanent redirect on the Next server). Old page sources (`hero-funnel`, `main_funnel`, `unternehmen`, `/api/careers`) stay on the API for already deployed clients. New pages do not call them.
 
 ## Request path
 
@@ -92,4 +92,4 @@ Do not run against production from an unattended agent. After the API deployment
 3. Repeat the same click: no second row and no second mail.
 4. Negative checks: empty required field, captcha blocked (devtools offline before submit), and API unavailable. The form must show an error and must not show success.
 
-Customer mail stays off.
+Customer mail stays off. The shared confirmation shell in `lib/leads/customer-mail.js` is preview-only (`npm run mail:customer:preview`). It is not sent for inquiry types.

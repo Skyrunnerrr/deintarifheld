@@ -21,6 +21,18 @@ No Resend API call and no customer mail were sent in this pass.
 
 Missing `RESEND_API_KEY` / `LEADS_FROM_EMAIL` / `LEADS_TO_EMAIL` in `internal_live` or `live` → `mail-not-configured`, `mail_status=failed`. Provider errors → `mail_status=failed` (not invented success). Unified inquiry then gets one cron retry (`/api/cron/inquiry-mail`): success `internal_sent`, second failure `failed_final`. Inquiry types never send customer mail, including `live` + `ALLOW_CUSTOMER_MAIL=YES`.
 
+## Customer mail shell (built, gate off)
+
+`lib/leads/customer-mail.js` renders one shared HTML shell for `private`, `business`, `partner`, and `general`. `sendLeadEmails` does not call it. `shouldSendCustomerMail` returns false for every unified `inquiry_type`, even when `LEADS_MAIL_MODE=live` and `ALLOW_CUSTOMER_MAIL=YES`.
+
+Preview, no send:
+
+```
+npm run mail:customer:preview
+```
+
+Open `tmp/customer-mail-preview/index.html` and the four HTML files. Resize the browser for a narrow viewport. Do not enable `ALLOW_CUSTOMER_MAIL` for this review. The gate stays off until Averi explicitly enables it.
+
 Unit tests cover dual-guard block, mock, fail, and internal-live. `CUSTOMER_CONFIRMATION_SEND_COUNT=0` in CI.
 
 ## Production unknowns

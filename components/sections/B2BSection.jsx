@@ -41,7 +41,7 @@ export function B2BSection() {
               Ansprechpartner und individueller Beratung — ganz ohne Risiko.
             </p>
 
-            <Link href="/unternehmen" className="w-full sm:w-auto">
+            <Link href="/unternehmen-neu" className="w-full sm:w-auto">
               <Button variant="volt" size="lg" className="w-full sm:w-auto whitespace-normal text-center">
                 Mehr erfahren &amp; Analyse anfragen
                 <ArrowRight className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
