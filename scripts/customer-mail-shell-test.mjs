@@ -12,6 +12,7 @@ import {
   customerMailVariantForInquiry,
 } from '../lib/leads/customer-mail.js'
 import { sendLeadEmails, shouldSendCustomerMail } from '../lib/leads/mail.js'
+import { stripMailControls } from '../lib/leads/mail-safety.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -49,11 +50,17 @@ function assertShell() {
   assert.equal(hostile.subject, 'Deine Anfrage bei DeinTarifheld')
 
   const business = buildCustomerMail({ variant: 'business', leadRef: 'B2B-1', name: 'Nord', submittedAt })
+  const noAuto = 'Es erfolgt keine automatische Vertragsänderung oder Beauftragung.'
   assert.match(business.html, /Guten Tag/)
-  assert.match(business.html, /keine automatische Vertragsänderung/)
-  assert.match(business.html, /keine Provision/)
+  assert.match(business.html, new RegExp(noAuto.replace(/[.]/g, '\\.')))
+  assert.match(business.text, new RegExp(noAuto.replace(/[.]/g, '\\.')))
+  assert.doesNotMatch(business.html, /Provision/)
+  assert.doesNotMatch(business.text, /Provision/)
+  assert.match(business.html, /background:#F98540;color:#090B15/i)
   assert.match(business.html, /#F98540/i)
   assert.match(business.html, /#090B15/i)
+  assert.equal(stripMailControls('A\r\nB\tC'), 'A B C')
+  assert.equal(stripMailControls('0123456789', 4), '0123')
 
   const partner = buildCustomerMail({ variant: 'partner', leadRef: 'PAR-1', name: 'Ada', submittedAt })
   assert.match(partner.html, /Zusammenarbeit/)
@@ -130,8 +137,13 @@ async function assertGateStaysOff() {
     else process.env.LEADS_TO_EMAIL = prevTo
   }
   const mailSrc = readFileSync(join(root, 'lib/leads/mail.js'), 'utf8')
+  const customerSrc = readFileSync(join(root, 'lib/leads/customer-mail.js'), 'utf8')
   assert.match(mailSrc, /if \(usesInquiryMail\(data\)\) return false/)
   assert.doesNotMatch(mailSrc, /buildCustomerMail/)
+  assert.match(mailSrc, /from '\.\/mail-safety\.js'/)
+  assert.doesNotMatch(mailSrc, /customer-mail/)
+  assert.match(customerSrc, /from '\.\/mail-safety\.js'/)
+  assert.doesNotMatch(customerSrc, /from '\.\/mail\.js'/)
   const preview = readFileSync(join(root, 'scripts/customer-mail-preview.mjs'), 'utf8')
   assert.doesNotMatch(preview, /sendLeadEmails|resend\.emails/)
   console.log('CUSTOMER_MAIL_GATE=OFF')

@@ -25,6 +25,8 @@ Missing `RESEND_API_KEY` / `LEADS_FROM_EMAIL` / `LEADS_TO_EMAIL` in `internal_li
 
 `lib/leads/customer-mail.js` renders one shared HTML shell for `private`, `business`, `partner`, and `general`. `sendLeadEmails` does not call it. `shouldSendCustomerMail` returns false for every unified `inquiry_type`, even when `LEADS_MAIL_MODE=live` and `ALLOW_CUSTOMER_MAIL=YES`.
 
+Header cleanup (`stripMailControls`) lives in `lib/leads/mail-safety.js`. `mail.js` and `customer-mail.js` both import that module and do not import each other. Business status bar and button use dark text `#090B15` on brand orange `#F98540`.
+
 Preview, no send:
 
 ```
