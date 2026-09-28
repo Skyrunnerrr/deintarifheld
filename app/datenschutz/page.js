@@ -419,12 +419,13 @@ export default function DatenschutzPage() {
           <SubSection title="9.5 ProvenExpert">
             <p style={{ marginBottom: '0.75rem' }}>
               Ohne optionale Auswahl zeigen wir ein <Highlight>lokales</Highlight> ProvenExpert-Siegel
-              ohne Laden des externen ProvenExpert-Scripts.
+              ohne Laden des externen ProvenExpert-Scripts. Das Siegel verlinkt auf das öffentliche
+              Profil bei ProvenExpert; ein Aufruf dort erfolgt erst, wenn Sie den Link öffnen.
             </p>
             <p style={{ margin: 0 }}>
               Nur wenn Sie im Banner die optionale Kategorie ProvenExpert auswählen, wird das
               Netzwerkscript von s.provenexpert.net geladen und kann ein Widget im Browser
-              aufbauen. Widerruf dieser Auswahl speichern wir, entfernen Script und
+              aufbauen. Das Script ruft dafür Siegeldaten von d.provenexpert.net ab. Widerruf dieser Auswahl speichern wir, entfernen Script und
               ProvenExpert-DOM und führen einmalig einen kontrollierten Seiten-Reload aus.
               Weitere Aussagen zum Verhalten von ProvenExpert auf deren Servern treffen wir
               hier nicht.

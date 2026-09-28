@@ -24,7 +24,9 @@ The banner does **not** claim “keine Daten ohne Zustimmung an Dritte”, becau
 
 ## Essential-only
 
-`{ essential: true, provenexpert: false }` → `shouldLoadProvenExpertScript` is false → **zero** ProvenExpert network script injection.
+`{ essential: true, provenexpert: false }` → `shouldLoadProvenExpertScript` is false → **zero** ProvenExpert network script injection. The local badge links to the public profile and does not inject `s.provenexpert.net`.
+
+After consent, `proseal-v2.js` fetches seal JSON from `d.provenexpert.net`. `public/.htaccess` allows that host on `connect-src` only. ProvenExpert stays off `script-src` except `s.provenexpert.net`.
 
 ## Withdrawal (`provenexpert` true → false)
 

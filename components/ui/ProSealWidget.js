@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   CONSENT_CHANGED_EVENT,
   CONSENT_STORAGE_KEY,
+  PROVENEXPERT_PROFILE_URL,
   PROVENEXPERT_SCRIPT_URL,
   shouldLoadProvenExpertScript,
 } from '@/lib/consent/third-party'
@@ -195,8 +196,10 @@ export function ProSealWidget() {
     <div ref={wrapperRef} style={wrapperStyle} data-dth-pe-external={loadExternal ? '1' : '0'}>
       {!loadExternal && (
         <a
-          href="/datenschutz"
-          aria-label="Bewertungssiegel (lokal, ohne externes Script)"
+          href={PROVENEXPERT_PROFILE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Bewertungssiegel ProvenExpert, zu den Bewertungen"
           style={{
             display: 'inline-block',
             background: '#444444',

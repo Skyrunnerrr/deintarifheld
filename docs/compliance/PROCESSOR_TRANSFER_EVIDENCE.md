@@ -38,7 +38,7 @@ Legend:
 | TELESON Vertriebs GmbH | Named Handelsvertreter / possible Tarifweitergabe | UNKNOWN (manual ops only; no automated repo path) | UNKNOWN | UNKNOWN | TIA_UNKNOWN | UNKNOWN | Not a hosting processor in this repo. |
 | Energy providers | Liefervertrag if later vermittelt | UNKNOWN | UNKNOWN | UNKNOWN | TIA_UNKNOWN | UNKNOWN | No automated repo path. |
 
-ProvenExpert network script is **not** loaded on essential-only consent. A local badge is shown instead.
+ProvenExpert network script is **not** loaded on essential-only consent. A local badge is shown instead and links to the public profile. Seal data from `d.provenexpert.net` is requested only after that optional script loads.
 
 No CRM / Averion processor row: not in this repository and not added here.
 
