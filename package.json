@@ -41,6 +41,7 @@
     "forms:career-partner:test": "node scripts/career-partner-copy-test.mjs",
     "forms:agb-privacy:test": "node scripts/agb-privacy-consistency-test.mjs",
     "legal:public-alignment:test": "node scripts/legal-public-alignment-test.mjs",
+    "provenexpert:profile:test": "node scripts/provenexpert-profile-url-test.mjs",
     "phase-b:verify": "node scripts/phase-b-verify.mjs",
     "checkdomain:status": "bash scripts/deploy/checkdomain/dth-checkdomain.sh status",
     "checkdomain:plan": "bash scripts/deploy/checkdomain/dth-checkdomain.sh plan",

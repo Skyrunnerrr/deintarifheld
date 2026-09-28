@@ -88,6 +88,8 @@ jobs:
         run: npm run leads:p0:security
       - name: P0 remediation (captcha binding, atomic RL, DSGVO/AI)
         run: npm run leads:p0:remediation
+      - name: ProvenExpert live profile URL
+        run: npm run provenexpert:profile:test
       - name: P0 closure (delete SM, PE withdrawal, legal/AI/npm gates)
         run: npm run leads:p0:closure
       - name: P0 reCAPTCHA v3 submit contract

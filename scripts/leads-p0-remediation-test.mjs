@@ -34,6 +34,7 @@ import {
 import { anonymisePayload, ANONYMISED_EMAIL, emailAuditPseudonym } from '../lib/leads/retention-privacy.js'
 import { processLeadDeletion } from '../lib/leads/supabase.js'
 import { publicCareersHealth, publicLeadsHealth } from '../lib/leads/public-health.js'
+import { assertProvenExpertProfileUrls } from './provenexpert-profile-url-test.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (rel) => readFileSync(join(root, rel), 'utf8')
@@ -313,6 +314,7 @@ function assertProvenExpertConsent() {
   assert.match(banner, /ProvenExpert|acceptOptionalProvenExpertConsent/)
   assert.match(widget, /PROVENEXPERT_SCRIPT_URL/)
   assert.match(read('lib/consent/third-party.js'), new RegExp(PROVENEXPERT_SCRIPT_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+  assertProvenExpertProfileUrls()
   console.log('P0_PROVENEXPERT_CONSENT=PASS')
 }
 

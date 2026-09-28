@@ -3,6 +3,7 @@ import { Navbar } from '@/components/ui/Navbar'
 import { CookieBanner } from '@/components/ui/CookieBanner'
 import { ProSealWidget } from '@/components/ui/ProSealWidget'
 import { StickyMobileCta } from '@/components/ui/StickyMobileCta'
+import { PROVENEXPERT_PROFILE_URL } from '@/lib/consent/third-party'
 
 export const metadata = {
   title: {
@@ -89,7 +90,7 @@ const JSON_LD_LOCAL_BUSINESS = {
     ],
   },
   sameAs: [
-    'https://www.provenexpert.com/deintarifheld/',
+    PROVENEXPERT_PROFILE_URL,
   ],
 }
 
